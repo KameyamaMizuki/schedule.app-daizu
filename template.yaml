@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Family Schedule LINE Bot with LIFF
+Description: Family Schedule LINE Bot + Chirol Dog Record (LIFF)
+
+# 注意: sam deploy は CloudFormation ResourceExistenceCheck エラーで失敗するため使用不可。
+# このファイルは参考用。実際のデプロイは zip → aws lambda update-function-code で直接更新。
+# 実際の Lambda 関数名は FunctionName に記載の通り。
 
 Parameters:
   LineSecretName:
@@ -17,7 +21,7 @@ Globals:
   Function:
     Runtime: nodejs20.x
     Timeout: 30
-    MemorySize: 512
+    MemorySize: 256
     Environment:
       Variables:
         LINE_SECRET_NAME: !Ref LineSecretName
@@ -43,13 +47,16 @@ Resources:
         AllowHeaders: "'Content-Type,Authorization,X-Line-Signature'"
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
 
-  # Lambda Functions
+  # ============================================================
+  # スケジュール系 Lambda Functions
+  # ============================================================
+
   WebhookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-webhook-kame
+      FunctionName: line-webhook-kame
       CodeUri: ./
-      Handler: dist/handlers/webhook.handler
+      Handler: handlers/webhook.handler
       Events:
         WebhookApi:
           Type: Api
@@ -69,9 +76,9 @@ Resources:
   ScheduleSubmitFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-submit-kame
+      FunctionName: schedule-submit-kame
       CodeUri: ./
-      Handler: dist/handlers/schedule-submit.handler
+      Handler: handlers/schedule-submit.handler
       Events:
         SubmitApi:
           Type: Api
@@ -93,9 +100,9 @@ Resources:
   ScheduleGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-get-kame
+      FunctionName: schedule-get-kame
       CodeUri: ./
-      Handler: dist/handlers/schedule-get.handler
+      Handler: handlers/schedule-get.handler
       Events:
         GetApi:
           Type: Api
@@ -115,9 +122,9 @@ Resources:
   ScheduleWeekGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-week-get-kame
+      FunctionName: schedule-week-get-kame
       CodeUri: ./
-      Handler: dist/handlers/schedule-week-get.handler
+      Handler: handlers/schedule-week-get.handler
       Events:
         GetApi:
           Type: Api
@@ -129,12 +136,18 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: ScheduleInputs-kame
 
+  # ============================================================
+  # 週次処理系 Lambda Functions
+  # EventBridge Schedule は AWS CLI で別途設定済み
+  # ============================================================
+
   WeeklyReminderFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-weekly-reminder-kame
+      FunctionName: weekly-reminder-kame
       CodeUri: ./
-      Handler: dist/handlers/weekly-reminder.handler
+      Handler: handlers/weekly-reminder.handler
+      # EventBridge: cron(0 1 ? * FRI *) = 金曜 10:00 JST
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DLQueue.Arn
@@ -152,15 +165,14 @@ Resources:
   WeeklyFinalizeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-weekly-finalize-kame
+      FunctionName: weekly-finalize-kame
       CodeUri: ./
-      Handler: dist/handlers/weekly-finalize.handler
+      Handler: handlers/weekly-finalize.handler
       Timeout: 60
+      # EventBridge: cron(0 15 ? * SUN *) = 月曜 0:00 JST
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DLQueue.Arn
-      # EventBridge Schedule は AWS CLI で別途設定
-      # cron(0 15 ? * SUN *) = 月曜 0:00 JST
       Policies:
         - DynamoDBCrudPolicy:
             TableName: ScheduleInputs-kame
@@ -172,10 +184,10 @@ Resources:
   WeeklyNotifyFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-weekly-notify-kame
+      FunctionName: weekly-notify-kame
       CodeUri: ./
-      Handler: dist/handlers/weekly-notify.handler
-      Timeout: 30
+      Handler: handlers/weekly-notify.handler
+      # EventBridge: cron(0 21 ? * SUN *) = 月曜 6:00 JST
       DeadLetterQueue:
         Type: SQS
         TargetArn: !GetAtt DLQueue.Arn
@@ -190,12 +202,16 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
 
+  # ============================================================
+  # 履歴系 Lambda Functions
+  # ============================================================
+
   HistoryGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: family-schedule-history-get-kame
+      FunctionName: history-get-kame
       CodeUri: ./
-      Handler: dist/handlers/history-get.handler
+      Handler: handlers/history-get.handler
       Events:
         HistoryApi:
           Type: Api
@@ -208,14 +224,19 @@ Resources:
             TableName: WeeklyFinalized-kame
         - DynamoDBReadPolicy:
             TableName: UserPoints-kame
+        - DynamoDBReadPolicy:
+            TableName: ScheduleInputs-kame
 
-  # 記録タブ用 Lambda Functions (AWS上ではdog-*という名前で作成済み)
+  # ============================================================
+  # チロル記録系 Lambda Functions
+  # ============================================================
+
   RecordSaveFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-record-save-kame
+      FunctionName: record-save-kame
       CodeUri: ./
-      Handler: dist/handlers/record-save.handler
+      Handler: handlers/record-save.handler
       Events:
         RecordSaveApi:
           Type: Api
@@ -230,9 +251,9 @@ Resources:
   RecordGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-record-get-kame
+      FunctionName: record-get-kame
       CodeUri: ./
-      Handler: dist/handlers/record-get.handler
+      Handler: handlers/record-get.handler
       Events:
         RecordGetByDateApi:
           Type: Api
@@ -253,9 +274,9 @@ Resources:
   RecordDeleteFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-record-delete-kame
+      FunctionName: record-delete-kame
       CodeUri: ./
-      Handler: dist/handlers/record-delete.handler
+      Handler: handlers/record-delete.handler
       Events:
         RecordDeleteApi:
           Type: Api
@@ -270,9 +291,9 @@ Resources:
   RecordSummaryFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-record-summary-kame
+      FunctionName: record-summary-kame
       CodeUri: ./
-      Handler: dist/handlers/record-summary.handler
+      Handler: handlers/record-summary.handler
       Timeout: 60
       Events:
         RecordSummaryApi:
@@ -290,12 +311,16 @@ Resources:
                 - bedrock:InvokeModel
               Resource: 'arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0'
 
+  # ============================================================
+  # 投薬管理系 Lambda Functions
+  # ============================================================
+
   MedicationGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-medication-get-kame
+      FunctionName: medication-get-kame
       CodeUri: ./
-      Handler: dist/handlers/medication-get.handler
+      Handler: handlers/medication-get.handler
       Events:
         MedicationGetApi:
           Type: Api
@@ -310,9 +335,9 @@ Resources:
   MedicationSaveFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: dog-medication-save-kame
+      FunctionName: medication-save-kame
       CodeUri: ./
-      Handler: dist/handlers/medication-save.handler
+      Handler: handlers/medication-save.handler
       Events:
         MedicationSaveApi:
           Type: Api
@@ -324,13 +349,16 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: MedicationSchedule-kame
 
-  # チロル一言API
+  # ============================================================
+  # チロルキャラクター系 Lambda Functions
+  # ============================================================
+
   ChirolHitokotoFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: chirol-hitokoto-kame
       CodeUri: ./
-      Handler: dist/handlers/chirol-hitokoto.handler
+      Handler: handlers/chirol-hitokoto.handler
       Events:
         HitokotoGetApi:
           Type: Api
@@ -354,13 +382,12 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: ChirolData-kame
 
-  # チロル画像API
   ChirolImageFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: chirol-image-kame
       CodeUri: ./
-      Handler: dist/handlers/chirol-image.handler
+      Handler: handlers/chirol-image.handler
       Timeout: 60
       MemorySize: 1024
       Events:
@@ -388,7 +415,28 @@ Resources:
         - S3CrudPolicy:
             BucketName: family-schedule-web-kame-982312822872
 
-  # Dead Letter Queue
+  # ============================================================
+  # LINE リッチメニュー設定
+  # ============================================================
+
+  LineRichmenuSetupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: line-richmenu-setup-kame
+      CodeUri: ./
+      Handler: handlers/line-richmenu-setup.handler
+      # 手動実行用（APIイベントなし）
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+
+  # ============================================================
+  # インフラ
+  # ============================================================
+
   DLQueue:
     Type: AWS::SQS::Queue
     Properties:

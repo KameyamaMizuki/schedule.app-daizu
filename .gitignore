@@ -4,9 +4,6 @@ node_modules/
 # Build output
 dist/
 .aws-sam/
-deploy/
-lambda-deploy/
-lambda-test/
 
 # Environment variables
 .env
@@ -38,7 +35,6 @@ packaged.yaml
 # Temporary and test files
 response*.json
 payload.json
-nul
 /tmp/
 test-*.js
 test-*.json

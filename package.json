@@ -1,13 +1,11 @@
 {
   "name": "family-schedule-linebot",
   "version": "1.0.0",
-  "description": "Family schedule management LINE bot with LIFF",
-  "main": "dist/index.js",
+  "description": "Family schedule management + dog (Chirol) record LINE bot with LIFF",
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "lint": "eslint . --ext .ts",
-    "deploy": "npm run build && sam deploy"
+    "lint": "eslint . --ext .ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.971.0",
