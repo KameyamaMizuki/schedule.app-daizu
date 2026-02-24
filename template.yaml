@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Family Schedule LINE Bot + Chirol Dog Record (LIFF)
+Description: Family Schedule LINE Bot with Chirol Character (LIFF)
 
 # 注意: sam deploy は CloudFormation ResourceExistenceCheck エラーで失敗するため使用不可。
 # このファイルは参考用。実際のデプロイは zip → aws lambda update-function-code で直接更新。
@@ -26,12 +26,10 @@ Globals:
       Variables:
         LINE_SECRET_NAME: !Ref LineSecretName
         TABLE_SCHEDULE_INPUTS: ScheduleInputs-kame
-        TABLE_WEEKLY_FINALIZED: WeeklyFinalized-kame
-        TABLE_USER_POINTS: UserPoints-kame
         TABLE_SYSTEM_CONFIG: SystemConfig-kame
-        TABLE_DOG_RECORDS: DogRecords-kame
-        TABLE_MEDICATIONS: MedicationSchedule-kame
         TABLE_CHIROL_DATA: ChirolData-kame
+        TABLE_FAMILY_POSTS: FamilyPosts-kame
+        TABLE_WANNADE_RANKING: WannadeRanking-kame
         CHIROL_IMAGE_BUCKET: family-schedule-web-kame-982312822872
         FAMILY_USER_IDS: !Ref FamilyUserIds
 
@@ -162,193 +160,6 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
 
-  WeeklyFinalizeFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: weekly-finalize-kame
-      CodeUri: ./
-      Handler: handlers/weekly-finalize.handler
-      Timeout: 60
-      # EventBridge: cron(0 15 ? * SUN *) = 月曜 0:00 JST
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt DLQueue.Arn
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: ScheduleInputs-kame
-        - DynamoDBCrudPolicy:
-            TableName: WeeklyFinalized-kame
-        - DynamoDBCrudPolicy:
-            TableName: UserPoints-kame
-
-  WeeklyNotifyFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: weekly-notify-kame
-      CodeUri: ./
-      Handler: handlers/weekly-notify.handler
-      # EventBridge: cron(0 21 ? * SUN *) = 月曜 6:00 JST
-      DeadLetterQueue:
-        Type: SQS
-        TargetArn: !GetAtt DLQueue.Arn
-      Policies:
-        - DynamoDBReadPolicy:
-            TableName: WeeklyFinalized-kame
-        - DynamoDBReadPolicy:
-            TableName: SystemConfig-kame
-        - Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
-
-  # ============================================================
-  # 履歴系 Lambda Functions
-  # ============================================================
-
-  HistoryGetFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: history-get-kame
-      CodeUri: ./
-      Handler: handlers/history-get.handler
-      Events:
-        HistoryApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /history
-            Method: GET
-      Policies:
-        - DynamoDBReadPolicy:
-            TableName: WeeklyFinalized-kame
-        - DynamoDBReadPolicy:
-            TableName: UserPoints-kame
-        - DynamoDBReadPolicy:
-            TableName: ScheduleInputs-kame
-
-  # ============================================================
-  # チロル記録系 Lambda Functions
-  # ============================================================
-
-  RecordSaveFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: record-save-kame
-      CodeUri: ./
-      Handler: handlers/record-save.handler
-      Events:
-        RecordSaveApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /records
-            Method: POST
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: DogRecords-kame
-
-  RecordGetFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: record-get-kame
-      CodeUri: ./
-      Handler: handlers/record-get.handler
-      Events:
-        RecordGetByDateApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /records/{date}
-            Method: GET
-        RecordGetRangeApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /records
-            Method: GET
-      Policies:
-        - DynamoDBReadPolicy:
-            TableName: DogRecords-kame
-
-  RecordDeleteFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: record-delete-kame
-      CodeUri: ./
-      Handler: handlers/record-delete.handler
-      Events:
-        RecordDeleteApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /records/{date}/{recordId}
-            Method: DELETE
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: DogRecords-kame
-
-  RecordSummaryFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: record-summary-kame
-      CodeUri: ./
-      Handler: handlers/record-summary.handler
-      Timeout: 60
-      Events:
-        RecordSummaryApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /records/summary
-            Method: POST
-      Policies:
-        - DynamoDBReadPolicy:
-            TableName: DogRecords-kame
-        - Statement:
-            - Effect: Allow
-              Action:
-                - bedrock:InvokeModel
-              Resource: 'arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0'
-
-  # ============================================================
-  # 投薬管理系 Lambda Functions
-  # ============================================================
-
-  MedicationGetFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: medication-get-kame
-      CodeUri: ./
-      Handler: handlers/medication-get.handler
-      Events:
-        MedicationGetApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /medications
-            Method: GET
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: MedicationSchedule-kame
-
-  MedicationSaveFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: medication-save-kame
-      CodeUri: ./
-      Handler: handlers/medication-save.handler
-      Events:
-        MedicationSaveApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGateway
-            Path: /medications
-            Method: PUT
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: MedicationSchedule-kame
-
   # ============================================================
   # チロルキャラクター系 Lambda Functions
   # ============================================================
@@ -388,14 +199,20 @@ Resources:
       FunctionName: chirol-image-kame
       CodeUri: ./
       Handler: handlers/chirol-image.handler
-      Timeout: 60
-      MemorySize: 1024
+      # sharp 不使用のため 256MB/30s に削減 (元: 1024MB/60s)
+      # AWS 実環境への反映: aws lambda update-function-configuration --function-name chirol-image-kame --timeout 30 --memory-size 256
       Events:
         ImageGetApi:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGateway
             Path: /chirol/images
+            Method: GET
+        ImageUploadUrlApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/upload-url
             Method: GET
         ImagePostApi:
           Type: Api
@@ -416,22 +233,89 @@ Resources:
             BucketName: family-schedule-web-kame-982312822872
 
   # ============================================================
-  # LINE リッチメニュー設定
+  # つぶやき・ダイ日記系 Lambda Functions
   # ============================================================
 
-  LineRichmenuSetupFunction:
+  PostGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: line-richmenu-setup-kame
+      FunctionName: post-get-kame
       CodeUri: ./
-      Handler: handlers/line-richmenu-setup.handler
-      # 手動実行用（APIイベントなし）
+      Handler: handlers/post-get.handler
+      Events:
+        PostsGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts
+            Method: GET
       Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - secretsmanager:GetSecretValue
-              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+        - DynamoDBReadPolicy:
+            TableName: FamilyPosts-kame
+
+  PostSaveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: post-save-kame
+      CodeUri: ./
+      Handler: handlers/post-save.handler
+      Events:
+        PostCreateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts
+            Method: POST
+        PostUpdateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}
+            Method: PUT
+        PostDeleteApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}
+            Method: DELETE
+        PostReactionApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}/reaction
+            Method: POST
+        PostCommentApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}/comment
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: FamilyPosts-kame
+
+  WannadeSaveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: wannade-save-kame
+      CodeUri: ./
+      Handler: handlers/wannade-save.handler
+      Events:
+        WannadeGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /wannade
+            Method: GET
+        WannadePostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /wannade
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: WannadeRanking-kame
 
   # ============================================================
   # インフラ

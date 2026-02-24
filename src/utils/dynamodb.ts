@@ -8,23 +8,23 @@ import {
   PutCommand,
   GetCommand,
   QueryCommand,
-  ScanCommand
+  UpdateCommand,
+  DeleteCommand
 } from '@aws-sdk/lib-dynamodb';
 import {
   ScheduleInput,
-  WeeklyFinalized,
-  UserPoints,
-  SystemConfig
+  SystemConfig,
+  FamilyPost,
+  PostType
 } from '../types';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
-const docClient = DynamoDBDocumentClient.from(client);
+export const docClient = DynamoDBDocumentClient.from(client);
 
 const TABLES = {
   scheduleInputs: process.env.TABLE_SCHEDULE_INPUTS || 'ScheduleInputs',
-  weeklyFinalized: process.env.TABLE_WEEKLY_FINALIZED || 'WeeklyFinalized',
-  userPoints: process.env.TABLE_USER_POINTS || 'UserPoints',
-  systemConfig: process.env.TABLE_SYSTEM_CONFIG || 'SystemConfig'
+  systemConfig: process.env.TABLE_SYSTEM_CONFIG || 'SystemConfig',
+  familyPosts: process.env.TABLE_FAMILY_POSTS || 'FamilyPosts-kame'
 };
 
 // TTL: 12週間後
@@ -56,65 +56,11 @@ export async function getAllScheduleInputs(weekId: string): Promise<ScheduleInpu
   const result = await docClient.send(new QueryCommand({
     TableName: TABLES.scheduleInputs,
     KeyConditionExpression: 'weekId = :weekId',
-    ExpressionAttributeValues: { ':weekId': weekId }
+    ExpressionAttributeValues: { ':weekId': weekId },
+    ConsistentRead: true
   }));
 
   return (result.Items as ScheduleInput[]) || [];
-}
-
-/**
- * WeeklyFinalized操作
- */
-export async function saveWeeklyFinalized(finalized: WeeklyFinalized): Promise<void> {
-  await docClient.send(new PutCommand({
-    TableName: TABLES.weeklyFinalized,
-    Item: {
-      ...finalized,
-      SK: 'FINALIZED',
-      ttl: getTTL()
-    }
-  }));
-}
-
-export async function getWeeklyFinalized(weekId: string): Promise<WeeklyFinalized | null> {
-  const result = await docClient.send(new GetCommand({
-    TableName: TABLES.weeklyFinalized,
-    Key: { weekId, SK: 'FINALIZED' }
-  }));
-
-  return result.Item as WeeklyFinalized || null;
-}
-
-/**
- * UserPoints操作
- */
-export async function getUserPoints(userId: string): Promise<UserPoints | null> {
-  const result = await docClient.send(new GetCommand({
-    TableName: TABLES.userPoints,
-    Key: { userId, SK: 'TOTAL' }
-  }));
-
-  return result.Item as UserPoints || null;
-}
-
-export async function updateUserPoints(points: UserPoints): Promise<void> {
-  await docClient.send(new PutCommand({
-    TableName: TABLES.userPoints,
-    Item: {
-      ...points,
-      SK: 'TOTAL'
-    }
-  }));
-}
-
-export async function getAllUserPoints(): Promise<UserPoints[]> {
-  const result = await docClient.send(new ScanCommand({
-    TableName: TABLES.userPoints,
-    FilterExpression: 'SK = :sk',
-    ExpressionAttributeValues: { ':sk': 'TOTAL' }
-  }));
-
-  return (result.Items as UserPoints[]) || [];
 }
 
 /**
@@ -136,6 +82,105 @@ export async function saveSystemConfig(config: SystemConfig): Promise<void> {
       PK: 'CONFIG',
       SK: 'MAIN',
       ...config
+    }
+  }));
+}
+
+/**
+ * FamilyPosts操作（つぶやき・ダイ日記）
+ */
+
+// TTL: 30日後
+const getPostTTL = () => Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+
+export async function createPost(post: FamilyPost): Promise<void> {
+  await docClient.send(new PutCommand({
+    TableName: TABLES.familyPosts,
+    Item: {
+      ...post,
+      ttl: getPostTTL()
+    }
+  }));
+}
+
+export async function getPostsByType(type: PostType, limit: number = 50): Promise<FamilyPost[]> {
+  const result = await docClient.send(new QueryCommand({
+    TableName: TABLES.familyPosts,
+    KeyConditionExpression: 'PK = :pk',
+    ExpressionAttributeValues: { ':pk': type },
+    ScanIndexForward: false, // 新しい順
+    Limit: limit
+  }));
+
+  return (result.Items as FamilyPost[]) || [];
+}
+
+export async function getPost(type: PostType, sk: string): Promise<FamilyPost | null> {
+  const result = await docClient.send(new GetCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk }
+  }));
+
+  return result.Item as FamilyPost || null;
+}
+
+export async function updatePostText(type: PostType, sk: string, text: string): Promise<void> {
+  await docClient.send(new UpdateCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk },
+    UpdateExpression: 'SET #text = :text',
+    ExpressionAttributeNames: { '#text': 'text' },
+    ExpressionAttributeValues: { ':text': text }
+  }));
+}
+
+export async function deletePost(type: PostType, sk: string): Promise<void> {
+  await docClient.send(new DeleteCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk }
+  }));
+}
+
+export async function addPostReaction(type: PostType, sk: string, userId: string): Promise<void> {
+  await docClient.send(new UpdateCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk },
+    UpdateExpression: 'SET reactions.#like = list_append(if_not_exists(reactions.#like, :empty), :user)',
+    ExpressionAttributeNames: { '#like': 'like' },
+    ExpressionAttributeValues: {
+      ':user': [userId],
+      ':empty': []
+    }
+  }));
+}
+
+export async function removePostReaction(type: PostType, sk: string, userId: string): Promise<void> {
+  // まず現在のリアクションを取得
+  const post = await getPost(type, sk);
+  if (!post?.reactions?.like) return;
+
+  const newLikes = post.reactions.like.filter(id => id !== userId);
+  await docClient.send(new UpdateCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk },
+    UpdateExpression: 'SET reactions.#like = :likes',
+    ExpressionAttributeNames: { '#like': 'like' },
+    ExpressionAttributeValues: { ':likes': newLikes }
+  }));
+}
+
+export async function addPostComment(
+  type: PostType,
+  sk: string,
+  comment: { userId: string; displayName: string; text: string; createdAt: string }
+): Promise<void> {
+  await docClient.send(new UpdateCommand({
+    TableName: TABLES.familyPosts,
+    Key: { PK: type, SK: sk },
+    UpdateExpression: 'SET comments = list_append(if_not_exists(comments, :empty), :comment)',
+    ExpressionAttributeValues: {
+      ':comment': [comment],
+      ':empty': []
     }
   }));
 }

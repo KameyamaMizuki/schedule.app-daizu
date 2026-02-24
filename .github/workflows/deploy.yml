@@ -1,0 +1,106 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+# 必要な GitHub Secrets:
+#   AWS_ACCESS_KEY_ID     - デプロイ用 IAM ユーザーのアクセスキー
+#   AWS_SECRET_ACCESS_KEY - デプロイ用 IAM ユーザーのシークレットキー
+
+env:
+  AWS_REGION: ap-northeast-1
+  S3_BUCKET: family-schedule-web-kame-982312822872
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (esbuild)
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Lambda 関数を個別に更新（ZIP → update-function-code）
+      # SAM deploy は使用不可のため直接更新
+      - name: Package & Deploy Lambda functions
+        run: |
+          set -e
+          mkdir -p /tmp/lambda-zips
+
+          FUNCTIONS=(
+            "family-schedule-webhook-kame:handlers/webhook.js"
+            "family-schedule-submit-kame:handlers/schedule-submit.js"
+            "family-schedule-get-kame:handlers/schedule-get.js"
+            "family-schedule-week-get-kame:handlers/schedule-week-get.js"
+            "family-schedule-weekly-reminder-kame:handlers/weekly-reminder.js"
+            "chirol-hitokoto-kame:handlers/chirol-hitokoto.js"
+            "chirol-image-kame:handlers/chirol-image.js"
+            "post-get-kame:handlers/post-get.js"
+            "post-save-kame:handlers/post-save.js"
+            "wannade-save-kame:handlers/wannade-save.js"
+          )
+
+          for entry in "${FUNCTIONS[@]}"; do
+            FUNC_NAME="${entry%%:*}"
+            HANDLER_FILE="${entry##*:}"
+            ZIP_PATH="/tmp/lambda-zips/${FUNC_NAME}.zip"
+
+            # ハンドラー JS + ソースマップを ZIP 化
+            zip -j "$ZIP_PATH" "dist/${HANDLER_FILE}" "dist/${HANDLER_FILE%.js}.js.map" 2>/dev/null || \
+            zip -j "$ZIP_PATH" "dist/${HANDLER_FILE}"
+
+            echo "Deploying ${FUNC_NAME}..."
+            aws lambda update-function-code \
+              --function-name "$FUNC_NAME" \
+              --zip-file "fileb://${ZIP_PATH}" \
+              --no-cli-pager \
+              --output text
+          done
+
+      # Web ファイルを S3 に同期
+      - name: Sync web assets to S3
+        run: |
+          aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "public, max-age=86400" \
+            --exclude "images/*" \
+            --no-cli-pager
+
+          # 画像は長期キャッシュ（変更があった場合のみ更新）
+          aws s3 sync web/images/ s3://${{ env.S3_BUCKET }}/images/ \
+            --cache-control "public, max-age=31536000, immutable" \
+            --no-cli-pager
+
+          # HTML は短期キャッシュ
+          aws s3 cp web/home.html s3://${{ env.S3_BUCKET }}/home.html \
+            --cache-control "public, max-age=300" \
+            --content-type "text/html; charset=utf-8" \
+            --no-cli-pager
+          aws s3 cp web/dashboard.html s3://${{ env.S3_BUCKET }}/dashboard.html \
+            --cache-control "public, max-age=300" \
+            --content-type "text/html; charset=utf-8" \
+            --no-cli-pager
+
+      - name: Deploy complete
+        run: echo "✅ Deploy complete. Lambda functions and S3 assets updated."

@@ -1,29 +1,30 @@
 {
   "name": "family-schedule-linebot",
   "version": "1.0.0",
-  "description": "Family schedule management + dog (Chirol) record LINE bot with LIFF",
+  "description": "Family schedule management LINE bot with Chirol character (LIFF)",
   "scripts": {
-    "build": "tsc",
+    "build": "node esbuild.config.js",
+    "build:check": "tsc --noEmit",
     "test": "jest",
     "lint": "eslint . --ext .ts"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.971.0",
+    "date-fns": "^3.0.0",
+    "date-fns-tz": "^3.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.971.0",
     "@aws-sdk/client-s3": "^3.971.0",
     "@aws-sdk/client-secrets-manager": "^3.971.0",
-    "@aws-sdk/lib-dynamodb": "^3.971.0",
-    "date-fns": "^3.0.0",
-    "date-fns-tz": "^3.0.0",
-    "sharp": "^0.34.5"
-  },
-  "devDependencies": {
     "@aws-sdk/credential-providers": "^3.972.0",
+    "@aws-sdk/lib-dynamodb": "^3.971.0",
+    "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
-    "archiver": "^7.0.1",
+    "esbuild": "^0.25.0",
     "eslint": "^8.54.0",
     "jest": "^29.7.0",
     "typescript": "^5.3.0"

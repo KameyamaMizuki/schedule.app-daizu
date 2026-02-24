@@ -1,219 +1,145 @@
 /**
- * チロルの画像 アップロード/取得 Lambda
+ * チロルの画像 Lambda
  *
- * GET /chirol/images - 画像一覧取得
- * POST /chirol/images - 新しい画像をアップロード
+ * GET /chirol/images?tag=... - 画像一覧取得
+ * GET /chirol/upload-url?tag=...&contentType=... - S3 Presigned URL 取得
+ * POST /chirol/images - 画像メタデータ保存（S3アップロード後）
+ * DELETE /chirol/images - 画像削除
  *
- * 画像はS3に保存、メタデータはDynamoDBに保存
+ * 画像はフロントエンド→S3へ直接アップロード（Presigned URL）
+ * メタデータのみDynamoDBに保存
  */
 
-import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import sharp from 'sharp';
+import { QueryCommand, PutCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { z } from 'zod';
+import { docClient } from '../utils/dynamodb';
+import { withHandler, ok, err } from '../utils/handler';
 
-const dynamoClient = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
 const s3Client = new S3Client({});
 
 const TABLE_NAME = process.env.TABLE_CHIROL_DATA || 'ChirolData-kame';
 const BUCKET_NAME = process.env.CHIROL_IMAGE_BUCKET || 'family-schedule-web-kame-982312822872';
 const IMAGE_PREFIX = 'chirol-images/';
+const PRESIGNED_URL_EXPIRES = 300; // 5分
 
-// 画像サイズ設定
-const IMAGE_SIZE = 400; // 400x400px
+const IMAGE_TAGS = ['normal', 'happy', 'thinking', 'sad', 'diary', 'wansta-daizu'] as const;
+type ImageTag = typeof IMAGE_TAGS[number];
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS'
-};
+const TagSchema = z.enum(IMAGE_TAGS);
 
-type ImageTag = 'normal' | 'happy' | 'thinking' | 'sad';
+const SaveMetaSchema = z.object({
+  s3Key: z.string().min(1, 's3Key は必須です'),
+  tag: TagSchema
+});
 
-export const handler: APIGatewayProxyHandler = async (event) => {
-  console.log('Event:', JSON.stringify(event));
+const DeleteSchema = z.object({
+  imageId: z.string().min(1, 'imageId は必須です')
+});
 
-  // CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers: corsHeaders, body: '' };
-  }
+export const handler = withHandler(async (event) => {
+  const path = event.path;
 
-  try {
-    if (event.httpMethod === 'GET') {
-      const tag = event.queryStringParameters?.tag as ImageTag | undefined;
-      return await getImageList(tag);
-    } else if (event.httpMethod === 'POST') {
-      const body = JSON.parse(event.body || '{}');
-      return await uploadImage(body.imageData, body.tag);
-    } else if (event.httpMethod === 'DELETE') {
-      const body = JSON.parse(event.body || '{}');
-      return await deleteImage(body.imageId);
+  // GET /chirol/upload-url - Presigned URL 発行
+  if (event.httpMethod === 'GET' && path.endsWith('/upload-url')) {
+    const tag = event.queryStringParameters?.tag;
+    const contentType = event.queryStringParameters?.contentType || 'image/jpeg';
+
+    const tagParsed = TagSchema.safeParse(tag);
+    if (!tagParsed.success) {
+      return err(`tag は ${IMAGE_TAGS.join('/')} のいずれかを指定してください`);
     }
 
-    return {
-      statusCode: 405,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  } catch (error) {
-    console.error('Error:', error);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Internal server error', details: String(error) })
-    };
-  }
-};
+    const imageId = `img_${Date.now()}`;
+    const ext = contentType.includes('png') ? 'png' : 'jpg';
+    const s3Key = `${IMAGE_PREFIX}${tagParsed.data}/${imageId}.${ext}`;
 
-async function getImageList(tag?: ImageTag) {
-  let filterExpression = 'begins_with(SK, :prefix)';
-  const expressionValues: Record<string, string> = { ':prefix': 'IMAGE#' };
-
-  if (tag) {
-    filterExpression += ' AND tag = :tag';
-    expressionValues[':tag'] = tag;
-  }
-
-  const result = await docClient.send(new ScanCommand({
-    TableName: TABLE_NAME,
-    FilterExpression: filterExpression,
-    ExpressionAttributeValues: expressionValues
-  }));
-
-  const items = (result.Items || []).map(item => ({
-    id: item.imageId,
-    url: item.imageUrl,
-    tag: item.tag,
-    createdAt: item.createdAt
-  })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify({ images: items })
-  };
-}
-
-async function uploadImage(imageData: string, tag: ImageTag) {
-  if (!imageData) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'imageData is required' })
-    };
-  }
-
-  if (!tag || !['normal', 'happy', 'thinking', 'sad'].includes(tag)) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Valid tag is required (normal/happy/thinking/sad)' })
-    };
-  }
-
-  // Base64デコード
-  const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
-  const imageBuffer = Buffer.from(base64Data, 'base64');
-
-  // sharpで正方形にリサイズ＆最適化
-  const optimizedBuffer = await sharp(imageBuffer)
-    .resize(IMAGE_SIZE, IMAGE_SIZE, {
-      fit: 'cover',
-      position: 'center'
-    })
-    .jpeg({ quality: 85 })
-    .toBuffer();
-
-  const imageId = `img_${Date.now()}`;
-  const fileName = `${IMAGE_PREFIX}${tag}/${imageId}.jpg`;
-  const now = new Date().toISOString();
-
-  // S3にアップロード
-  await s3Client.send(new PutObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: fileName,
-    Body: optimizedBuffer,
-    ContentType: 'image/jpeg',
-    CacheControl: 'max-age=31536000'
-  }));
-
-  const imageUrl = `https://${BUCKET_NAME}.s3.ap-northeast-1.amazonaws.com/${fileName}`;
-
-  // DynamoDBにメタデータ保存
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME,
-    Item: {
-      PK: 'CHIROL',
-      SK: `IMAGE#${imageId}`,
-      imageId,
-      imageUrl,
-      s3Key: fileName,
-      tag,
-      createdAt: now
-    }
-  }));
-
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify({
-      success: true,
-      imageId,
-      imageUrl,
-      message: '追加したぜ。'
-    })
-  };
-}
-
-async function deleteImage(imageId: string) {
-  if (!imageId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'imageId is required' })
-    };
-  }
-
-  // まずメタデータを取得してS3キーを確認
-  const result = await docClient.send(new ScanCommand({
-    TableName: TABLE_NAME,
-    FilterExpression: 'imageId = :id',
-    ExpressionAttributeValues: { ':id': imageId }
-  }));
-
-  if (!result.Items || result.Items.length === 0) {
-    return {
-      statusCode: 404,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Image not found' })
-    };
-  }
-
-  const item = result.Items[0];
-
-  // S3から削除
-  if (item.s3Key) {
-    await s3Client.send(new DeleteObjectCommand({
+    const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
-      Key: item.s3Key
-    }));
+      Key: s3Key,
+      ContentType: contentType,
+      CacheControl: 'max-age=31536000'
+    });
+
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: PRESIGNED_URL_EXPIRES });
+    const imageUrl = `https://${BUCKET_NAME}.s3.ap-northeast-1.amazonaws.com/${s3Key}`;
+
+    return ok({ uploadUrl, s3Key, imageId, imageUrl });
   }
 
-  // DynamoDBから削除
-  await docClient.send(new PutCommand({
-    TableName: TABLE_NAME,
-    Item: {
-      PK: 'CHIROL',
-      SK: `IMAGE#${imageId}#DELETED`,
-      deletedAt: new Date().toISOString()
-    }
-  }));
+  // GET /chirol/images - 画像一覧
+  if (event.httpMethod === 'GET') {
+    const tag = event.queryStringParameters?.tag as ImageTag | undefined;
 
-  return {
-    statusCode: 200,
-    headers: corsHeaders,
-    body: JSON.stringify({ success: true })
-  };
-}
+    // ScanCommand → QueryCommand に変更（効率化）
+    const result = await docClient.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: { ':pk': 'CHIROL', ':prefix': 'IMAGE#' },
+      ...(tag ? {
+        FilterExpression: 'tag = :tag',
+        ExpressionAttributeValues: { ':pk': 'CHIROL', ':prefix': 'IMAGE#', ':tag': tag }
+      } : {})
+    }));
+
+    const items = (result.Items || []).map(item => ({
+      id: item.imageId,
+      url: item.imageUrl,
+      tag: item.tag,
+      createdAt: item.createdAt
+    })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return ok({ images: items });
+  }
+
+  // POST /chirol/images - S3アップロード後のメタデータ保存
+  if (event.httpMethod === 'POST') {
+    const parsed = SaveMetaSchema.safeParse(JSON.parse(event.body || '{}'));
+    if (!parsed.success) return err(parsed.error.issues[0].message);
+
+    const { s3Key, tag } = parsed.data;
+    const imageId = s3Key.split('/').pop()?.replace(/\.\w+$/, '') || `img_${Date.now()}`;
+    const imageUrl = `https://${BUCKET_NAME}.s3.ap-northeast-1.amazonaws.com/${s3Key}`;
+    const now = new Date().toISOString();
+
+    await docClient.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: { PK: 'CHIROL', SK: `IMAGE#${imageId}`, imageId, imageUrl, s3Key, tag, createdAt: now }
+    }));
+
+    return ok({ success: true, imageId, imageUrl, message: '追加したぜ。' });
+  }
+
+  // DELETE /chirol/images - 画像削除
+  if (event.httpMethod === 'DELETE') {
+    const parsed = DeleteSchema.safeParse(JSON.parse(event.body || '{}'));
+    if (!parsed.success) return err(parsed.error.issues[0].message);
+
+    const { imageId } = parsed.data;
+
+    // ScanCommand → GetCommand に変更（直接キーで取得）
+    const result = await docClient.send(new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: 'CHIROL', SK: `IMAGE#${imageId}` }
+    }));
+
+    if (!result.Item) {
+      return err('Image not found', 404);
+    }
+
+    if (result.Item.s3Key) {
+      await s3Client.send(new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: result.Item.s3Key }));
+    }
+
+    await docClient.send(new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: 'CHIROL', SK: `IMAGE#${imageId}` }
+    }));
+
+    return ok({ success: true });
+  }
+
+  return err('Method not allowed', 405);
+});

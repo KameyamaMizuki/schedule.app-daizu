@@ -21,33 +21,6 @@ export interface ScheduleInput {
   ttl?: number;
 }
 
-export interface PointsBreakdown {
-  displayName: string;
-  weekdayPoints: number;
-  weekendBonusPoints: number;
-  totalPoints: number;
-}
-
-export interface WeeklyFinalized {
-  weekId: string;
-  finalizedAt: string;
-  scheduleText: string;
-  pointsBreakdown: { [userId: string]: PointsBreakdown };
-  messageId?: string;
-  version: number;
-  ttl?: number;
-}
-
-export interface UserPoints {
-  userId: string;
-  displayName: string;
-  totalPoints: number;
-  weekdayPoints: number;
-  weekendBonusPoints: number;
-  lastUpdatedWeek: string;
-  updatedAt: string;
-}
-
 export interface SystemConfig {
   groupId: string;
   adminUserId: string;
@@ -77,3 +50,50 @@ export const TIME_SLOTS = ['allday', '09', '17', '21', '24'] as const;
 export type TimeSlot = typeof TIME_SLOTS[number];
 
 export const DAYS_OF_WEEK = ['月', '火', '水', '木', '金', '土', '日'] as const;
+
+// つぶやき・ダイ日記用
+export type PostType = 'POST' | 'DIARY';
+
+export interface PostComment {
+  userId: string;
+  displayName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface PostReactions {
+  like?: string[]; // userIdの配列
+}
+
+export interface FamilyPost {
+  PK: PostType;
+  SK: string; // timestamp#postId
+  postId: string;
+  userId: string;
+  displayName: string;
+  text: string;
+  imageUrl?: string;
+  createdAt: string;
+  reactions?: PostReactions;
+  comments?: PostComment[];
+  ttl: number;
+}
+
+export interface CreatePostRequest {
+  type: PostType;
+  userId: string;
+  displayName: string;
+  text: string;
+  imageUrl?: string;
+}
+
+export interface PostReactionRequest {
+  userId: string;
+  action: 'like';
+}
+
+export interface PostCommentRequest {
+  userId: string;
+  displayName: string;
+  text: string;
+}

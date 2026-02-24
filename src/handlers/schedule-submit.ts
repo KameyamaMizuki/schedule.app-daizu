@@ -3,17 +3,20 @@
  * スケジュール入力保存API（変更検出機能付き）
  */
 
-import { APIGatewayProxyHandler } from 'aws-lambda';
+import { z } from 'zod';
 import { ScheduleSubmitRequest } from '../types';
 import { saveScheduleInput, getScheduleInput, getSystemConfig } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
 import { pushMessage } from '../utils/line';
+import { withHandler, ok, err } from '../utils/handler';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-  'Access-Control-Allow-Methods': 'POST,OPTIONS'
-};
+const SubmitSchema = z.object({
+  weekId: z.string().min(1),
+  userId: z.string().min(1),
+  displayName: z.string().min(1),
+  slots: z.record(z.boolean()),
+  notes: z.record(z.string()).optional()
+});
 
 interface ChangeInfo {
   addedSlots: string[];
@@ -75,78 +78,41 @@ async function detectChanges(
   return { changes: hasChanges ? changes : null, isNewEntry: false };
 }
 
-export const handler: APIGatewayProxyHandler = async (event) => {
+export const handler = withHandler(async (event) => {
+  const parsed = SubmitSchema.safeParse(JSON.parse(event.body || '{}'));
+  if (!parsed.success) return err(parsed.error.issues[0].message);
+
+  const { weekId, userId, displayName, slots, notes } = parsed.data;
+
+  // 変更検出（保存前に実行）
+  const { changes, isNewEntry } = await detectChanges(weekId, userId, slots, notes);
+
+  // 保存（通知より先に実行 - 通知失敗で保存がブロックされるのを防止）
+  await saveScheduleInput({
+    weekId,
+    userId,
+    displayName,
+    slots,
+    notes: notes || {},
+    submittedAt: new Date().toISOString(),
+    isLocked: false
+  });
+
+  // グループに通知（ベストエフォート - 失敗しても保存は成功扱い）
   try {
-    // CORS対応
-    if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers: corsHeaders,
-        body: ''
-      };
-    }
-
-    const body: ScheduleSubmitRequest = JSON.parse(event.body || '{}');
-    const { weekId, userId, slots, notes, displayName } = body;
-
-    if (!weekId || !userId || !slots || !displayName) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: 'Missing required fields' })
-      };
-    }
-
     const credentials = await getLineCredentials();
-
-    // 変更検出（保存前に実行）
-    const { changes, isNewEntry } = await detectChanges(weekId, userId, slots, notes);
-
-    // 保存
-    await saveScheduleInput({
-      weekId,
-      userId,
-      displayName,
-      slots,
-      notes: notes || {},
-      submittedAt: new Date().toISOString(),
-      isLocked: false
-    });
-
-    // グループに通知
     const config = await getSystemConfig();
-    if (config?.groupId) {
+    if (config?.groupId && (changes || isNewEntry)) {
       const s3BaseUrl = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
       const dashboardUrl = `${s3BaseUrl}/dashboard.html?weekId=${weekId}`;
-
-      let message: string;
-      if (changes || isNewEntry) {
-        // 新規入力または変更がある場合
-        message = buildNotificationMessage(displayName, dashboardUrl);
-      } else {
-        // 変更なしの場合は通知しない
-        message = '';
-      }
-
-      if (message) {
-        await pushMessage(config.groupId, message, credentials.channelAccessToken);
-      }
+      await pushMessage(config.groupId, buildNotificationMessage(displayName, dashboardUrl), credentials.channelAccessToken);
     }
-
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: JSON.stringify({ message: 'Success' })
-    };
-  } catch (error) {
-    console.error('Schedule submit error:', error);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Internal server error' })
-    };
+  } catch (notifyError) {
+    console.error('Notification failed (save succeeded):', notifyError);
   }
-};
+
+  return ok({ message: 'Success' });
+});
 
 /**
  * 通知メッセージを生成

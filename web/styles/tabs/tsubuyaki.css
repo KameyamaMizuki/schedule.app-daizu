@@ -1,0 +1,34 @@
+/* つぶやきタブ */
+.tsubuyaki-sky{min-height:calc(100vh - 60px);position:relative;transition:background 0.5s ease;padding:16px;padding-bottom:150px}
+.tsubuyaki-sky.morning{background:linear-gradient(180deg,#fff5e6 0%,#ffe4c4 30%,#ffd4a3 70%,#ffb380 100%)}
+.tsubuyaki-sky.day{background:linear-gradient(180deg,#e3f2fd 0%,#bbdefb 30%,#90caf9 70%,#64b5f6 100%)}
+.tsubuyaki-sky.sunset{background:linear-gradient(180deg,#fff3e0 0%,#ffcc80 40%,#ff8a65 100%)}
+.tsubuyaki-sky.dusk{background:linear-gradient(180deg,#e8eaf6 0%,#9fa8da 50%,#7986cb 100%)}
+.tsubuyaki-sky.night{background:linear-gradient(180deg,#1a237e 0%,#283593 50%,#303f9f 100%)}
+.tsubuyaki-clouds{position:absolute;top:10px;left:0;right:0;height:100px;overflow:hidden;pointer-events:none}
+.tsubuyaki-cloud{position:absolute;background:rgba(255,255,255,0.7);border-radius:50%;box-shadow:20px 0 30px 20px rgba(255,255,255,0.7)}
+.tsubuyaki-posts{display:flex;flex-direction:column;gap:12px;max-width:500px;margin:0 auto;padding:0 12px}
+.tsubuyaki-post{background:rgba(255,255,255,0.92);border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,0.08);position:relative;backdrop-filter:blur(10px)}
+.tsubuyaki-post::before{display:none}
+.tsubuyaki-post-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.tsubuyaki-post-author{font-weight:600;font-size:12px;color:#495057}
+.tsubuyaki-post-time{font-size:10px;color:#6c757d}
+.tsubuyaki-post-text{font-size:13px;color:#333;line-height:1.4;margin-bottom:6px;word-break:break-word}
+.tsubuyaki-post-actions{display:flex;gap:12px;font-size:12px;color:#6c757d;align-items:center;flex-wrap:wrap}
+.tsubuyaki-action{display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 8px;border-radius:16px;transition:background 0.2s}
+.tsubuyaki-action:hover{background:rgba(0,0,0,0.05)}
+.tsubuyaki-action.liked{color:#e74c3c}
+.tsubuyaki-action-own{margin-left:auto;display:flex;gap:8px}
+.tsubuyaki-fab{position:fixed;bottom:90px;right:20px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#4fc3f7 0%,#29b6f6 100%);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(79,195,247,0.4);z-index:100}
+.tsubuyaki-fab:active{transform:scale(0.95)}
+.tsubuyaki-input-area{position:fixed;bottom:60px;left:0;right:0;padding:20px 16px;background:#fff;border-top:1px solid #e0e0e0;z-index:101;box-shadow:0 -4px 20px rgba(0,0,0,0.12);border-radius:20px 20px 0 0}
+.tsubuyaki-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;font-weight:600;color:#495057}
+.tsubuyaki-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:4px 8px}
+.tsubuyaki-textarea{width:100%;padding:12px;border:1px solid #dee2e6;border-radius:12px;font-size:14px;outline:none;resize:none;font-family:inherit;margin-bottom:12px}
+.tsubuyaki-textarea:focus{border-color:#667eea}
+.tsubuyaki-submit-btn{width:100%;background:linear-gradient(135deg,#4fc3f7 0%,#29b6f6 100%);color:#fff;border:none;padding:14px;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(79,195,247,0.3)}
+.tsubuyaki-submit-btn:disabled{background:#ccc}
+.tsubuyaki-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.8);font-size:14px}
+.tsubuyaki-comment-section{margin-top:10px;padding-top:10px;border-top:1px solid #eee}
+.tsubuyaki-comment{font-size:12px;color:#495057;padding:4px 0}
+.tsubuyaki-comment-input{width:100%;padding:6px 10px;border:1px solid #dee2e6;border-radius:12px;font-size:12px;margin-top:6px}

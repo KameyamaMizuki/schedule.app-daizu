@@ -1,0 +1,11 @@
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["Content-Type", "Content-Length"],
+      "AllowedMethods": ["GET", "PUT"],
+      "AllowedOrigins": ["https://liff.line.me"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

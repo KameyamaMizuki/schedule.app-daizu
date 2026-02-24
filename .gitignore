@@ -5,6 +5,9 @@ node_modules/
 dist/
 .aws-sam/
 
+# Original images (converted to webp, no longer needed in repo)
+assets/dog-originals/
+
 # Environment variables
 .env
 .env.local
@@ -32,6 +35,9 @@ packaged.yaml
 # Lambda packages
 *.zip
 
+# DynamoDB exports (personal data)
+*-export.json
+
 # Temporary and test files
 response*.json
 payload.json
@@ -44,3 +50,8 @@ insert-test-*.sh
 package-*.js
 send-*.ts
 maintenance-*.json
+
+# Ad-hoc work scripts and outputs
+*.ps1
+cwlogs-cleanup-*/
+nul
