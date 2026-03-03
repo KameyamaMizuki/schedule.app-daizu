@@ -15,7 +15,7 @@
 .diary-entry-action:hover{background:#ebe5de}
 .diary-fab{position:fixed;bottom:80px;right:16px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(141,110,99,0.4);z-index:100}
 .diary-fab:active{transform:scale(0.95)}
-.diary-input-area{position:fixed;top:56px;left:0;right:0;bottom:60px;padding:16px;background:#fff;z-index:101;box-shadow:0 4px 24px rgba(0,0,0,0.15);overflow-y:auto;display:flex;flex-direction:column}
+.diary-input-area{position:fixed;top:0;left:0;right:0;bottom:0;padding:16px;background:#fff;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.15);overflow-y:auto;display:flex;flex-direction:column}
 .diary-input-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:15px;font-weight:600;color:#8d6e63}
 .diary-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:4px 8px}
 .diary-photo-select{display:block;text-align:center;padding:16px;background:#f8f9fa;border:2px dashed #a1887f;border-radius:12px;cursor:pointer;margin-bottom:12px;font-size:14px;color:#8d6e63}
@@ -25,7 +25,7 @@
 .diary-photo-remove{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:16px}
 .diary-text-input{width:100%;padding:14px;border:1px solid #dee2e6;border-radius:12px;font-size:15px;resize:none;font-family:inherit;line-height:1.6}
 .diary-text-input:focus{border-color:#8d6e63;outline:none}
-.diary-submit-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer}
+.diary-submit-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;position:sticky;bottom:0;z-index:10;flex-shrink:0}
 .diary-submit-btn:disabled{background:#ccc}
 .diary-empty{text-align:center;padding:60px 20px;color:#8d6e63;font-size:15px}
 .diary-title-input{width:100%;padding:12px 14px;border:1px solid #dee2e6;border-radius:10px;font-size:16px;font-weight:600;margin-bottom:10px;box-sizing:border-box}
@@ -58,7 +58,7 @@
 .diary-entry:active{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
 
 /* 詳細表示モーダル */
-.diary-detail-modal{display:none;position:fixed;top:56px;left:0;right:0;bottom:60px;background:#fff;z-index:200;overflow-y:auto}
+.diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:9999;overflow-y:auto}
 .diary-detail-modal.active{display:block}
 .diary-detail-header{display:flex;align-items:center;padding:12px 16px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.08);position:sticky;top:0;z-index:1}
 .diary-detail-close{background:none;border:none;font-size:15px;font-weight:700;color:#8d6e63;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
@@ -81,4 +81,15 @@
 .diary-entry-catch{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;border-radius:16px 16px 0 0}
 
 /* キャッチ画像（詳細モーダル） */
-.diary-detail-catch{width:100%;border-radius:12px;margin-bottom:20px;display:block;max-height:280px;object-fit:cover}
+.diary-detail-catch{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:0;margin-bottom:20px;display:block}
+
+/* いいね/コメント */
+.diary-entry-action.liked{color:#e91e63;background:#fce4ec}
+.diary-detail-like-section{display:flex;gap:12px;margin-top:16px;padding:12px 0;border-top:1px solid #f0ebe6}
+.diary-detail-like-btn{cursor:pointer;padding:6px 12px;border-radius:16px;background:#f5f0eb;font-size:13px;color:#8d6e63;transition:background 0.2s}
+.diary-detail-like-btn.liked{color:#e91e63;background:#fce4ec}
+.diary-comment-section{margin-top:12px;padding-top:12px;border-top:1px solid #f0ebe6}
+.diary-comment{padding:8px 0;font-size:13px;color:#333;border-bottom:1px solid #f5f0eb}
+.diary-comment strong{color:#5d4037}
+.diary-comment-input{width:100%;padding:10px 12px;border:1px solid #dee2e6;border-radius:10px;font-size:13px;margin-top:8px;box-sizing:border-box}
+.diary-comment-input:focus{border-color:#8d6e63;outline:none}

@@ -15,7 +15,9 @@ const SubmitSchema = z.object({
   userId: z.string().min(1),
   displayName: z.string().min(1),
   slots: z.record(z.boolean()),
-  notes: z.record(z.string()).optional()
+  notes: z.record(z.string()).optional(),
+  skipNotification: z.boolean().optional(),
+  notifierName: z.string().optional()
 });
 
 interface ChangeInfo {
@@ -98,17 +100,20 @@ export const handler = withHandler(async (event) => {
     isLocked: false
   });
 
-  // グループに通知（ベストエフォート - 失敗しても保存は成功扱い）
-  try {
-    const credentials = await getLineCredentials();
-    const config = await getSystemConfig();
-    if (config?.groupId && (changes || isNewEntry)) {
-      const s3BaseUrl = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
-      const dashboardUrl = `${s3BaseUrl}/dashboard.html?weekId=${weekId}`;
-      await pushMessage(config.groupId, buildNotificationMessage(displayName, dashboardUrl), credentials.channelAccessToken);
+  // グループに通知（ベストエフォート - skipNotification の場合はスキップ）
+  if (!parsed.data.skipNotification) {
+    try {
+      const credentials = await getLineCredentials();
+      const config = await getSystemConfig();
+      if (config?.groupId && (changes || isNewEntry)) {
+        const s3BaseUrl = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
+        const dashboardUrl = `${s3BaseUrl}/dashboard.html?weekId=${weekId}`;
+        const notifier = parsed.data.notifierName || displayName;
+        await pushMessage(config.groupId, buildNotificationMessage(notifier, dashboardUrl), credentials.channelAccessToken);
+      }
+    } catch (notifyError) {
+      console.error('Notification failed (save succeeded):', notifyError);
     }
-  } catch (notifyError) {
-    console.error('Notification failed (save succeeded):', notifyError);
   }
 
   return ok({ message: 'Success' });

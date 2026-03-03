@@ -96,7 +96,10 @@ async function saveThisWeekEdits() {
       return;
     }
 
-    for (const schedule of thisWeekSchedules) {
+    const editorName = currentUser ? getDisplayName(currentUser) : '';
+    for (let i = 0; i < thisWeekSchedules.length; i++) {
+      const schedule = thisWeekSchedules[i];
+      const isLast = (i === thisWeekSchedules.length - 1);
       const response = await fetch(`${API_BASE_URL}/schedule/submit`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -105,7 +108,9 @@ async function saveThisWeekEdits() {
           userId: schedule.userId,
           displayName: schedule.displayName,
           slots: schedule.slots,
-          notes: schedule.notes || {}
+          notes: schedule.notes || {},
+          skipNotification: !isLast,
+          notifierName: isLast ? editorName : undefined
         })
       });
       if (!response.ok) throw new Error(`${schedule.displayName}の保存に失敗`);

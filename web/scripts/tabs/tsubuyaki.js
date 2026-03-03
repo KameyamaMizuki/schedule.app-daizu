@@ -98,47 +98,67 @@ async function loadTsubuyakiPosts() {
   }
 }
 
+function renderSingleTsubuyaki(post, userId) {
+  const time = formatTsubuyakiTime(post.createdAt);
+  const likeCount = post.reactions?.like?.length || 0;
+  const commentCount = post.comments?.length || 0;
+  const isLiked = userId && post.reactions?.like?.includes(userId);
+  const isOwner = userId && post.userId === userId;
+  const sk = encodeURIComponent(post.SK || '');
+  const postMember = familyMembers.find(m => m.userId === post.userId);
+  const authorName = postMember ? getDisplayName(postMember) : post.displayName;
+
+  return `<div class="tsubuyaki-post" data-post-id="${post.postId}">
+    <div class="tsubuyaki-post-header">
+      <span class="tsubuyaki-post-author">${escapeHtml(authorName)}</span>
+      <span class="tsubuyaki-post-time">${time}</span>
+    </div>
+    <div class="tsubuyaki-post-text">${escapeHtml(post.text)}</div>
+    <div class="tsubuyaki-post-actions">
+      <span class="tsubuyaki-action ${isLiked ? 'liked' : ''}" onclick="toggleTsubuyakiLike('${post.postId}', '${sk}', 'POST')">
+        ❤️ ${likeCount > 0 ? likeCount : ''}
+      </span>
+      <span class="tsubuyaki-action" onclick="toggleTsubuyakiComments('${post.postId}')">
+        💬 ${commentCount > 0 ? commentCount : ''}
+      </span>
+      ${isOwner ? `
+        <span class="tsubuyaki-action-own">
+          <span class="tsubuyaki-action" onclick="editTsubuyaki('${post.postId}', '${sk}')">✏️</span>
+          <span class="tsubuyaki-action" onclick="deleteTsubuyaki('${post.postId}', '${sk}')">🗑</span>
+        </span>
+      ` : ''}
+    </div>
+    <div class="tsubuyaki-comment-section" id="comments-${post.postId}" style="display:none">
+      ${renderTsubuyakiComments(post.comments || [])}
+      <input type="text" class="tsubuyaki-comment-input" placeholder="コメントを入力..." onkeypress="handleTsubuyakiCommentKeypress(event, '${post.postId}', '${sk}')">
+    </div>
+  </div>`;
+}
+
 function renderTsubuyakiPosts() {
   const container = document.getElementById('tsubuyakiPosts');
-  let html = '';
   const userId = currentUser?.userId;
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  tsubuyakiPosts.forEach(post => {
-    const time = formatTsubuyakiTime(post.createdAt);
-    const likeCount = post.reactions?.like?.length || 0;
-    const commentCount = post.comments?.length || 0;
-    const isLiked = userId && post.reactions?.like?.includes(userId);
-    const isOwner = userId && post.userId === userId;
-    const sk = encodeURIComponent(post.SK || '');
-    const postMember = familyMembers.find(m => m.userId === post.userId);
-    const authorName = postMember ? getDisplayName(postMember) : post.displayName;
+  const activePosts = tsubuyakiPosts.filter(p => new Date(p.createdAt) >= oneWeekAgo);
+  const archivedPosts = tsubuyakiPosts.filter(p => new Date(p.createdAt) < oneWeekAgo);
 
-    html += `<div class="tsubuyaki-post" data-post-id="${post.postId}">
-      <div class="tsubuyaki-post-header">
-        <span class="tsubuyaki-post-author">${escapeHtml(authorName)}</span>
-        <span class="tsubuyaki-post-time">${time}</span>
-      </div>
-      <div class="tsubuyaki-post-text">${escapeHtml(post.text)}</div>
-      <div class="tsubuyaki-post-actions">
-        <span class="tsubuyaki-action ${isLiked ? 'liked' : ''}" onclick="toggleTsubuyakiLike('${post.postId}', '${sk}', 'POST')">
-          ❤️ ${likeCount > 0 ? likeCount : ''}
-        </span>
-        <span class="tsubuyaki-action" onclick="toggleTsubuyakiComments('${post.postId}')">
-          💬 ${commentCount > 0 ? commentCount : ''}
-        </span>
-        ${isOwner ? `
-          <span class="tsubuyaki-action-own">
-            <span class="tsubuyaki-action" onclick="editTsubuyaki('${post.postId}', '${sk}')">✏️</span>
-            <span class="tsubuyaki-action" onclick="deleteTsubuyaki('${post.postId}', '${sk}')">🗑</span>
-          </span>
-        ` : ''}
-      </div>
-      <div class="tsubuyaki-comment-section" id="comments-${post.postId}" style="display:none">
-        ${renderTsubuyakiComments(post.comments || [])}
-        <input type="text" class="tsubuyaki-comment-input" placeholder="コメントを入力..." onkeypress="handleTsubuyakiCommentKeypress(event, '${post.postId}', '${sk}')">
-      </div>
-    </div>`;
+  let html = '';
+  activePosts.forEach(post => {
+    html += renderSingleTsubuyaki(post, userId);
   });
+
+  if (archivedPosts.length > 0) {
+    html += `<div class="tsubuyaki-archive-section">
+      <button class="tsubuyaki-archive-toggle" onclick="toggleTsubuyakiArchive()">
+        📦 アーカイブ (${archivedPosts.length}件)
+      </button>
+      <div id="tsubuyakiArchive" style="display:none">`;
+    archivedPosts.forEach(post => {
+      html += renderSingleTsubuyaki(post, userId);
+    });
+    html += `</div></div>`;
+  }
 
   container.innerHTML = html || '<div class="tsubuyaki-empty">まだつぶやきはありません</div>';
 }
@@ -315,6 +335,13 @@ async function deleteTsubuyaki(postId, sk) {
   } catch (error) {
     console.error('Delete error:', error);
     alert('削除に失敗しました');
+  }
+}
+
+function toggleTsubuyakiArchive() {
+  const archive = document.getElementById('tsubuyakiArchive');
+  if (archive) {
+    archive.style.display = archive.style.display === 'none' ? 'block' : 'none';
   }
 }
 

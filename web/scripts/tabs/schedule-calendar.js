@@ -3,6 +3,27 @@
 let scheduleCalendarMonth = new Date();
 let scheduleCalendarSelectedDate = null;
 let scheduleCalendarData = {};
+let calendarDiaryPosts = [];
+let calendarTsubuyakiPosts = [];
+
+async function preloadCalendarPosts() {
+  try {
+    const [diaryRes, postRes] = await Promise.all([
+      fetch(`${API_BASE_URL}${AppConfig.API.POSTS}?type=DIARY`),
+      fetch(`${API_BASE_URL}${AppConfig.API.POSTS}?type=POST`)
+    ]);
+    if (diaryRes.ok) {
+      const d = await diaryRes.json();
+      calendarDiaryPosts = d.posts || [];
+    }
+    if (postRes.ok) {
+      const p = await postRes.json();
+      calendarTsubuyakiPosts = p.posts || [];
+    }
+  } catch (e) {
+    console.error('Posts preload failed:', e);
+  }
+}
 
 async function renderScheduleCalendar() {
   const container = document.getElementById('calendarContent');
@@ -20,6 +41,7 @@ async function renderScheduleCalendar() {
   html += '<div id="scheduleCalendarDetail" style="background:#fff;border-radius:8px;padding:16px"></div>';
 
   container.innerHTML = html;
+  await preloadCalendarPosts();
   await renderScheduleCalendarGrid();
 }
 
@@ -188,6 +210,46 @@ async function showScheduleCalendarDetail(dateStr) {
     if (notesHtml.length > 0) {
       html += notesHtml.join('');
     }
+  }
+
+  // ダイ日記の表示
+  const dayDiaries = calendarDiaryPosts.filter(post => {
+    const dateMatch = (post.text || '').match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
+    if (dateMatch) return dateMatch[1] === dateStr;
+    return post.createdAt && post.createdAt.startsWith(dateStr);
+  });
+
+  if (dayDiaries.length > 0) {
+    html += `<h4 style="margin-top:16px;font-size:13px;color:#8d6e63;border-bottom:1px solid #f0ebe6;padding-bottom:6px">📔 ダイ日記 (${dayDiaries.length}件)</h4>`;
+    dayDiaries.forEach(post => {
+      let text = post.text || '';
+      const titleMatch = text.match(/\[TITLE:([^\]]+)\]/);
+      const title = titleMatch ? titleMatch[1] : '';
+      text = text.replace(/^\[DATE:[^\]]+\]/, '').replace(/^\[TITLE:[^\]]+\]/, '').replace(/^\[PHOTO_POS:[^\]]+\]/, '').replace(/^\[CATCH_IMG:[^\]]+\]/, '');
+      const preview = text.replace(/<[^>]*>/g, '').substring(0, 60);
+      const calMember = familyMembers.find(m => m.userId === post.userId);
+      const calName = calMember ? getDisplayName(calMember) : post.displayName;
+      html += `<div onclick="switchTab('diary');setTimeout(function(){diaryShowDetail('${post.postId}')},300)" style="padding:8px;margin:4px 0;background:#f5f0eb;border-radius:6px;cursor:pointer;font-size:12px">
+        <strong>${escapeHtml(title || calName)}</strong>: ${escapeHtml(preview)}${preview.length >= 60 ? '...' : ''}
+      </div>`;
+    });
+  }
+
+  // つぶやきの表示
+  const dayPosts = calendarTsubuyakiPosts.filter(post => {
+    return post.createdAt && post.createdAt.startsWith(dateStr);
+  });
+
+  if (dayPosts.length > 0) {
+    html += `<h4 style="margin-top:12px;font-size:13px;color:#1976d2;border-bottom:1px solid #e3f2fd;padding-bottom:6px">☁️ つぶやき (${dayPosts.length}件)</h4>`;
+    dayPosts.forEach(post => {
+      const calMember = familyMembers.find(m => m.userId === post.userId);
+      const calName = calMember ? getDisplayName(calMember) : post.displayName;
+      const preview = (post.text || '').substring(0, 60);
+      html += `<div style="padding:8px;margin:4px 0;background:#e3f2fd;border-radius:6px;font-size:12px">
+        <strong>${escapeHtml(calName)}</strong>: ${escapeHtml(preview)}${preview.length >= 60 ? '...' : ''}
+      </div>`;
+    });
   }
 
   detail.innerHTML = html;

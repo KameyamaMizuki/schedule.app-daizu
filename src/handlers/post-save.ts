@@ -29,14 +29,38 @@ const CreateSchema = z.object({
   type: PostTypeSchema,
   userId: z.string().min(1),
   displayName: z.string().min(1),
-  text: z.string().min(1, '本文は必須です').max(500, '500文字以内で入力してください'),
+  text: z.string().min(1, '本文は必須です'),
   imageUrl: z.string().url().optional()
+}).superRefine((data, ctx) => {
+  const limit = data.type === 'DIARY' ? 512000 : 500;
+  if (data.text.length > limit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_big,
+      maximum: limit,
+      type: 'string',
+      inclusive: true,
+      message: data.type === 'DIARY' ? 'データサイズが大きすぎます' : '500文字以内で入力してください',
+      path: ['text']
+    });
+  }
 });
 
 const UpdateSchema = z.object({
-  text: z.string().min(1).max(500),
+  text: z.string().min(1),
   type: PostTypeSchema,
   sk: z.string().min(1, 'sk は必須です')
+}).superRefine((data, ctx) => {
+  const limit = data.type === 'DIARY' ? 512000 : 500;
+  if (data.text.length > limit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_big,
+      maximum: limit,
+      type: 'string',
+      inclusive: true,
+      message: 'テキストが長すぎます',
+      path: ['text']
+    });
+  }
 });
 
 const DeleteQuerySchema = z.object({

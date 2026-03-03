@@ -13,6 +13,7 @@ function toggleDiaryInput() {
   const inputArea = document.getElementById('diaryInputArea');
   const isVisible = inputArea.style.display !== 'none';
   inputArea.style.display = isVisible ? 'none' : 'flex';
+  document.body.style.overflow = isVisible ? '' : 'hidden';
   if (!isVisible) {
     // エディタをクリア
     document.getElementById('diaryRichEditor').innerHTML = '';
@@ -117,6 +118,11 @@ function renderDiaryPosts() {
     const member = familyMembers.find(m => m.userId === post.userId);
     const displayName = member ? getDisplayName(member) : post.displayName;
 
+    const likeCount = post.reactions?.like?.length || 0;
+    const commentCount = post.comments?.length || 0;
+    const isLiked = currentUser && post.reactions?.like?.includes(currentUser.userId);
+    const sk = encodeURIComponent(post.SK || '');
+
     html += `<div class="diary-entry" data-post-id="${post.postId}" onclick="diaryShowDetail('${post.postId}')">
       ${catchImgData ? `<img class="diary-entry-catch" src="${catchImgData}" alt="">` : ''}
       <div class="diary-entry-body">
@@ -126,12 +132,14 @@ function renderDiaryPosts() {
         </div>
         ${title ? `<div class="diary-entry-title">${escapeHtml(title)}</div>` : ''}
         <div class="diary-entry-text">${sanitizedText}</div>
-        ${isOwner ? `
-          <div class="diary-entry-actions">
-            <span class="diary-entry-action" onclick="event.stopPropagation();editDiary('${post.postId}')">✏️ 編集</span>
-            <span class="diary-entry-action" onclick="event.stopPropagation();deleteDiary('${post.postId}')">🗑 削除</span>
-          </div>
-        ` : ''}
+        <div class="diary-entry-actions">
+          <span class="diary-entry-action ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation();toggleDiaryLike('${post.postId}','${sk}')">
+            ❤️ ${likeCount > 0 ? likeCount : ''}
+          </span>
+          <span class="diary-entry-action" onclick="event.stopPropagation();diaryShowDetail('${post.postId}')">
+            💬 ${commentCount > 0 ? commentCount : ''}
+          </span>
+        </div>
       </div>
     </div>`;
   });
@@ -698,12 +706,38 @@ function diaryShowDetail(postId) {
   const member = familyMembers.find(m => m.userId === post.userId);
   const displayName = member ? getDisplayName(member) : post.displayName;
 
+  const likeCount = post.reactions?.like?.length || 0;
+  const commentCount = post.comments?.length || 0;
+  const isLiked = currentUser && post.reactions?.like?.includes(currentUser?.userId);
+  const sk = encodeURIComponent(post.SK || '');
+
+  let commentsHtml = '';
+  if (post.comments && post.comments.length > 0) {
+    commentsHtml = post.comments.map(c => {
+      const cMember = familyMembers.find(m => m.userId === c.userId);
+      const cName = cMember ? getDisplayName(cMember) : c.displayName;
+      return `<div class="diary-comment"><strong>${escapeHtml(cName)}:</strong> ${escapeHtml(c.text)}</div>`;
+    }).join('');
+  }
+
   document.getElementById('diaryDetailContent').innerHTML = `
     <div class="diary-detail-date">📅 ${dateStr}</div>
     ${title ? `<div class="diary-detail-title">${escapeHtml(title)}</div>` : ''}
     <div class="diary-detail-author">${escapeHtml(displayName)}</div>
     ${catchImgData ? `<img class="diary-detail-catch" src="${catchImgData}" alt="">` : ''}
     <div class="diary-detail-text">${sanitizedText}</div>
+    <div class="diary-detail-like-section">
+      <span class="diary-detail-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleDiaryLike('${post.postId}','${sk}')">
+        ❤️ ${likeCount > 0 ? likeCount : ''}
+      </span>
+      <span class="diary-detail-like-btn">
+        💬 ${commentCount > 0 ? commentCount : ''}
+      </span>
+    </div>
+    <div class="diary-comment-section">
+      ${commentsHtml}
+      <input type="text" class="diary-comment-input" placeholder="コメントを入力..." onkeypress="handleDiaryCommentKeypress(event, '${post.postId}', '${sk}')">
+    </div>
     ${isOwner ? `
       <div class="diary-detail-actions">
         <span class="diary-entry-action" onclick="closeDiaryDetail();editDiary('${post.postId}')">✏️ 編集</span>
@@ -712,8 +746,77 @@ function diaryShowDetail(postId) {
     ` : ''}
   `;
   document.getElementById('diaryDetailModal').classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeDiaryDetail() {
   document.getElementById('diaryDetailModal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// ========== いいね/コメント機能 ==========
+async function toggleDiaryLike(postId, sk) {
+  if (!currentUser) { showUserSelectModal(); return; }
+  const userId = currentUser.userId;
+  const post = diaryPosts.find(p => p.postId === postId);
+  if (!post) return;
+
+  const wasLiked = post.reactions?.like?.includes(userId);
+  if (!post.reactions) post.reactions = { like: [] };
+  if (wasLiked) {
+    post.reactions.like = post.reactions.like.filter(id => id !== userId);
+  } else {
+    post.reactions.like = [...(post.reactions.like || []), userId];
+  }
+  renderDiaryPosts();
+  // 詳細モーダルが開いていれば再描画
+  if (document.getElementById('diaryDetailModal').classList.contains('active')) {
+    diaryShowDetail(postId);
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}${AppConfig.API.POSTS}/${postId}/reaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId, action: 'like', type: 'DIARY',
+        sk: decodeURIComponent(sk)
+      })
+    });
+    if (!res.ok) throw new Error('API error');
+  } catch (error) {
+    console.error('いいねエラー:', error);
+    if (wasLiked) {
+      post.reactions.like = [...(post.reactions.like || []), userId];
+    } else {
+      post.reactions.like = post.reactions.like.filter(id => id !== userId);
+    }
+    renderDiaryPosts();
+  }
+}
+
+async function handleDiaryCommentKeypress(event, postId, sk) {
+  if (event.key !== 'Enter') return;
+  const input = event.target;
+  const text = input.value.trim();
+  if (!text || !currentUser) return;
+
+  try {
+    await fetch(`${API_BASE_URL}${AppConfig.API.POSTS}/${postId}/comment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.userId,
+        displayName: currentUser.displayName,
+        text,
+        type: 'DIARY',
+        sk: decodeURIComponent(sk)
+      })
+    });
+    input.value = '';
+    await loadDiaryPosts();
+    diaryShowDetail(postId);
+  } catch (error) {
+    console.error('コメントエラー:', error);
+  }
 }
