@@ -140,6 +140,7 @@ function getDateScheduleStatus(dateStr) {
   if (!data || !data.users || data.users.length === 0) return null;
 
   const usersWithSlots = data.users.filter(u => {
+    if (u.userId === 'daizu-status') return false;
     const slots = u.slots || {};
     return Object.keys(slots).some(k => k.startsWith(dateStr) && slots[k]);
   });
@@ -212,6 +213,9 @@ async function showScheduleCalendarDetail(dateStr) {
     }
   }
 
+  // だいずの様子
+  html += renderDaizuStatusSection(dateStr, data);
+
   // ダイ日記の表示
   const dayDiaries = calendarDiaryPosts.filter(post => {
     const dateMatch = (post.text || '').match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
@@ -253,4 +257,79 @@ async function showScheduleCalendarDetail(dateStr) {
   }
 
   detail.innerHTML = html;
+}
+
+/**
+ * だいずの様子セクションを生成
+ */
+function renderDaizuStatusSection(dateStr, data) {
+  const daizuUser = data && data.users ? data.users.find(u => u.userId === 'daizu-status') : null;
+  const existingNote = daizuUser && daizuUser.notes ? (daizuUser.notes[dateStr] || '') : '';
+
+  let html = '<div style="margin-top:16px;padding:12px;background:#fff8e1;border-radius:8px;border:1px solid #ffe082">';
+  html += '<h4 style="font-size:13px;color:#f57f17;margin:0 0 8px 0">🐕 だいずの様子</h4>';
+
+  if (existingNote) {
+    html += `<div id="daizuStatusDisplay" style="font-size:13px;color:#333;line-height:1.5;white-space:pre-wrap;margin-bottom:8px">${escapeHtml(existingNote)}</div>`;
+  }
+
+  html += `<textarea id="daizuStatusInput" placeholder="今日のだいずの様子を入力..." style="width:100%;min-height:60px;padding:8px;border:1px solid #ffe082;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;font-family:inherit">${escapeHtml(existingNote)}</textarea>`;
+  html += `<button onclick="saveDaizuStatus('${dateStr}')" style="margin-top:8px;background:#f57f17;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;width:100%">保存</button>`;
+  html += '</div>';
+
+  return html;
+}
+
+/**
+ * だいずの様子を保存
+ */
+async function saveDaizuStatus(dateStr) {
+  const input = document.getElementById('daizuStatusInput');
+  const note = input.value.trim();
+  const weekId = getWeekId(new Date(dateStr + 'T00:00:00+09:00'));
+
+  // 既存のだいずデータを取得して notes をマージ
+  const daizuUser = scheduleCalendarData[weekId] && scheduleCalendarData[weekId].users
+    ? scheduleCalendarData[weekId].users.find(u => u.userId === 'daizu-status')
+    : null;
+  const existingNotes = daizuUser && daizuUser.notes ? { ...daizuUser.notes } : {};
+  existingNotes[dateStr] = note;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_SUBMIT}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        weekId: weekId,
+        userId: 'daizu-status',
+        displayName: 'だいず',
+        slots: {},
+        notes: existingNotes,
+        skipNotification: true
+      })
+    });
+
+    if (response.ok) {
+      // キャッシュを更新
+      if (scheduleCalendarData[weekId]) {
+        if (daizuUser) {
+          daizuUser.notes = existingNotes;
+        } else {
+          scheduleCalendarData[weekId].users = scheduleCalendarData[weekId].users || [];
+          scheduleCalendarData[weekId].users.push({
+            userId: 'daizu-status',
+            displayName: 'だいず',
+            slots: {},
+            notes: existingNotes
+          });
+        }
+      }
+      showToast('だいずの様子を保存しました');
+    } else {
+      showToast('保存に失敗しました');
+    }
+  } catch (e) {
+    console.error('Failed to save daizu status:', e);
+    showToast('保存に失敗しました');
+  }
 }

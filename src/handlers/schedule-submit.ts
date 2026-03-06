@@ -7,8 +7,9 @@ import { z } from 'zod';
 import { ScheduleSubmitRequest } from '../types';
 import { saveScheduleInput, getScheduleInput, getSystemConfig } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
-import { pushMessage } from '../utils/line';
+import { pushMessage, QuickReplyItem } from '../utils/line';
 import { withHandler, ok, err } from '../utils/handler';
+import { getDashboardUrl } from '../utils/constants';
 
 const SubmitSchema = z.object({
   weekId: z.string().min(1),
@@ -106,10 +107,10 @@ export const handler = withHandler(async (event) => {
       const credentials = await getLineCredentials();
       const config = await getSystemConfig();
       if (config?.groupId && (changes || isNewEntry)) {
-        const s3BaseUrl = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
-        const dashboardUrl = `${s3BaseUrl}/dashboard.html?weekId=${weekId}`;
+        const dashboardUrl = getDashboardUrl(weekId);
         const notifier = parsed.data.notifierName || displayName;
-        await pushMessage(config.groupId, buildNotificationMessage(notifier, dashboardUrl), credentials.channelAccessToken);
+        const quickReply = buildQuickReply(dashboardUrl);
+        await pushMessage(config.groupId, buildNotificationMessage(notifier, dashboardUrl), credentials.channelAccessToken, quickReply);
       }
     } catch (notifyError) {
       console.error('Notification failed (save succeeded):', notifyError);
@@ -124,5 +125,17 @@ export const handler = withHandler(async (event) => {
  */
 function buildNotificationMessage(displayName: string, dashboardUrl: string): string {
   return `来週の予定を${displayName}さんが更新しました。\n\n▼修正する場合はこちら\n${dashboardUrl}`;
+}
+
+/**
+ * Quick Replyボタンを生成
+ */
+function buildQuickReply(dashboardUrl: string): { items: QuickReplyItem[] } {
+  return {
+    items: [
+      { type: 'action', action: { type: 'message', label: '今日の予定', text: '今日' } },
+      { type: 'action', action: { type: 'uri', label: 'サイトを開く', uri: dashboardUrl } }
+    ]
+  };
 }
 

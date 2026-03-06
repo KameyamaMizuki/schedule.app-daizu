@@ -18,14 +18,30 @@ function goToHome() {
 async function init() {
   initCurrentUser();
 
+  // クエリパラメータからタブを読み取る（リッチメニュー/LIFF経由）
+  var urlParams = new URLSearchParams(window.location.search);
+  var queryTab = urlParams.get('tab');
+  var queryAction = urlParams.get('action');
+
   // hashからタブを読み取る（デフォルトはschedule）
   var _route = AppRoutes.parseHash(window.location.hash);
-  var startTab = _route.tab || 'schedule';
+  var startTab = queryTab || _route.tab || 'schedule';
 
   // 該当タブに切り替え
   await switchTab(startTab);
   if (startTab === 'schedule' && _route.subTab) {
     await switchScheduleSubTab(_route.subTab);
+  }
+
+  // action=new: 対応タブの新規投稿画面を自動表示
+  if (queryAction === 'new') {
+    setTimeout(function() {
+      if (startTab === 'diary' && typeof toggleDiaryInput === 'function') {
+        toggleDiaryInput();
+      } else if (startTab === 'tsubuyaki' && typeof toggleTsubuyakiInput === 'function') {
+        toggleTsubuyakiInput();
+      }
+    }, 500);
   }
 }
 

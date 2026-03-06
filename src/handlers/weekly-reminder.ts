@@ -31,6 +31,13 @@ export const handler: Handler = async () => {
   const dashboardUrl = getDashboardUrl(weekId);
   const message = `【リマインド】\n来週（${startMonth}/${startDay}(月)〜${endMonth}/${endDay}(日)）の予定入力をお忘れなく！\nまだの方は早めにお願いします🙏\n\n▼管理ページ（入力・確認・調整）\n${dashboardUrl}`;
 
-  await pushMessage(config.groupId, message, credentials.channelAccessToken);
+  const quickReply = {
+    items: [
+      { type: 'action' as const, action: { type: 'message' as const, label: '今日の予定', text: '今日' } },
+      { type: 'action' as const, action: { type: 'uri' as const, label: 'サイトを開く', uri: dashboardUrl } }
+    ]
+  };
+
+  await pushMessage(config.groupId, message, credentials.channelAccessToken, quickReply);
   console.log('Friday reminder sent for week:', weekId);
 }
