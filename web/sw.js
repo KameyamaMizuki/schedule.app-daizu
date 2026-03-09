@@ -6,7 +6,7 @@
  * - API リクエスト (/posts, /schedule): Network First、失敗時はキャッシュ
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 

@@ -39,16 +39,16 @@ async function switchScheduleSubTab(subTab) {
     }
   } else if (subTab === 'thisWeek') {
     document.getElementById('thisWeekContent').classList.add('active');
-    if (!window.thisWeekLoaded) {
-      await renderThisWeek();
-      window.thisWeekLoaded = true;
-    }
+    // 週IDをリセットして最新の週を再取得（日曜境界対策）
+    thisWeekSelectedWeekId = null;
+    await renderThisWeek();
+    window.thisWeekLoaded = true;
   } else if (subTab === 'nextWeek') {
     document.getElementById('nextWeekContent').classList.add('active');
-    if (!window.nextWeekLoaded) {
-      await renderNextWeek();
-      window.nextWeekLoaded = true;
-    }
+    // 週IDをリセットして最新の週を再取得（日曜境界対策）
+    nextWeekSelectedWeekId = null;
+    await renderNextWeek();
+    window.nextWeekLoaded = true;
   }
 }
 

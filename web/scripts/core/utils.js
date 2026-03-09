@@ -10,7 +10,13 @@ function getCalendarWeekId() {
   const now = new Date();
   const jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
   const day = jstNow.getDay();
-  const daysFromMonday = (day === 0) ? 6 : (day - 1);
+  // 日曜日は翌日の月曜＝来週を「今週」として扱う
+  if (day === 0) {
+    const nextMonday = new Date(jstNow);
+    nextMonday.setDate(jstNow.getDate() + 1);
+    return formatDateToWeekId(nextMonday);
+  }
+  const daysFromMonday = day - 1;
   const thisMonday = new Date(jstNow);
   thisMonday.setDate(jstNow.getDate() - daysFromMonday);
   return formatDateToWeekId(thisMonday);
@@ -20,7 +26,8 @@ function getNextWeekId() {
   const now = new Date();
   const jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
   const day = jstNow.getDay();
-  const daysUntilNextMonday = (day === 0) ? 1 : (8 - day);
+  // 日曜日は翌週の月曜（+1日）のさらに次の月曜（+8日）を「来週」とする
+  const daysUntilNextMonday = (day === 0) ? 8 : (8 - day);
   const nextMonday = new Date(jstNow);
   nextMonday.setDate(jstNow.getDate() + daysUntilNextMonday);
   return formatDateToWeekId(nextMonday);
