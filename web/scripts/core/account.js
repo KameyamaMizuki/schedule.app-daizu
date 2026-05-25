@@ -13,7 +13,7 @@
  * @returns {string}
  */
 function getDisplayName(member) {
-  const customNames = JSON.parse(localStorage.getItem('customNames') || '{}');
+  const customNames = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_NAMES) || '{}');
   return customNames[member.userId] || member.displayName;
 }
 

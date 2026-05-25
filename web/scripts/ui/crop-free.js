@@ -2,7 +2,8 @@
 // 依存: core/config.js, diary.js (diaryCatchImageData, diaryCropTarget)
 
 var diaryCropImage = null;
-var diaryCropRatio = '16:9'; // 'free', '16:9', '4:3', '1:1'
+var diaryCropRatio = '16:9'; // 'free', '16:9', '4:3', '1:1', '9:16'
+var diaryCropDisplaySize = 'large'; // 'large'=100%, 'medium'=60%, 'small'=40%
 var diaryCropX = 0, diaryCropY = 0;
 var diaryCropW = 200, diaryCropH = 112;
 var diaryDragging = false;
@@ -73,10 +74,20 @@ function openDiaryCropModal(imageSrc) {
   var modal = document.getElementById('diaryCropModal');
   var canvas = document.getElementById('diaryCropCanvas');
 
+  // サイズ選択行はエディタ挿入時のみ表示（キャッチ画像では非表示）
+  var sizeRow = document.getElementById('diarySizeRow');
+  if (sizeRow) sizeRow.style.display = diaryCropTarget === 'catch' ? 'none' : 'flex';
+
+  // サイズをリセット
+  diaryCropDisplaySize = 'large';
+  document.querySelectorAll('.diary-size-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.size === 'large');
+  });
+
   diaryCropImage = new Image();
   diaryCropImage.onload = function() {
     var maxW = window.innerWidth - 20;
-    var maxH = window.innerHeight - 200;
+    var maxH = window.innerHeight - 250;
     var scale = Math.min(maxW / diaryCropImage.width, maxH / diaryCropImage.height, 1);
     canvas.width = diaryCropImage.width * scale;
     canvas.height = diaryCropImage.height * scale;
@@ -88,6 +99,13 @@ function openDiaryCropModal(imageSrc) {
     canvas.addEventListener('touchstart', startDiaryCropDrag, { passive: false });
   };
   diaryCropImage.src = imageSrc;
+}
+
+function setDiaryCropSize(size) {
+  diaryCropDisplaySize = size;
+  document.querySelectorAll('.diary-size-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.size === size);
+  });
 }
 
 function setDiaryCropRatio(ratio) {
@@ -107,6 +125,16 @@ function setDiaryCropRatio(ratio) {
     diaryCropH = diaryCropW * 3 / 4;
   } else if (ratio === '1:1') {
     diaryCropW = diaryCropH = Math.min(cw, ch) * 0.8;
+  } else if (ratio === '9:16') {
+    diaryCropH = Math.min(ch * 0.9, cw * 0.9 * 16 / 9);
+    diaryCropW = diaryCropH * 9 / 16;
+    // 縦型のデフォルトサイズを「中」に設定
+    if (diaryCropTarget !== 'catch') { setDiaryCropSize('medium'); }
+  } else if (ratio === '3:4') {
+    diaryCropH = Math.min(ch * 0.9, cw * 0.9 * 4 / 3);
+    diaryCropW = diaryCropH * 3 / 4;
+    // 縦型のデフォルトサイズを「中」に設定
+    if (diaryCropTarget !== 'catch') { setDiaryCropSize('medium'); }
   } else { // free
     diaryCropW = cw * 0.8;
     diaryCropH = ch * 0.8;
@@ -222,6 +250,12 @@ function moveDiaryCropDrag(e) {
       newH = newW * 3 / 4;
     } else if (diaryCropRatio === '1:1') {
       newW = newH = Math.max(80, Math.min(Math.min(cw, ch), newW));
+    } else if (diaryCropRatio === '9:16') {
+      newH = Math.max(80, Math.min(ch, newH));
+      newW = newH * 9 / 16;
+    } else if (diaryCropRatio === '3:4') {
+      newH = Math.max(80, Math.min(ch, newH));
+      newW = newH * 3 / 4;
     } else {
       newW = Math.max(50, Math.min(cw, newW));
       newH = Math.max(50, Math.min(ch, newH));
@@ -316,9 +350,15 @@ function confirmDiaryCrop() {
   var editor = document.getElementById('diaryRichEditor');
   var img = document.createElement('img');
   img.src = imageData;
-  img.style.maxWidth = '100%';
+  // 表示サイズをdata属性とstyleに設定
+  var sizeMap = { large: '100%', medium: '60%', small: '40%' };
+  var displayWidth = sizeMap[diaryCropDisplaySize] || '100%';
+  img.dataset.size = diaryCropDisplaySize;
+  img.style.width = displayWidth;
+  img.style.maxWidth = displayWidth;
   img.style.borderRadius = '8px';
-  img.style.margin = '8px 0';
+  img.style.margin = '8px auto';
+  img.style.display = 'block';
 
   var selection = window.getSelection();
   if (selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {

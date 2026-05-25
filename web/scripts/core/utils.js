@@ -2,10 +2,6 @@
 
 // ========== 日付ユーティリティ ==========
 
-function isAfterDeadline() {
-  return false;
-}
-
 function getCalendarWeekId() {
   const now = new Date();
   const jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));

@@ -6,6 +6,7 @@ var diaryPhotoData = null;
 var diaryPhotoPosition = 'top';
 var diaryCatchImageData = null;
 var diaryCropTarget = 'editor'; // 'editor' or 'catch' — crop-free.js から参照
+var diaryEditingPostId = null; // 編集中の投稿ID（nullなら新規作成）
 
 async function initDiaryTab() {
   await loadDiaryPosts();
@@ -14,15 +15,15 @@ async function initDiaryTab() {
 function toggleDiaryInput() {
   var inputArea = document.getElementById('diaryInputArea');
   var isVisible = inputArea.style.display !== 'none';
-  inputArea.style.display = isVisible ? 'none' : 'flex';
+
   if (isVisible) {
+    // 閉じる：状態をリセット
+    inputArea.style.display = 'none';
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
+    diaryEditingPostId = null;
   } else {
-    document.body.classList.add('modal-open');
-    document.body.style.overflow = 'hidden';
-  }
-  if (!isVisible) {
+    // 開く：新規作成モードで初期化
     document.getElementById('diaryRichEditor').innerHTML = '';
     document.getElementById('diaryTitleInput').value = '';
     var today = new Date().toISOString().split('T')[0];
@@ -36,6 +37,15 @@ function toggleDiaryInput() {
     if (catchPreviewImg) catchPreviewImg.src = '';
     var catchSelectBtn = document.getElementById('diaryCatchSelectBtn');
     if (catchSelectBtn) catchSelectBtn.style.display = 'block';
+    // ヘッダー・ボタンを新規作成表示に
+    var titleEl = document.getElementById('diaryInputTitle');
+    if (titleEl) titleEl.textContent = '📝 日記を書く';
+    var btn = document.getElementById('diarySubmitBtn');
+    if (btn) btn.textContent = '投稿する';
+
+    inputArea.style.display = 'flex';
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
   }
 }
 
@@ -192,11 +202,16 @@ function sanitizeDiaryHtml(html) {
   tempDiv.innerHTML = html;
   var scripts = tempDiv.querySelectorAll('script,style,iframe,object,embed');
   scripts.forEach(function(el) { el.remove(); });
+  var sizeMap = { large: '100%', medium: '60%', small: '40%' };
   var imgs = tempDiv.querySelectorAll('img');
   imgs.forEach(function(img) {
-    img.style.maxWidth = '100%';
+    // data-size 属性を保持して表示サイズを正しく反映
+    var size = img.dataset.size || 'large';
+    var displayWidth = sizeMap[size] || '100%';
+    img.style.width = displayWidth;
+    img.style.maxWidth = displayWidth;
     img.style.borderRadius = '8px';
-    img.style.margin = '8px 0';
+    img.style.margin = '8px auto';
     img.style.display = 'block';
   });
   return tempDiv.innerHTML;
@@ -269,19 +284,37 @@ async function submitDiary() {
       finalText = '[DATE:' + selectedDate + ']' + finalText;
     }
 
-    var response = await fetch(API_BASE_URL + AppConfig.API.POSTS, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'DIARY',
-        userId: currentUser.userId,
-        displayName: currentUser.displayName,
-        text: finalText
-      })
-    });
+    var response;
+    if (diaryEditingPostId) {
+      // 編集モード: PUT
+      var editPost = diaryPosts.find(function(p) { return p.postId === diaryEditingPostId; });
+      response = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + diaryEditingPostId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: finalText,
+          type: 'DIARY',
+          sk: editPost ? editPost.SK : '',
+          displayName: currentUser ? getDisplayName(currentUser) : '不明'
+        })
+      });
+    } else {
+      // 新規作成: POST
+      response = await fetch(API_BASE_URL + AppConfig.API.POSTS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'DIARY',
+          userId: currentUser.userId,
+          displayName: currentUser.displayName,
+          text: finalText
+        })
+      });
+    }
 
-    if (!response.ok) throw new Error('投稿失敗');
+    if (!response.ok) throw new Error(diaryEditingPostId ? '更新失敗' : '投稿失敗');
 
+    diaryEditingPostId = null;
     editor.innerHTML = '';
     if (titleInput) titleInput.value = '';
     diaryCatchImageData = null;
@@ -291,35 +324,74 @@ async function submitDiary() {
     toggleDiaryInput();
     await loadDiaryPosts();
   } catch (error) {
-    alert('投稿に失敗しました: ' + error.message);
+    alert((diaryEditingPostId ? '更新' : '投稿') + 'に失敗しました: ' + error.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = '投稿する';
+    btn.textContent = diaryEditingPostId ? '更新する' : '投稿する';
   }
 }
 
-async function editDiary(postId) {
+function editDiary(postId) {
   var post = diaryPosts.find(function(p) { return p.postId === postId; });
   if (!post) return;
 
-  var newText = prompt('編集:', post.text);
-  if (newText === null || newText.trim() === '') return;
+  // 投稿テキストからプレフィックスタグを解析して各フィールドに展開
+  var rawText = post.text || '';
+  var editDate = '';
+  var editTitle = '';
+  var editCatchImg = null;
+  var editHtml = rawText;
 
-  try {
-    await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: newText.trim(),
-        type: 'DIARY',
-        sk: post.SK,
-        displayName: currentUser ? getDisplayName(currentUser) : '不明'
-      })
-    });
-    await loadDiaryPosts();
-  } catch (error) {
-    alert('編集に失敗しました');
+  var dateMatch = editHtml.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
+  if (dateMatch) {
+    editDate = dateMatch[1];
+    editHtml = editHtml.replace(dateMatch[0], '');
+  } else {
+    editDate = post.createdAt ? post.createdAt.substring(0, 10) : '';
   }
+
+  var titleMatch = editHtml.match(/^\[TITLE:([^\]]+)\]/);
+  if (titleMatch) {
+    editTitle = titleMatch[1];
+    editHtml = editHtml.replace(titleMatch[0], '');
+  }
+
+  var posMatch = editHtml.match(/^\[PHOTO_POS:(top|middle|bottom)\]/);
+  if (posMatch) editHtml = editHtml.replace(posMatch[0], '');
+
+  var catchMatch = editHtml.match(/^\[CATCH_IMG:(data:[^\]]+)\]/);
+  if (catchMatch) {
+    editCatchImg = catchMatch[1];
+    editHtml = editHtml.replace(catchMatch[0], '');
+  }
+
+  // フォームに値をセット
+  diaryEditingPostId = postId;
+  document.getElementById('diaryRichEditor').innerHTML = editHtml;
+  document.getElementById('diaryTitleInput').value = editTitle;
+  document.getElementById('diaryDateInput').value = editDate;
+
+  diaryCatchImageData = editCatchImg;
+  if (editCatchImg) {
+    document.getElementById('diaryCatchPreviewImg').src = editCatchImg;
+    document.getElementById('diaryCatchPreview').style.display = 'block';
+    document.getElementById('diaryCatchSelectBtn').style.display = 'none';
+  } else {
+    document.getElementById('diaryCatchPreview').style.display = 'none';
+    document.getElementById('diaryCatchSelectBtn').style.display = 'block';
+  }
+
+  // ヘッダー・ボタンを編集モード表示に
+  var titleEl = document.getElementById('diaryInputTitle');
+  if (titleEl) titleEl.textContent = '✏️ 日記を編集';
+  var btn = document.getElementById('diarySubmitBtn');
+  if (btn) btn.textContent = '更新する';
+
+  // 入力エリアを開く
+  var inputArea = document.getElementById('diaryInputArea');
+  inputArea.style.display = 'flex';
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = 'hidden';
 }
 
 async function deleteDiary(postId) {

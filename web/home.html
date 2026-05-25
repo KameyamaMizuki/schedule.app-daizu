@@ -355,7 +355,7 @@
       if (!('serviceWorker' in navigator)) return;
 
       // 古いキャッシュを全削除してから最新SWを登録
-      var APP_SW_VERSION = 'v12';
+      var APP_SW_VERSION = 'v14';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();

@@ -26,3 +26,7 @@
 .diary-crop-ratio{display:flex;gap:8px;padding:8px 16px;background:rgba(0,0,0,0.5);justify-content:center}
 .diary-ratio-btn{padding:8px 16px;border:1px solid #666;border-radius:20px;background:transparent;color:#fff;font-size:13px;cursor:pointer}
 .diary-ratio-btn.active{background:#8d6e63;border-color:#8d6e63}
+.diary-size-row{display:flex;gap:8px;padding:6px 16px;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;flex-wrap:wrap}
+.diary-size-label{color:#aaa;font-size:12px;white-space:nowrap}
+.diary-size-btn{padding:6px 20px;border:1px solid #666;border-radius:20px;background:transparent;color:#fff;font-size:13px;cursor:pointer}
+.diary-size-btn.active{background:#8d6e63;border-color:#8d6e63}

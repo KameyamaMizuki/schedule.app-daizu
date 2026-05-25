@@ -20,84 +20,23 @@ async function loadYousuPosts(append) {
     yousuLastKey = null;
   }
 
-  // Posts API (YOUSU) と旧スケジュールAPI (daizu-status notes) を並行取得
   var postsUrl = API_BASE_URL + AppConfig.API.POSTS + '?type=YOUSU&limit=50';
   if (append && yousuLastKey) {
     postsUrl += '&lastKey=' + encodeURIComponent(yousuLastKey);
   }
-  var postsPromise = fetch(postsUrl)
-    .then(function(r) { return r.ok ? r.json() : { posts: [] }; })
-    .catch(function() { return { posts: [] }; });
 
-  // 過去3週分のスケジュールから daizu-status notes を取得
-  var weekIds = getRecentWeekIds(3);
-  var legacyPromises = weekIds.map(function(wid) {
-    return fetch(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + wid)
-      .then(function(r) { return r.ok ? r.json() : null; })
-      .catch(function() { return null; });
-  });
-
-  var results = await Promise.all([postsPromise].concat(legacyPromises));
-  var postsData = results[0];
-  var newPosts = postsData.posts || [];
-  yousuLastKey = postsData.lastEvaluatedKey || null;
-
-  // 旧データを投稿形式に変換
-  var legacyPosts = [];
-  for (var i = 1; i < results.length; i++) {
-    var weekData = results[i];
-    if (!weekData || !weekData.users) continue;
-    var daizuUser = weekData.users.find(function(u) { return u.userId === 'daizu-status'; });
-    if (!daizuUser || !daizuUser.notes) continue;
-    for (var dateStr in daizuUser.notes) {
-      var noteText = daizuUser.notes[dateStr];
-      if (!noteText) continue;
-      legacyPosts.push({
-        postId: 'legacy-' + dateStr,
-        userId: 'daizu-status',
-        displayName: 'だいず',
-        text: noteText,
-        createdAt: dateStr + 'T12:00:00.000Z',
-        isLegacy: true
-      });
-    }
+  try {
+    var res = await fetch(postsUrl);
+    var postsData = res.ok ? await res.json() : { posts: [] };
+    var newPosts = postsData.posts || [];
+    yousuLastKey = postsData.lastEvaluatedKey || null;
+    yousuPosts = append ? yousuPosts.concat(newPosts) : newPosts;
+  } catch (e) {
+    console.error('Failed to load yousu posts:', e);
+    if (!append) yousuPosts = [];
   }
-
-  // 新しい投稿と旧データをマージ（重複排除: 同じ日・同じテキストの旧データは除外）
-  var newPostDates = {};
-  for (var j = 0; j < newPosts.length; j++) {
-    var key = newPosts[j].createdAt.substring(0, 10) + '|' + newPosts[j].text;
-    newPostDates[key] = true;
-  }
-  for (var k = 0; k < legacyPosts.length; k++) {
-    var lkey = legacyPosts[k].createdAt.substring(0, 10) + '|' + legacyPosts[k].text;
-    if (!newPostDates[lkey]) {
-      newPosts.push(legacyPosts[k]);
-    }
-  }
-
-  yousuPosts = append ? yousuPosts.concat(newPosts) : newPosts;
 }
 
-function getRecentWeekIds(numWeeks) {
-  var ids = [];
-  var now = new Date();
-  var jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  var day = jstNow.getDay();
-  // 今週の月曜日を求める
-  var monday = new Date(jstNow);
-  if (day === 0) {
-    monday.setDate(jstNow.getDate() + 1);
-  } else {
-    monday.setDate(jstNow.getDate() - (day - 1));
-  }
-  for (var i = 0; i < numWeeks; i++) {
-    var d = new Date(monday);
-    d.setDate(monday.getDate() - (i * 7));
-    ids.push(formatDateForApi(d));
-  }
-  return ids;
-}
 
 function renderYousuTab() {
   var container = document.getElementById('yousuContainer');

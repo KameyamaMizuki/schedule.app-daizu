@@ -88,7 +88,7 @@
       <!-- 投稿フォーム（非表示） -->
       <div id="diaryInputArea" class="diary-input-area" style="display:none">
         <div class="diary-input-header">
-          <span>📝 日記を書く</span>
+          <span id="diaryInputTitle">📝 日記を書く</span>
           <button class="diary-close-btn" onclick="toggleDiaryInput()">✕</button>
         </div>
         <!-- 日付選択 -->
@@ -344,6 +344,15 @@
       <button class="diary-ratio-btn active" onclick="setDiaryCropRatio('16:9')" data-ratio="16:9">16:9</button>
       <button class="diary-ratio-btn" onclick="setDiaryCropRatio('4:3')" data-ratio="4:3">4:3</button>
       <button class="diary-ratio-btn" onclick="setDiaryCropRatio('1:1')" data-ratio="1:1">1:1</button>
+      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('9:16')" data-ratio="9:16">縦9:16</button>
+      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('3:4')" data-ratio="3:4">縦3:4</button>
+    </div>
+    <!-- 挿入サイズ選択（エディタ挿入時のみ表示） -->
+    <div class="diary-size-row" id="diarySizeRow">
+      <span class="diary-size-label">表示サイズ</span>
+      <button class="diary-size-btn active" data-size="large" onclick="setDiaryCropSize('large')">大</button>
+      <button class="diary-size-btn" data-size="medium" onclick="setDiaryCropSize('medium')">中</button>
+      <button class="diary-size-btn" data-size="small" onclick="setDiaryCropSize('small')">小</button>
     </div>
     <div class="diary-crop-container">
       <canvas id="diaryCropCanvas" class="diary-crop-canvas"></canvas>
