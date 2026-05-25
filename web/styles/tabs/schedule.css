@@ -1,0 +1,61 @@
+/* ========== 犬の記録タブ用CSS ========== */
+/* カレンダー */
+.calendar-container{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px}
+.calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.calendar-header h2{font-size:16px;color:#495057}
+.calendar-nav{display:flex;gap:8px}
+.calendar-nav button{background:#ff9a9e;color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calendar-day-header{text-align:center;font-size:12px;color:#6c757d;padding:8px 0;font-weight:600}
+.calendar-day{text-align:center;padding:10px 4px;border-radius:6px;cursor:pointer;font-size:14px;min-height:44px;display:flex;align-items:center;justify-content:center}
+.calendar-day:hover{background:#f8f9fa}
+.calendar-day.other-month{color:#ccc}
+.calendar-day.today{background:#fff3cd;font-weight:600}
+.calendar-day.selected{background:#ff9a9e;color:#fff}
+.calendar-day.has-record{position:relative}
+.calendar-day.has-record::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:#ff9a9e;border-radius:50%}
+.calendar-day.selected.has-record::after{background:#fff}
+
+/* 記録フォーム */
+.record-form{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px}
+.record-form h3{font-size:15px;color:#495057;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #ff9a9e}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;color:#495057;margin-bottom:6px;font-weight:600}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px;border:1px solid #dee2e6;border-radius:6px;font-size:14px}
+.form-group textarea{min-height:60px;resize:vertical}
+.time-select{display:flex;gap:8px}
+.time-select select{flex:1}
+.submit-btn{width:100%;background:linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%);color:#fff;border:none;padding:14px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.submit-btn:disabled{background:#ccc}
+
+/* 記録一覧 */
+.records-list{background:#fff;border-radius:8px;padding:16px}
+.records-list h3{font-size:15px;color:#495057;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #ff9a9e}
+.record-item{padding:12px;background:#f8f9fa;border-radius:6px;margin-bottom:8px;position:relative}
+.record-item .time{font-weight:600;color:#ff9a9e;margin-bottom:4px}
+.record-item .detail{font-size:13px;color:#495057;line-height:1.5}
+.record-item .detail span{display:block;margin-bottom:2px}
+.record-item .delete-btn{position:absolute;top:8px;right:8px;background:#dc3545;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer}
+.no-records{text-align:center;color:#6c757d;padding:20px}
+
+/* 薬リストモーダル */
+.med-table{width:100%;border-collapse:collapse}
+.med-table th,.med-table td{padding:8px;text-align:center;border:1px solid #dee2e6;font-size:12px}
+.med-table th{background:#f8f9fa}
+.med-table td input[type="text"]{width:100%;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:12px}
+.med-table td input[type="checkbox"]{width:18px;height:18px}
+
+/* 要約セクション */
+.summary-section{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px}
+.summary-section h3{font-size:15px;color:#495057;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #ff9a9e}
+.date-range-picker{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.date-range-picker input{flex:1;min-width:120px;padding:10px;border:1px solid #dee2e6;border-radius:6px}
+.summary-btn{background:linear-gradient(135deg,#e91e8c 0%,#ff9a9e 100%);color:#fff;border:none;padding:12px 20px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600}
+.summary-result{margin-top:16px;padding:16px;background:#f8f9fa;border-radius:6px;white-space:pre-wrap;font-size:13px;line-height:1.6}
+.summary-loading{text-align:center;padding:20px;color:#6c757d}
+
+/* アクションボタン */
+.action-buttons{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.action-btn{flex:1;min-width:140px;padding:12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.action-btn.med{background:#e3f2fd;color:#1976d2}
+.action-btn.summary{background:#f3e5f5;color:#7b1fa2}

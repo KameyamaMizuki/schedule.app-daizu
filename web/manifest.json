@@ -1,0 +1,19 @@
+{
+  "name": "家族スケジュール",
+  "short_name": "スケジュール",
+  "description": "家族でスケジュールを共有するアプリ",
+  "start_url": "/home.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#81c784",
+  "background_color": "#f5f5f5",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%2381c784'/><text y='140' font-size='120' text-anchor='middle' x='96'>🐕</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

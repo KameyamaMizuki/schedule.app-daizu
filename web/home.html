@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>かめさんち</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#81c784">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="スケジュール">
+  <link rel="stylesheet" href="styles/base.css?v=20260317b">
+  <link rel="stylesheet" href="styles/crop.css?v=20260317b">
+  <link rel="stylesheet" href="styles/tabs/home.css?v=20260317b">
+</head>
+<body>
+  <div class="header green" id="mainHeader">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <h1 id="headerTitle">ホーム</h1>
+    <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
+      <span id="headerUserAvatar" class="header-avatar">👤</span>
+    </button>
+  </div>
+
+  <!-- サイドバー -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>メニュー</h2>
+      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item" onclick="navigateTo('home')">🏠 ホーム</div>
+      <div class="nav-item" onclick="navigateTo('schedule')">📅 スケジュール</div>
+      <div class="nav-item" onclick="navigateTo('yousu')">🐕 様子</div>
+      <div class="nav-item" onclick="navigateTo('diary')">📓 ダイ日記</div>
+      <div class="nav-item" onclick="navigateTo('wansta')">📷 WANsta</div>
+    </nav>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="tabs">
+    <div class="tab active green">ホーム</div>
+    <div class="tab" data-route="schedule">スケジュール</div>
+    <div class="tab" data-route="yousu">様子</div>
+    <div class="tab" data-route="diary">ダイ日記</div>
+    <div class="tab" data-route="wansta">WANsta</div>
+  </div>
+
+  <!-- ホームタブ -->
+  <div id="homeContent" class="content active">
+    <div class="home-container">
+      <!-- 犬の画像 -->
+      <div class="dog-area">
+        <img id="homeDogImage" class="dog-image" src="images/dog/chirol/normal/IMG_3707.webp" alt="犬" onclick="homeDogTapped()" style="cursor:pointer" onerror="this.src='images/dog/chirol/normal/IMG_3707.webp'">
+      </div>
+
+      <!-- 吹き出し -->
+      <div id="homeSpeechBubble" class="speech-bubble">
+        <p id="homeSpeechText">今日は <span class="highlight" id="homeTodayDate">-</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！</p>
+      </div>
+
+      <!-- プログレスバー -->
+      <div id="homeProgressContainer" class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-bar-inner"></div>
+        </div>
+        <p class="progress-text">ちょっと待ってくれ...</p>
+      </div>
+
+      <!-- メニューボタン -->
+      <div id="homeMenuButtons" class="menu-buttons active">
+        <button class="menu-btn uranau" onclick="homeStartUranau()">
+          <span class="icon">🔮</span>
+          <span class="label">うらなう</span>
+          <span class="desc">今日の運勢は？</span>
+        </button>
+        <button class="menu-btn asobu" onclick="homeStartAsobu()">
+          <span class="icon">🐾</span>
+          <span class="label">あそぶ</span>
+          <span class="desc">なでなでタイム</span>
+        </button>
+        <button class="menu-btn shitteru" onclick="homeStartChirolInfo()">
+          <span class="icon">📝</span>
+          <span class="label">しってる</span>
+          <span class="desc">写真・一言を追加</span>
+        </button>
+        <button class="menu-btn daizu-yousu" onclick="homeStartDaizuYousu()">
+          <span class="icon">🐕</span>
+          <span class="label">だいずのようす</span>
+          <span class="desc">今日の記録</span>
+        </button>
+        <button class="menu-btn kiroku" onclick="navigateTo('diary')">
+          <span class="icon">📓</span>
+          <span class="label">ダイ日記</span>
+          <span class="desc">日記を見る・書く</span>
+        </button>
+      </div>
+
+      <!-- 選択肢ボタン -->
+      <div id="homeChoiceButtons" class="choice-buttons">
+      </div>
+
+      <!-- カレンダー選択エリア -->
+      <div id="homeCalendarArea" class="calendar-area">
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" onclick="homeChangeCalendarMonth(-1)">◀</button>
+          <h3 id="homeCalendarTitle">2024年1月</h3>
+          <button class="calendar-nav-btn" onclick="homeChangeCalendarMonth(1)">▶</button>
+        </div>
+        <div class="calendar-grid" id="homeCalendarGrid"></div>
+        <button class="calendar-confirm-btn" onclick="homeConfirmCalendarSelection()">この日を確認する</button>
+        <button class="back-btn" onclick="homeBackToMenu()">戻る</button>
+      </div>
+
+      <!-- スケジュール表示エリア -->
+      <div id="homeScheduleDisplay" class="schedule-display">
+        <h4 id="homeScheduleTitle">予定</h4>
+        <div id="homeScheduleContent"></div>
+      </div>
+
+      <!-- スケジュール編集エリア -->
+      <div id="homeScheduleEdit" class="schedule-edit">
+        <div id="homeScheduleEditContent"></div>
+        <button class="submit-btn home-submit" onclick="homeSubmitScheduleEdit()">変更を保存する</button>
+        <button class="back-btn" onclick="homeBackToScheduleDisplay()">戻る</button>
+      </div>
+
+      <!-- 知ってる犬選択エリア -->
+      <div id="dogSelectArea" class="chirol-choice-area">
+        <p style="margin-bottom:12px;color:#5d4037;font-weight:600">誰のことを教える？</p>
+        <button class="chirol-choice-btn" onclick="selectDogForInfo('chirol')">
+          <span class="icon">🐕</span>
+          <span>チロル</span>
+        </button>
+        <button class="chirol-choice-btn" onclick="selectDogForInfo('daizu')">
+          <span class="icon">🐕</span>
+          <span>だいず</span>
+        </button>
+        <button class="chirol-choice-btn cancel" onclick="chirolCancel()">
+          <span class="icon">🚫</span>
+          <span>やっぱやめる</span>
+        </button>
+      </div>
+
+      <!-- 知ってる登録タイプ選択エリア -->
+      <div id="chirolChoiceArea" class="chirol-choice-area">
+        <p id="infoTargetLabel" style="margin-bottom:12px;color:#5d4037;font-weight:600">チロルに何を追加する？</p>
+        <button class="chirol-choice-btn" onclick="chirolStartImage()">
+          <span class="icon">📷</span>
+          <span>写真を追加する</span>
+        </button>
+        <button class="chirol-choice-btn" onclick="chirolStartHitokoto()">
+          <span class="icon">💬</span>
+          <span>一言を追加する</span>
+        </button>
+        <button class="chirol-choice-btn cancel" onclick="chirolBackToDogSelect()">
+          <span class="icon">⬅️</span>
+          <span>戻る</span>
+        </button>
+      </div>
+
+      <!-- 一言入力エリア -->
+      <div id="chirolHitokotoArea" class="chirol-hitokoto-area">
+        <textarea id="chirolHitokotoText" placeholder="チロルの一言を入力..." maxlength="100"></textarea>
+        <div class="char-count"><span id="chirolHitokotoCount">0</span>/100</div>
+        <button class="submit-btn home-submit" onclick="chirolSubmitHitokoto()" style="background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%)">追加する</button>
+        <button class="back-btn" onclick="chirolBackToChoice()">戻る</button>
+      </div>
+
+      <!-- 画像追加エリア -->
+      <div id="chirolImageArea" class="chirol-image-area">
+        <label for="chirolImageInput" class="image-preview-container">
+          <input type="file" id="chirolImageInput" accept="image/*" style="display:none" onchange="chirolImageSelected(event)">
+          <img id="chirolImagePreview" class="image-preview" src="" alt="">
+          <div class="image-placeholder">
+            <div class="icon">📷</div>
+            <span>タップして写真を選択</span>
+          </div>
+        </label>
+        <div class="tag-selector">
+          <button class="tag-btn" data-tag="normal" onclick="chirolSelectTag('normal')">😊 normal</button>
+          <button class="tag-btn" data-tag="happy" onclick="chirolSelectTag('happy')">😄 happy</button>
+          <button class="tag-btn" data-tag="thinking" onclick="chirolSelectTag('thinking')">🤔 thinking</button>
+          <button class="tag-btn" data-tag="sad" onclick="chirolSelectTag('sad')">😢 sad</button>
+        </div>
+        <button class="submit-btn home-submit" id="chirolImageSubmitBtn" onclick="chirolSubmitImage()" style="background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%)" disabled>追加する</button>
+        <button class="back-btn" onclick="chirolBackToChoice()">戻る</button>
+      </div>
+
+      <!-- だいずのようすエリア -->
+      <div id="homeDaizuYousuArea" class="home-daizu-yousu-area">
+        <div class="daizu-yousu-bubble">
+          <div class="daizu-yousu-bubble-content">
+            <textarea id="homeDaizuYousuInput" placeholder="今日のだいずの様子を書いてね..." maxlength="200" oninput="document.getElementById('homeDaizuYousuCount').textContent = this.value.length"></textarea>
+            <div class="char-count"><span id="homeDaizuYousuCount">0</span>/200</div>
+          </div>
+          <div class="daizu-yousu-bubble-tail"></div>
+        </div>
+        <button class="submit-btn home-submit" id="homeDaizuYousuSubmitBtn" onclick="homeSubmitDaizuYousu()" style="background:linear-gradient(135deg,#ff9800 0%,#e65100 100%)">保存する</button>
+        <button class="back-btn" onclick="homeDaizuYousuCancel()">やめる</button>
+      </div>
+
+      <!-- だいず占いエリア -->
+      <div id="homeUranauArea" class="home-uranau-area">
+        <div class="uranau-bg"><div class="stars"></div></div>
+        <div class="uranau-header">
+          <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" class="uranau-daizu-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+          <h3 style="color:#f8bbd9">✨ だいずの占いワン ✨</h3>
+        </div>
+        <div id="uranauPersonSelect"></div>
+        <div id="uranauResult" style="display:none"></div>
+        <button class="back-btn" onclick="uranauBackToHome()" style="margin-top:16px;background:rgba(255,255,255,0.9)">ホームに戻る</button>
+      </div>
+
+      <!-- わんなでエリア -->
+      <div id="homeWannadeArea" class="home-wannade-area">
+        <div class="wannade-header">
+          <h3>🐾 わんなで 🐾</h3>
+          <div id="wannadeTimer" class="wannade-timer" style="display:none">10</div>
+        </div>
+        <div class="wannade-dogs">
+          <div class="wannade-dog" id="wannadeChirol" ontouchstart="wannadeTap('chirol')" onclick="wannadeTap('chirol')">
+            <img src="images/dog/chirol/normal/IMG_3707.webp" alt="チロル" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+            <span>チロル</span>
+          </div>
+          <div class="wannade-dog" id="wannadeDaizu" ontouchstart="wannadeTap('daizu')" onclick="wannadeTap('daizu')">
+            <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+            <span>だいず</span>
+          </div>
+        </div>
+        <p class="wannade-instruction" id="wannadeInstruction">タップしてなでなで！</p>
+        <div class="wannade-count" id="wannadeCount">なでなで: <span id="wannadeCountNum">0</span>回</div>
+        <button class="wannade-start-btn" id="wannadeStartBtn" onclick="wannadeStart()">スタート！</button>
+        <div class="wannade-ranking" id="wannadeRanking">
+          <h4>🏆 ランキング</h4>
+          <div id="wannadeRankingList" class="wannade-ranking-list">
+            <div class="loading">読み込み中...</div>
+          </div>
+        </div>
+        <button class="back-btn" onclick="wannadeBackToHome()" style="margin-top:16px">ホームに戻る</button>
+      </div>
+      <!-- ホームFABボタン -->
+      <button class="home-fab" id="homeFab" onclick="homeReturnToInitial()">🏠</button>
+    </div>
+  </div>
+
+  <!-- ユーザー選択モーダル -->
+  <div id="userSelectModal" class="user-select-modal">
+    <div class="user-select-content">
+      <div class="user-select-icon">👋</div>
+      <h3>あなたは誰？</h3>
+      <p>家族を選んでね</p>
+      <div id="userSelectButtons" class="user-select-buttons"></div>
+    </div>
+  </div>
+
+  <!-- アカウントモーダル -->
+  <div id="accountModal" class="account-modal">
+    <div class="account-modal-content">
+      <button class="account-modal-close" onclick="closeAccountModal()">×</button>
+      <!-- 表示モード -->
+      <div id="accountViewMode">
+        <div id="accountAvatarContainer" onclick="startEditAccount()" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;margin-bottom:8px">
+          <div class="account-avatar" id="accountAvatar">👤</div>
+          <img class="account-avatar-img" id="accountAvatarImg" src="" alt="" style="display:none">
+        </div>
+        <h3 id="accountName" onclick="startEditAccount()" style="cursor:pointer">ユーザー名</h3>
+        <p class="account-subtitle">タップして編集</p>
+        <p id="accountBirthday" class="account-subtitle" style="margin-top:4px;font-size:13px">🎂 生年月日: 未設定</p>
+        <div class="account-switch">
+          <p>アカウント切り替え</p>
+          <div id="accountSwitchButtons" class="account-switch-buttons"></div>
+        </div>
+      </div>
+      <!-- 編集モード -->
+      <div id="accountEditMode" style="display:none">
+        <p style="font-size:14px;color:#666;margin-bottom:12px">アイコンを選択</p>
+        <div class="account-icon-tabs">
+          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')">📷 写真</div>
+          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')">😊 絵文字</div>
+        </div>
+        <div id="accountPhotoPicker" class="account-photo-picker">
+          <input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="accountPhotoSelected(event)">
+          <div class="account-photo-preview" id="accountPhotoPreview" onclick="document.getElementById('accountPhotoInput').click()">
+            <img id="accountPreviewImg" src="" alt="プレビュー">
+            <div class="placeholder">📷<br>タップして<br>写真を選択</div>
+          </div>
+          <button class="account-photo-btn" onclick="document.getElementById('accountPhotoInput').click()">写真を変更</button>
+          <button class="account-photo-remove" id="accountPhotoRemove" onclick="removeAccountPhoto()" style="display:none">写真を削除</button>
+        </div>
+        <div class="account-emoji-picker" id="accountEmojiPicker" style="display:none"></div>
+        <p style="font-size:14px;color:#666;margin:16px 0 8px">表示名</p>
+        <input type="text" id="accountNameInput" class="account-name-input" maxlength="10" placeholder="表示名を入力">
+        <p style="font-size:14px;color:#666;margin:16px 0 8px">🎂 生年月日（だいず占いに使用）</p>
+        <input type="date" id="accountBirthdayInput" class="account-name-input">
+        <div class="account-edit-buttons">
+          <button class="account-edit-cancel" onclick="cancelEditAccount()">キャンセル</button>
+          <button class="account-edit-save" onclick="saveAccountEdit()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像切り抜きモーダル -->
+  <div id="cropModal" class="crop-modal">
+    <div class="crop-header">
+      <h3>正方形に切り抜き</h3>
+      <span class="crop-hint">ドラッグ移動・ピンチで拡縮</span>
+      <button class="crop-close" onclick="closeCropModal()">×</button>
+    </div>
+    <div class="crop-container">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <div class="crop-footer">
+      <button class="crop-btn cancel" onclick="closeCropModal()">キャンセル</button>
+      <button class="crop-btn confirm" onclick="confirmCrop()">切り抜く</button>
+    </div>
+  </div>
+
+  <!-- だいずの様子入力フォーム (LIFF mode=daizu) -->
+  <div id="daizuLiffForm" class="daizu-liff-form" style="display:none">
+    <div class="daizu-liff-container">
+      <h2>だいずの様子</h2>
+      <p class="daizu-liff-date" id="daizuLiffDate"></p>
+      <textarea id="daizuLiffInput" class="daizu-liff-textarea" placeholder="今日のだいずの様子を書いてね..." maxlength="200"
+        oninput="document.getElementById('daizuLiffCount').textContent = this.value.length"></textarea>
+      <div class="daizu-liff-charcount"><span id="daizuLiffCount">0</span>/200</div>
+      <button class="daizu-liff-submit" id="daizuLiffSubmitBtn" onclick="submitDaizuLiffForm()">保存する</button>
+      <div id="daizuLiffResult" style="display:none">
+        <p class="daizu-liff-success">保存しました!</p>
+        <button class="daizu-liff-close" onclick="closeDaizuLiff()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/routes.js?v=20260317b"></script>
+  <script src="scripts/core/config.js?v=20260317b"></script>
+  <script src="scripts/core/state.js?v=20260317b"></script>
+  <script src="scripts/core/utils.js?v=20260317b"></script>
+  <script src="scripts/ui/sidebar.ui.js?v=20260317b"></script>
+  <script src="scripts/core/account.js?v=20260317b"></script>
+  <script src="scripts/ui/account-edit.js?v=20260317b"></script>
+  <script src="scripts/ui/user-select.js?v=20260317b"></script>
+  <script src="scripts/ui/crop-square.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.record.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.schedule.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.uranau.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.wannade.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.chirolinfo.js?v=20260317b"></script>
+  <script src="scripts/tabs/home.daizu-liff.js?v=20260317b"></script>
+  <script src="scripts/home.page.js?v=20260317b"></script>
+  <script>
+    (async function() {
+      if (!('serviceWorker' in navigator)) return;
+
+      // 古いキャッシュを全削除してから最新SWを登録
+      var APP_SW_VERSION = 'v12';
+      var lastSWVersion = localStorage.getItem('sw-version');
+      if (lastSWVersion !== APP_SW_VERSION) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+        localStorage.setItem('sw-version', APP_SW_VERSION);
+        // 既存SWがあれば登録解除して再登録
+        var regs = await navigator.serviceWorker.getRegistrations();
+        for (var r of regs) { await r.unregister(); }
+      }
+
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function(reg) {
+        reg.addEventListener('updatefound', function() {
+          var newSW = reg.installing;
+          if (newSW) {
+            newSW.addEventListener('statechange', function() {
+              if (newSW.state === 'activated') {
+                window.location.reload();
+              }
+            });
+          }
+        });
+        reg.update().catch(function() {});
+      }).catch(function(e) { console.warn('SW registration failed:', e); });
+
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        window.location.reload();
+      });
+    })();
+  </script>
+</body>
+</html>

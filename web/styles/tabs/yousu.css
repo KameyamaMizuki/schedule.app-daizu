@@ -1,0 +1,55 @@
+/* 様子タブ */
+.yousu-container{max-width:500px;margin:0 auto;padding:0 0 100px}
+
+/* ヘッダーバナー */
+.yousu-banner{display:flex;align-items:center;gap:12px;padding:16px;background:linear-gradient(135deg,#fff3e0 0%,#ffe0b2 100%);border-radius:12px;margin-bottom:16px}
+.yousu-banner-img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid #ffb74d;flex-shrink:0}
+.yousu-banner-text{font-size:16px;font-weight:700;color:#e65100}
+.yousu-banner-sub{font-size:12px;color:#bf360c;margin-top:2px;font-weight:400}
+
+/* 今日の入力カード */
+.yousu-today{background:#fff;border-radius:12px;padding:16px;margin-bottom:20px;border:2px solid #ffb74d;box-shadow:0 2px 8px rgba(255,152,0,0.15)}
+.yousu-today-label{font-size:14px;font-weight:600;color:#e65100;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.yousu-today-textarea{width:100%;min-height:80px;padding:10px;border:1px solid #ffe0b2;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;box-sizing:border-box;background:#fff}
+.yousu-today-textarea:focus{border-color:#ff9800;outline:none;box-shadow:0 0 0 2px rgba(255,152,0,0.15)}
+.yousu-input-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.yousu-char-count{font-size:12px;color:#999}
+.yousu-save-btn{background:linear-gradient(135deg,#ff9800 0%,#e65100 100%);color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+.yousu-save-btn:disabled{background:#ccc;cursor:default}
+.yousu-save-btn:active:not(:disabled){opacity:0.8}
+
+/* タイムライン */
+.yousu-timeline{margin-top:4px}
+
+/* 日付グループ */
+.yousu-date-group{margin-bottom:16px}
+.yousu-date-label{font-size:12px;color:#999;padding:6px 0;border-bottom:1px solid #f0f0f0;margin-bottom:8px;font-weight:600}
+.yousu-date-label.today{color:#e65100}
+
+/* 各エントリ */
+.yousu-entry{padding:10px 12px;background:#fff;border-radius:8px;border-left:4px solid #ff9800;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.yousu-entry-content{display:flex;flex-direction:column;gap:6px}
+.yousu-entry-text{font-size:13px;color:#333;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.yousu-entry-meta{display:flex;align-items:center;gap:8px;font-size:11px;color:#999}
+.yousu-entry-time{color:#999}
+.yousu-entry-author{color:#bf360c}
+.yousu-entry-actions{margin-left:auto;display:flex;gap:4px}
+.yousu-action-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;opacity:0.6;transition:opacity 0.2s}
+.yousu-action-btn:active{opacity:1}
+
+/* 編集モード */
+.yousu-edit-area{display:flex;flex-direction:column;gap:8px}
+.yousu-edit-actions{display:flex;gap:8px;justify-content:flex-end}
+.yousu-edit-cancel{background:#f5f5f5;color:#666;border:1px solid #ddd;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer}
+.yousu-edit-cancel:active{background:#eee}
+.yousu-edit-save{background:#ff9800;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer}
+.yousu-edit-save:active{opacity:0.8}
+
+/* 空状態 */
+.yousu-empty{text-align:center;padding:48px 20px;color:#999;font-size:14px}
+.yousu-empty-icon{font-size:48px;margin-bottom:12px}
+.yousu-empty-text{line-height:1.6}
+
+/* スケルトン */
+.yousu-skeleton-card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px}
+.yousu-skeleton-line{height:14px;background:linear-gradient(90deg,#e8e8e8 25%,#f5f5f5 50%,#e8e8e8 75%);background-size:800px 100%;animation:skeleton-shimmer 1.4s ease-in-out infinite;border-radius:4px;margin-bottom:8px}

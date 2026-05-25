@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>管理ダッシュボード</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#667eea">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ダッシュボード">
+  <link rel="stylesheet" href="styles/base.css?v=20260317b">
+  <link rel="stylesheet" href="styles/crop.css?v=20260317b">
+  <link rel="stylesheet" href="styles/tabs/schedule.css?v=20260317b">
+  <link rel="stylesheet" href="styles/tabs/yousu.css?v=20260317b">
+  <link rel="stylesheet" href="styles/tabs/diary.css?v=20260317b">
+  <link rel="stylesheet" href="styles/tabs/wansta.css?v=20260317b">
+</head>
+<body>
+  <div class="header" id="mainHeader">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <h1 id="headerTitle">スケジュール管理</h1>
+    <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
+      <span id="headerUserAvatar" class="header-avatar">👤</span>
+    </button>
+  </div>
+
+  <!-- サイドバー -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>メニュー</h2>
+      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item" onclick="window.location.href='home.html'">🏠 ホーム</div>
+      <div class="nav-item" onclick="navigateTo('schedule')">📅 スケジュール</div>
+      <div class="nav-item" onclick="navigateTo('yousu')">🐕 様子</div>
+      <div class="nav-item" onclick="navigateTo('diary')">📓 ダイ日記</div>
+      <div class="nav-item" onclick="navigateTo('wansta')">📷 WANsta</div>
+    </nav>
+  </div>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="tabs">
+    <div class="tab green" onclick="window.location.href='home.html'">ホーム</div>
+    <div class="tab" onclick="switchTab('schedule')">スケジュール</div>
+    <div class="tab" onclick="switchTab('yousu')">様子</div>
+    <div class="tab" onclick="switchTab('diary')">ダイ日記</div>
+    <div class="tab" onclick="switchTab('wansta')">WANsta</div>
+  </div>
+
+  <!-- スケジュールサブタブ（スケジュールタブ選択時のみ表示） -->
+  <div class="sub-tabs" id="scheduleSubTabs" style="display:none">
+    <div class="sub-tab active" onclick="switchScheduleSubTab('calendar')">カレンダー</div>
+    <div class="sub-tab" onclick="switchScheduleSubTab('thisWeek')">今週</div>
+    <div class="sub-tab" onclick="switchScheduleSubTab('nextWeek')">来週</div>
+  </div>
+
+  <!-- ホームタブは home.html に移動済み -->
+
+  <!-- スケジュール系タブ -->
+  <div id="calendarContent" class="content">
+    <div class="loading">カレンダーを読み込み中...</div>
+  </div>
+
+  <div id="thisWeekContent" class="content">
+    <div class="loading">読み込み中...</div>
+  </div>
+
+  <div id="nextWeekContent" class="content">
+    <div class="loading">来週の予定を読み込み中...</div>
+  </div>
+
+  <!-- 様子タブ -->
+  <div id="yousuContent" class="content">
+    <div class="yousu-container" id="yousuContainer">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </div>
+
+  <!-- ダイ日記タブ -->
+  <div id="diaryContent" class="content">
+    <div class="diary-container">
+      <div id="diaryPosts" class="diary-posts">
+        <div class="loading">読み込み中...</div>
+      </div>
+      <!-- 投稿ボタン（フローティング） -->
+      <button class="diary-fab" onclick="toggleDiaryInput()">📝</button>
+      <!-- 投稿フォーム（非表示） -->
+      <div id="diaryInputArea" class="diary-input-area" style="display:none">
+        <div class="diary-input-header">
+          <span>📝 日記を書く</span>
+          <button class="diary-close-btn" onclick="toggleDiaryInput()">✕</button>
+        </div>
+        <!-- 日付選択 -->
+        <div class="diary-date-row">
+          <span class="diary-date-label">📅 日付</span>
+          <input type="date" id="diaryDateInput" class="diary-date-input">
+        </div>
+        <!-- タイトル入力 -->
+        <input type="text" id="diaryTitleInput" class="diary-title-input" placeholder="タイトル（任意）" maxlength="50">
+        <!-- キャッチ画像（タイトル下・任意） -->
+        <div class="diary-catch-section">
+          <button id="diaryCatchSelectBtn" class="diary-catch-select-btn" onclick="diaryOpenCatchInput()">📷 キャッチ画像を選ぶ（任意）</button>
+          <div id="diaryCatchPreview" class="diary-catch-preview" style="display:none">
+            <img id="diaryCatchPreviewImg" src="" alt="キャッチ画像">
+            <button class="diary-photo-remove" onclick="diaryCatchRemove()">✕</button>
+          </div>
+        </div>
+        <!-- 写真選択 -->
+        <input type="file" id="diaryPhotoInput" accept="image/*" style="display:none" onchange="diaryPhotoSelected(event)">
+        <div id="diaryPhotoPreview" class="diary-photo-preview" style="display:none">
+          <img id="diaryPreviewImg" src="" alt="プレビュー">
+          <button class="diary-photo-remove" onclick="diaryRemovePhoto()">✕</button>
+        </div>
+        <!-- リッチテキストツールバー -->
+        <div class="diary-editor-toolbar">
+          <button class="diary-toolbar-btn" onclick="diaryFormatText('bold')" title="太字"><b>B</b></button>
+          <button class="diary-toolbar-btn" onclick="diaryFormatText('italic')" title="斜体"><i>I</i></button>
+          <div class="diary-toolbar-sep"></div>
+          <button class="diary-toolbar-btn" onclick="diaryInsertPhoto()" title="写真を挿入">📷 挿入</button>
+        </div>
+        <!-- リッチテキストエディタ -->
+        <div class="diary-editor-wrapper">
+          <div id="diaryRichEditor" class="diary-rich-editor" contenteditable="true" data-placeholder="今日のだいずの様子..."></div>
+        </div>
+        <button id="diarySubmitBtn" class="diary-submit-btn" onclick="submitDiary()">投稿する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ワンスタタブ -->
+  <div id="wanstaContent" class="content">
+    <div class="wansta-container">
+      <!-- アカウント切り替え -->
+      <div class="wansta-account-switch">
+        <button class="wansta-switch-btn active" id="wanstaChirolBtn" onclick="wanstaSwitchAccount('chirol')">
+          <img src="images/dog/chirol/normal/IMG_3707.webp" alt="チロル" onerror="this.style.display='none'">
+          <span>チロル</span>
+        </button>
+        <button class="wansta-switch-btn" id="wanstaDaizuBtn" onclick="wanstaSwitchAccount('daizu')">
+          <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" onerror="this.style.display='none'">
+          <span>だいず</span>
+        </button>
+      </div>
+      <!-- アカウントヘッダー -->
+      <div class="wansta-account-header">
+        <img id="wanstaAvatar" class="wansta-avatar" src="images/dog/chirol/normal/IMG_3707.webp" alt="アバター">
+        <div class="wansta-account-info">
+          <div id="wanstaAccountName" class="wansta-account-name">チロル</div>
+          <div class="wansta-account-stats">
+            <div>📷 <span id="wanstaPhotoCount">0</span>枚</div>
+            <div>💬 <span id="wanstaHitokotoCount">0</span>件</div>
+          </div>
+        </div>
+      </div>
+      <!-- タブ切り替え -->
+      <div class="wansta-tabs">
+        <div class="wansta-tab active" id="wanstaPhotoTab" onclick="wanstaSwitchTab('photo')">📷 写真</div>
+        <div class="wansta-tab" id="wanstaHitokotoTab" onclick="wanstaSwitchTab('hitokoto')">💬 一言</div>
+      </div>
+      <!-- 写真グリッド -->
+      <div id="wanstaPhotoGrid" class="wansta-photo-grid">
+        <div class="loading" style="grid-column:1/-1;padding:40px;text-align:center">読み込み中...</div>
+      </div>
+      <!-- 一言リスト -->
+      <div id="wanstaHitokotoList" class="wansta-hitokoto-list" style="display:none">
+        <div class="loading">読み込み中...</div>
+      </div>
+      <!-- FABボタン（写真追加 / 一言追加） -->
+      <button class="wansta-fab" id="wanstaFabBtn" onclick="wanstaFabClick()">+</button>
+    </div>
+  </div>
+
+  <!-- ワンスタ写真ビューア（Instagram風） -->
+  <div id="wanstaPhotoViewer" class="wansta-photo-viewer">
+    <div class="wansta-viewer-header">
+      <div class="wansta-viewer-account">
+        <img id="wanstaViewerAvatar" class="wansta-viewer-avatar" src="" alt="">
+        <span id="wanstaViewerName" class="wansta-viewer-name">チロル</span>
+      </div>
+      <button class="wansta-viewer-close" onclick="wanstaCloseViewer()">×</button>
+    </div>
+    <div class="wansta-viewer-body">
+      <img id="wanstaViewerImg" src="" alt="写真">
+    </div>
+    <div class="wansta-viewer-actions">
+      <button class="wansta-action-btn" id="wanstaLikeBtn" onclick="wanstaToggleLike()">🤍</button>
+      <button class="wansta-action-btn" onclick="document.getElementById('wanstaCommentInput').focus()">💬</button>
+      <div class="wansta-action-spacer"></div>
+      <button class="wansta-action-btn wansta-action-delete" id="wanstaDeleteBtn" onclick="wanstaDeletePhoto()">🗑️</button>
+    </div>
+    <div class="wansta-likes" id="wanstaLikesCount">いいね 0件</div>
+    <div class="wansta-comments" id="wanstaCommentsList"></div>
+    <div class="wansta-comment-input-area">
+      <input type="text" class="wansta-comment-input" id="wanstaCommentInput" placeholder="コメントを追加..." maxlength="100" onkeypress="if(event.key==='Enter')wanstaAddComment()">
+      <button class="wansta-comment-submit" id="wanstaCommentSubmitBtn" onclick="wanstaAddComment()">投稿</button>
+    </div>
+  </div>
+
+  <!-- ワンスタ写真アップロードモーダル -->
+  <div id="wanstaUploadModal" class="wansta-upload-modal">
+    <div class="wansta-upload-content">
+      <div class="wansta-upload-header">
+        <h3>📷 写真を追加</h3>
+        <button class="wansta-upload-close" onclick="wanstaCloseUpload()">×</button>
+      </div>
+      <input type="file" id="wanstaPhotoInput" accept="image/*" style="display:none" onchange="wanstaPhotoSelected(event)">
+      <div class="wansta-upload-preview" id="wanstaUploadPreview" onclick="document.getElementById('wanstaPhotoInput').click()">
+        <img id="wanstaPreviewImg" src="" alt="プレビュー">
+        <div class="placeholder">
+          <div class="icon">📷</div>
+          <div>タップして写真を選択</div>
+        </div>
+      </div>
+      <button class="wansta-upload-btn" id="wanstaUploadBtn" onclick="wanstaUploadPhoto()" disabled>アップロード</button>
+    </div>
+  </div>
+
+  <!-- ワンスタ一言追加モーダル -->
+  <div id="wanstaHitokotoModal" class="wansta-hitokoto-modal">
+    <div class="wansta-hitokoto-content">
+      <h3>💬 一言を追加</h3>
+      <textarea id="wanstaHitokotoInput" class="wansta-hitokoto-input" placeholder="今日の一言..." maxlength="100" rows="3"></textarea>
+      <button class="wansta-hitokoto-submit" id="wanstaHitokotoSubmitBtn" onclick="wanstaSubmitHitokoto()">追加する</button>
+      <button class="back-btn" onclick="wanstaCloseHitokotoModal()" style="margin-top:8px">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- 週選択モーダル -->
+  <div id="weekPickerModal" class="week-picker-modal">
+    <div class="week-picker-content">
+      <h3>週を選択</h3>
+      <p>入力したい週の月曜日を選択してください</p>
+      <input type="date" id="weekPickerDate">
+      <div class="week-picker-buttons">
+        <button class="cancel-btn" onclick="closeWeekPicker()">キャンセル</button>
+        <button class="confirm-btn" onclick="confirmWeekSelection()">選択</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編集モーダル -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="editModalTitle">スケジュール編集</h2>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="editModalBody">
+        <div class="loading">読み込み中...</div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-secondary" onclick="closeEditModal()">キャンセル</button>
+        <button class="modal-btn modal-btn-primary" onclick="saveEditedSchedule()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ユーザー選択モーダル -->
+  <div id="userSelectModal" class="user-select-modal">
+    <div class="user-select-content">
+      <div class="user-select-icon">👋</div>
+      <h3>あなたは誰？</h3>
+      <p>家族を選んでね</p>
+      <div id="userSelectButtons" class="user-select-buttons"></div>
+    </div>
+  </div>
+
+  <!-- アカウントモーダル -->
+  <div id="accountModal" class="account-modal">
+    <div class="account-modal-content">
+      <button class="account-modal-close" onclick="closeAccountModal()">×</button>
+      <!-- 表示モード -->
+      <div id="accountViewMode">
+        <div id="accountAvatarContainer" onclick="startEditAccount()" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;margin-bottom:8px">
+          <div class="account-avatar" id="accountAvatar">👤</div>
+          <img class="account-avatar-img" id="accountAvatarImg" src="" alt="" style="display:none">
+        </div>
+        <h3 id="accountName" onclick="startEditAccount()" style="cursor:pointer">ユーザー名</h3>
+        <p class="account-subtitle">タップして編集</p>
+        <p id="accountBirthday" class="account-subtitle" style="margin-top:4px;font-size:13px">🎂 生年月日: 未設定</p>
+        <div class="account-switch">
+          <p>アカウント切り替え</p>
+          <div id="accountSwitchButtons" class="account-switch-buttons"></div>
+        </div>
+      </div>
+      <!-- 編集モード -->
+      <div id="accountEditMode" style="display:none">
+        <p style="font-size:14px;color:#666;margin-bottom:12px">アイコンを選択</p>
+        <!-- アイコンタイプ切り替え -->
+        <div class="account-icon-tabs">
+          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')">📷 写真</div>
+          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')">😊 絵文字</div>
+        </div>
+        <!-- 写真ピッカー -->
+        <div id="accountPhotoPicker" class="account-photo-picker">
+          <input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="accountPhotoSelected(event)">
+          <div class="account-photo-preview" id="accountPhotoPreview" onclick="document.getElementById('accountPhotoInput').click()">
+            <img id="accountPreviewImg" src="" alt="プレビュー">
+            <div class="placeholder">📷<br>タップして<br>写真を選択</div>
+          </div>
+          <button class="account-photo-btn" onclick="document.getElementById('accountPhotoInput').click()">写真を変更</button>
+          <button class="account-photo-remove" id="accountPhotoRemove" onclick="removeAccountPhoto()" style="display:none">写真を削除</button>
+        </div>
+        <!-- 絵文字ピッカー -->
+        <div class="account-emoji-picker" id="accountEmojiPicker" style="display:none"></div>
+        <p style="font-size:14px;color:#666;margin:16px 0 8px">表示名</p>
+        <input type="text" id="accountNameInput" class="account-name-input" maxlength="10" placeholder="表示名を入力">
+        <p style="font-size:14px;color:#666;margin:16px 0 8px">🎂 生年月日（だいず占いに使用）</p>
+        <input type="date" id="accountBirthdayInput" class="account-name-input">
+        <div class="account-edit-buttons">
+          <button class="account-edit-cancel" onclick="cancelEditAccount()">キャンセル</button>
+          <button class="account-edit-save" onclick="saveAccountEdit()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 画像切り抜きモーダル -->
+  <div id="cropModal" class="crop-modal">
+    <div class="crop-header">
+      <h3>正方形に切り抜き</h3>
+      <span class="crop-hint">ドラッグ移動・ピンチで拡縮</span>
+      <button class="crop-close" onclick="closeCropModal()">×</button>
+    </div>
+    <div class="crop-container">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <div class="crop-footer">
+      <button class="crop-btn cancel" onclick="closeCropModal()">キャンセル</button>
+      <button class="crop-btn confirm" onclick="confirmCrop()">切り抜く</button>
+    </div>
+  </div>
+
+  <!-- 日記用自由トリミングモーダル -->
+  <div id="diaryCropModal" class="diary-crop-modal">
+    <div class="diary-crop-header">
+      <h3>写真をトリミング</h3>
+      <span class="diary-crop-info">ドラッグで移動、ピンチで拡大縮小</span>
+      <button class="crop-close" onclick="closeDiaryCropModal()">×</button>
+    </div>
+    <div class="diary-crop-ratio">
+      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('free')" data-ratio="free">自由</button>
+      <button class="diary-ratio-btn active" onclick="setDiaryCropRatio('16:9')" data-ratio="16:9">16:9</button>
+      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('4:3')" data-ratio="4:3">4:3</button>
+      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('1:1')" data-ratio="1:1">1:1</button>
+    </div>
+    <div class="diary-crop-container">
+      <canvas id="diaryCropCanvas" class="diary-crop-canvas"></canvas>
+    </div>
+    <div class="diary-crop-footer">
+      <button class="crop-btn cancel" onclick="closeDiaryCropModal()">キャンセル</button>
+      <button class="crop-btn confirm" onclick="confirmDiaryCrop()">挿入する</button>
+    </div>
+  </div>
+
+  <!-- 日記詳細モーダル（bodyの直下でフルスクリーン表示） -->
+  <div id="diaryDetailModal" class="diary-detail-modal">
+    <div class="diary-detail-header">
+      <button class="diary-detail-close" onclick="closeDiaryDetail()">← 戻る</button>
+    </div>
+    <div id="diaryDetailContent" class="diary-detail-content"></div>
+  </div>
+
+  <script src="scripts/routes.js?v=20260317b"></script>
+  <script src="scripts/core/config.js?v=20260317b"></script>
+  <script src="scripts/core/state.js?v=20260317b"></script>
+  <script src="scripts/core/utils.js?v=20260317b"></script>
+  <script src="scripts/ui/sidebar.ui.js?v=20260317b"></script>
+  <script src="scripts/core/account.js?v=20260317b"></script>
+  <script src="scripts/ui/account-edit.js?v=20260317b"></script>
+  <script src="scripts/ui/user-select.js?v=20260317b"></script>
+  <script src="scripts/ui/crop-square.js?v=20260317b"></script>
+  <script src="scripts/tabs/schedule.js?v=20260317b"></script>
+  <script src="scripts/tabs/schedule-calendar.js?v=20260525"></script>
+  <script src="scripts/tabs/schedule-weekview.js?v=20260317b"></script>
+  <script src="scripts/tabs/yousu.js?v=20260525"></script>
+  <script src="scripts/tabs/diary.js?v=20260525"></script>
+  <script src="scripts/tabs/diary-detail.js?v=20260317b"></script>
+  <script src="scripts/ui/crop-free.js?v=20260317b"></script>
+  <script src="scripts/tabs/wansta.js?v=20260317b"></script>
+  <script src="scripts/tabs/wansta-social.js?v=20260317b"></script>
+  <script src="scripts/dashboard.page.js?v=20260317b"></script>
+  <script>
+    (async function() {
+      if (!('serviceWorker' in navigator)) return;
+
+      var APP_SW_VERSION = 'v14';
+      var lastSWVersion = localStorage.getItem('sw-version');
+      if (lastSWVersion !== APP_SW_VERSION) {
+        var keys = await caches.keys();
+        await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+        localStorage.setItem('sw-version', APP_SW_VERSION);
+        var regs = await navigator.serviceWorker.getRegistrations();
+        for (var r of regs) { await r.unregister(); }
+      }
+
+      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function(reg) {
+        reg.addEventListener('updatefound', function() {
+          var newSW = reg.installing;
+          if (newSW) {
+            newSW.addEventListener('statechange', function() {
+              if (newSW.state === 'activated') {
+                window.location.reload();
+              }
+            });
+          }
+        });
+        reg.update().catch(function() {});
+      }).catch(function(e) { console.warn('SW registration failed:', e); });
+
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        window.location.reload();
+      });
+    })();
+  </script>
+</body>
+</html>

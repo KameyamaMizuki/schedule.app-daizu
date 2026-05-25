@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.aws-sam/
+
+# Original images (converted to webp, no longer needed in repo)
+assets/dog-originals/
+
+# Environment variables
+.env
+.env.local
+credentials.json
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SAM
+samconfig.toml
+packaged.yaml
+
+# Lambda packages
+*.zip
+
+# DynamoDB exports (personal data)
+*-export.json
+
+# Temporary and test files
+response*.json
+payload.json
+/tmp/
+test-*.js
+test-*.json
+create-test-*.js
+create-dummy-*.js
+insert-test-*.sh
+package-*.js
+send-*.ts
+maintenance-*.json
+
+# Ad-hoc work scripts and outputs
+# scripts/ フォルダ内の .ps1 はGit管理対象（除外しない）
+cwlogs-cleanup-*/
+nul

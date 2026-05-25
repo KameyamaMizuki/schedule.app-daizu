@@ -1,0 +1,337 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Family Schedule LINE Bot with Chirol Character (LIFF)
+
+# 注意: sam deploy は CloudFormation ResourceExistenceCheck エラーで失敗するため使用不可。
+# このファイルは参考用。実際のデプロイは zip → aws lambda update-function-code で直接更新。
+# 実際の Lambda 関数名は FunctionName に記載の通り。
+
+Parameters:
+  LineSecretName:
+    Type: String
+    Default: line/credentials-kame
+    Description: Secrets Manager secret name for LINE credentials
+
+  FamilyUserIds:
+    Type: String
+    Description: Comma-separated list of family member userIds
+    Default: ""
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        LINE_SECRET_NAME: !Ref LineSecretName
+        TABLE_SCHEDULE_INPUTS: ScheduleInputs-kame
+        TABLE_SYSTEM_CONFIG: SystemConfig-kame
+        TABLE_CHIROL_DATA: ChirolData-kame
+        TABLE_FAMILY_POSTS: FamilyPosts-kame
+        TABLE_WANNADE_RANKING: WannadeRanking-kame
+        CHIROL_IMAGE_BUCKET: family-schedule-web-kame-982312822872
+        FAMILY_USER_IDS: !Ref FamilyUserIds
+
+Resources:
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Content-Type,Authorization,X-Line-Signature'"
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+
+  # ============================================================
+  # スケジュール系 Lambda Functions
+  # ============================================================
+
+  WebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: line-webhook-kame
+      CodeUri: ./
+      Handler: handlers/webhook.handler
+      Events:
+        WebhookApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /webhook
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: SystemConfig-kame
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+
+  ScheduleSubmitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: schedule-submit-kame
+      CodeUri: ./
+      Handler: handlers/schedule-submit.handler
+      Events:
+        SubmitApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schedule/submit
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: ScheduleInputs-kame
+        - DynamoDBReadPolicy:
+            TableName: SystemConfig-kame
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+
+  ScheduleGetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: schedule-get-kame
+      CodeUri: ./
+      Handler: handlers/schedule-get.handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schedule/{weekId}
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: ScheduleInputs-kame
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+
+  ScheduleWeekGetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: schedule-week-get-kame
+      CodeUri: ./
+      Handler: handlers/schedule-week-get.handler
+      Events:
+        GetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /schedule/week/{weekId}
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: ScheduleInputs-kame
+
+  # ============================================================
+  # 週次処理系 Lambda Functions
+  # EventBridge Schedule は AWS CLI で別途設定済み
+  # ============================================================
+
+  WeeklyReminderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: weekly-reminder-kame
+      CodeUri: ./
+      Handler: handlers/weekly-reminder.handler
+      # EventBridge: cron(0 1 ? * FRI *) = 金曜 10:00 JST
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt DLQueue.Arn
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: ScheduleInputs-kame
+        - DynamoDBReadPolicy:
+            TableName: SystemConfig-kame
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+
+  # ============================================================
+  # チロルキャラクター系 Lambda Functions
+  # ============================================================
+
+  ChirolHitokotoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: chirol-hitokoto-kame
+      CodeUri: ./
+      Handler: handlers/chirol-hitokoto.handler
+      Events:
+        HitokotoGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/hitokoto
+            Method: GET
+        HitokotoPostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/hitokoto
+            Method: POST
+        HitokotoDeleteApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/hitokoto
+            Method: DELETE
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: ChirolData-kame
+
+  ChirolImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: chirol-image-kame
+      CodeUri: ./
+      Handler: handlers/chirol-image.handler
+      # sharp 不使用のため 256MB/30s に削減 (元: 1024MB/60s)
+      # AWS 実環境への反映: aws lambda update-function-configuration --function-name chirol-image-kame --timeout 30 --memory-size 256
+      Events:
+        ImageGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/images
+            Method: GET
+        ImageUploadUrlApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/upload-url
+            Method: GET
+        ImagePostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/images
+            Method: POST
+        ImageDeleteApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /chirol/images
+            Method: DELETE
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: ChirolData-kame
+        - S3CrudPolicy:
+            BucketName: family-schedule-web-kame-982312822872
+
+  # ============================================================
+  # つぶやき・ダイ日記系 Lambda Functions
+  # ============================================================
+
+  PostGetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: post-get-kame
+      CodeUri: ./
+      Handler: handlers/post-get.handler
+      Events:
+        PostsGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts
+            Method: GET
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: FamilyPosts-kame
+
+  PostSaveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: post-save-kame
+      CodeUri: ./
+      Handler: handlers/post-save.handler
+      Events:
+        PostCreateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts
+            Method: POST
+        PostUpdateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}
+            Method: PUT
+        PostDeleteApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}
+            Method: DELETE
+        PostReactionApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}/reaction
+            Method: POST
+        PostCommentApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /posts/{postId}/comment
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: FamilyPosts-kame
+
+  WannadeSaveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: wannade-save-kame
+      CodeUri: ./
+      Handler: handlers/wannade-save.handler
+      Events:
+        WannadeGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /wannade
+            Method: GET
+        WannadePostApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /wannade
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: WannadeRanking-kame
+
+  # ============================================================
+  # インフラ
+  # ============================================================
+
+  DLQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: family-schedule-dlq-kame
+      MessageRetentionPeriod: 1209600  # 14 days
+
+Outputs:
+  ApiGatewayUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod'
+
+  WebhookUrl:
+    Description: LINE Webhook URL
+    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/webhook'

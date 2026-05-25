@@ -1,0 +1,16 @@
+# CloudFormation package時に除外するファイル
+# 注意: sam deploy は使用不可。このファイルは参考用。
+src/
+web/
+scripts/
+assets/
+.git/
+.gitignore
+.claude/
+.aws-sam/
+.vscode/
+node_modules/
+*.md
+*.zip
+*.tar.gz
+*.log
