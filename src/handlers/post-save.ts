@@ -163,7 +163,8 @@ export const handler = withHandler(async (event) => {
         const credentials = await getLineCredentials();
         const config = await getSystemConfig();
         if (config?.groupId) {
-          const preview = text.length > 50 ? text.substring(0, 50) + '...' : text;
+          const src = text || '';
+          const preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
           const flex = buildFlexBubble(
             '🐕 だいずの様子が更新されました',
             FLEX_COLORS.DAIZU,
@@ -199,38 +200,6 @@ export const handler = withHandler(async (event) => {
       });
     } else {
       await updatePost(type, sk, { text: (text || '').trim() });
-    }
-
-    // DIARY/YOUSU 更新時のLINE通知（ベストエフォート）
-    if ((type === 'DIARY' || type === 'YOUSU') && updaterName) {
-      try {
-        const credentials = await getLineCredentials();
-        const config = await getSystemConfig();
-        if (config?.groupId) {
-          const label = type === 'DIARY' ? 'ダイ日記' : '様子';
-          const tabName = type === 'DIARY' ? 'diary' : 'yousu';
-          const color = type === 'DIARY' ? FLEX_COLORS.DIARY : FLEX_COLORS.DAIZU;
-          const icon = type === 'DIARY' ? '📔' : '🐕';
-          // 新形式: title フィールド使用。旧形式: text から抽出。YOUSU は本文プレビュー
-          let preview: string;
-          if (type === 'DIARY') {
-            preview = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
-          } else {
-            const src = text || '';
-            preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
-          }
-          const flex = buildFlexBubble(
-            `${icon} ${label}が更新されました`,
-            color,
-            [`${updaterName}さんが${label}を更新しました`, preview],
-            [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=${tabName}` }]
-          );
-          const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
-          await pushFlexMessage(config.groupId, `${label}が更新されました`, flex, credentials.channelAccessToken, quickReply);
-        }
-      } catch (notifyError) {
-        console.error('Update notification failed (update succeeded):', notifyError);
-      }
     }
 
     return ok({ message: 'Updated' });

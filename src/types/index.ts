@@ -46,9 +46,6 @@ export interface ScheduleGetResponse {
   isAdmin: boolean;
 }
 
-export const TIME_SLOTS = ['allday', '09', '17', '21', '24'] as const;
-export type TimeSlot = typeof TIME_SLOTS[number];
-
 export const DAYS_OF_WEEK = ['月', '火', '水', '木', '金', '土', '日'] as const;
 
 // つぶやき・ダイ日記用

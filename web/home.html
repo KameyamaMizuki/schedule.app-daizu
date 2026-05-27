@@ -9,9 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="スケジュール">
-  <link rel="stylesheet" href="styles/base.css">
-  <link rel="stylesheet" href="styles/crop.css">
-  <link rel="stylesheet" href="styles/tabs/home.css">
+  <link rel="stylesheet" href="styles/home.bundle.css">
 </head>
 <body>
   <div class="header green" id="mainHeader">
@@ -333,29 +331,13 @@
     </div>
   </div>
 
-  <script src="scripts/routes.js"></script>
-  <script src="scripts/core/config.js"></script>
-  <script src="scripts/core/state.js"></script>
-  <script src="scripts/core/utils.js"></script>
-  <script src="scripts/ui/sidebar.ui.js"></script>
-  <script src="scripts/core/account.js"></script>
-  <script src="scripts/ui/account-edit.js"></script>
-  <script src="scripts/ui/user-select.js"></script>
-  <script src="scripts/ui/crop-square.js"></script>
-  <script src="scripts/tabs/home.js"></script>
-  <script src="scripts/tabs/home.record.js"></script>
-  <script src="scripts/tabs/home.schedule.js"></script>
-  <script src="scripts/tabs/home.uranau.js"></script>
-  <script src="scripts/tabs/home.wannade.js"></script>
-  <script src="scripts/tabs/home.chirolinfo.js"></script>
-  <script src="scripts/tabs/home.daizu-liff.js"></script>
-  <script src="scripts/home.page.js"></script>
+  <script src="scripts/home.bundle.js"></script>
   <script>
     (async function() {
       if (!('serviceWorker' in navigator)) return;
 
       // 古いキャッシュを全削除してから最新SWを登録
-      var APP_SW_VERSION = 'v14';
+      var APP_SW_VERSION = 'v15';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();

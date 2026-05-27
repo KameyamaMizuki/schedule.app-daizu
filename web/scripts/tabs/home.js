@@ -74,8 +74,11 @@ function initHomeTab() {
   initHomeTimeSelectors();
   updateHomeTodayInfo();
   homeSetRandomDogImage('normal');
-  loadHitokotoFromDB();
-  loadChirolImagesFromDB();
+  // 一言・犬画像は初期表示に不要なので遅延読み込み（Lambdaコールドスタートの競合を避ける）
+  setTimeout(function() {
+    loadHitokotoFromDB();
+    loadChirolImagesFromDB();
+  }, 800);
 }
 
 function initHomeTimeSelectors() {

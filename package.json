@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Family schedule management LINE bot with Chirol character (LIFF)",
   "scripts": {
-    "build": "node esbuild.config.js",
+    "build": "node esbuild.config.js && node scripts/build-web.js",
+    "build:web": "node scripts/build-web.js",
     "build:check": "tsc --noEmit",
     "test": "jest",
     "lint": "eslint . --ext .ts"

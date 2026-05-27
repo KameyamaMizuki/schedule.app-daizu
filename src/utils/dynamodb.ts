@@ -17,7 +17,7 @@ import {
   FamilyPost,
   PostType
 } from '../types';
-import { DB_KEYS, TTL_SCHEDULE_WEEKS, TTL_POST_DAYS, getTTLFromNow } from './constants';
+import { DB_KEYS, TTL_SCHEDULE_WEEKS, getTTLFromNow } from './constants';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 export const docClient = DynamoDBDocumentClient.from(client);
@@ -90,8 +90,6 @@ export async function saveSystemConfig(config: SystemConfig): Promise<void> {
  * FamilyPosts操作（つぶやき・ダイ日記）
  */
 
-const getPostTTL = () => getTTLFromNow(TTL_POST_DAYS);
-
 export async function createPost(post: FamilyPost): Promise<void> {
   // TTL は post-save.ts 側で制御済み（DIARY: TTLなし永続, YOUSU: TTLなし永続, POST: 30日TTL）
   // ここで上書きしないことで DIARY/YOUSU の永続保存を保証
@@ -130,12 +128,7 @@ export async function getPost(type: PostType, sk: string): Promise<FamilyPost | 
   return result.Item as FamilyPost || null;
 }
 
-/** POST/YOUSU用: textのみ更新 */
-export async function updatePostText(type: PostType, sk: string, text: string): Promise<void> {
-  await updatePost(type, sk, { text });
-}
-
-/** 汎用: 指定フィールドのみ更新（DIARY新形式対応） */
+/** 指定フィールドのみ更新（DIARY新形式対応） */
 export async function updatePost(
   type: PostType,
   sk: string,

@@ -8,12 +8,7 @@
   <meta name="theme-color" content="#667eea">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ダッシュボード">
-  <link rel="stylesheet" href="styles/base.css">
-  <link rel="stylesheet" href="styles/crop.css">
-  <link rel="stylesheet" href="styles/tabs/schedule.css">
-  <link rel="stylesheet" href="styles/tabs/yousu.css">
-  <link rel="stylesheet" href="styles/tabs/diary.css">
-  <link rel="stylesheet" href="styles/tabs/wansta.css">
+  <link rel="stylesheet" href="styles/dashboard.bundle.css">
 </head>
 <body>
   <div class="header" id="mainHeader">
@@ -371,30 +366,12 @@
     <div id="diaryDetailContent" class="diary-detail-content"></div>
   </div>
 
-  <script src="scripts/routes.js"></script>
-  <script src="scripts/core/config.js"></script>
-  <script src="scripts/core/state.js"></script>
-  <script src="scripts/core/utils.js"></script>
-  <script src="scripts/ui/sidebar.ui.js"></script>
-  <script src="scripts/core/account.js"></script>
-  <script src="scripts/ui/account-edit.js"></script>
-  <script src="scripts/ui/user-select.js"></script>
-  <script src="scripts/ui/crop-square.js"></script>
-  <script src="scripts/tabs/schedule.js"></script>
-  <script src="scripts/tabs/schedule-calendar.js"></script>
-  <script src="scripts/tabs/schedule-weekview.js"></script>
-  <script src="scripts/tabs/yousu.js"></script>
-  <script src="scripts/tabs/diary.js"></script>
-  <script src="scripts/tabs/diary-detail.js"></script>
-  <script src="scripts/ui/crop-free.js"></script>
-  <script src="scripts/tabs/wansta.js"></script>
-  <script src="scripts/tabs/wansta-social.js"></script>
-  <script src="scripts/dashboard.page.js"></script>
+  <script src="scripts/dashboard.bundle.js"></script>
   <script>
     (async function() {
       if (!('serviceWorker' in navigator)) return;
 
-      var APP_SW_VERSION = 'v14';
+      var APP_SW_VERSION = 'v15';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();

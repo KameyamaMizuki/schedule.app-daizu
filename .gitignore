@@ -5,6 +5,12 @@ node_modules/
 dist/
 .aws-sam/
 
+# Generated web bundles (build成果物 — npm run build:web で生成)
+web/scripts/home.bundle.js
+web/scripts/dashboard.bundle.js
+web/styles/home.bundle.css
+web/styles/dashboard.bundle.css
+
 # Original images (converted to webp, no longer needed in repo)
 assets/dog-originals/
 
