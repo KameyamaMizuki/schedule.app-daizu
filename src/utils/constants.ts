@@ -60,8 +60,8 @@ export function getTTLFromNow(offsetSeconds: number): number {
 export const TEXT_LIMITS = {
   /** つぶやき本文 */
   POST: 500,
-  /** ダイ日記本文（画像データ込み） */
-  DIARY: 512000,
+  /** ダイ日記本文（画像は S3 URL 化済みのため HTML テキストのみ） */
+  DIARY: 200000,
   /** だいずの様子 */
   YOUSU: 200,
   /** コメント */

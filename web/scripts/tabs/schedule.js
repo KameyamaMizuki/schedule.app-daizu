@@ -329,13 +329,7 @@ async function saveSchedule(userId) {
       }
     });
 
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_SUBMIT}`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({weekId: currentWeekToSave, userId, displayName, slots, notes})
-    });
-
-    if (!response.ok) throw new Error('保存に失敗しました');
+    await submitScheduleData({weekId: currentWeekToSave, userId, displayName, slots, notes});
 
     alert(`${getDisplayNameByUserId(userId)}さんのスケジュールを保存しました`);
     await loadAllSchedulesForWeek(currentWeekToSave);
@@ -484,12 +478,7 @@ async function saveEditedSchedule() {
       const noteInputs = document.querySelectorAll(`input[data-user="${member.userId}"][data-date]`);
       const notes = {};
       noteInputs.forEach(input => {if (input.value.trim()) {notes[input.dataset.date] = input.value.trim();}});
-      const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_SUBMIT}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({weekId: editingWeekId, userId: member.userId, displayName: member.displayName, slots, notes})
-      });
-      if (!response.ok) throw new Error(`${member.displayName}の保存失敗`);
+      await submitScheduleData({weekId: editingWeekId, userId: member.userId, displayName: member.displayName, slots, notes});
     }
     alert('保存完了');
     closeEditModal();

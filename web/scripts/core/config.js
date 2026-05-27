@@ -11,8 +11,7 @@ const AppConfig = Object.freeze({
     CUSTOM_AVATARS:   'customAvatars',
     CUSTOM_NAMES:     'customNames',
     FAMILY_BIRTHDAYS: 'familyBirthdays',
-    WANSTA_LIKES:     'wanstaLikes',
-    WANSTA_COMMENTS:  'wanstaComments',
+    // WANSTA_LIKES / WANSTA_COMMENTS は Phase2 で DynamoDB に移行済みのため削除
   },
 
   /** タイムアウト・遅延 (ms) */

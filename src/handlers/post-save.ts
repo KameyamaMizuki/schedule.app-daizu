@@ -36,7 +36,7 @@ const CreateSchema = z.object({
   // POST / YOUSU / 旧DIARY形式
   text: z.string().optional(),
   // DIARY 新形式（body が存在すれば新形式）
-  body: z.string().max(200000).optional(),
+  body: z.string().max(TEXT_LIMITS.DIARY).optional(),
   title: z.string().max(200).optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   catchImageUrl: z.string().url().optional(),

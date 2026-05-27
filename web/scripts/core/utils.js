@@ -220,3 +220,24 @@ function compressImage(file, maxSize, quality) {
     reader.readAsDataURL(file);
   });
 }
+
+// ========== スケジュール送信共通関数 ==========
+// home.js / home.schedule.js / schedule.js の重複 fetch を統一
+
+/**
+ * スケジュール送信
+ * @param {object} body - { weekId, userId, displayName, slots, notes, skipNotification? }
+ * @returns {Promise<Response>}
+ */
+async function submitScheduleData(body) {
+  const res = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_SUBMIT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || '保存に失敗しました');
+  }
+  return res;
+}

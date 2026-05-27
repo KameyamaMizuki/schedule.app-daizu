@@ -365,17 +365,13 @@ async function homeSubmitDaizuYousu() {
     }
     existingNotes[dateStr] = note;
 
-    const saveRes = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_SUBMIT}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        weekId: weekId,
-        userId: 'daizu-status',
-        displayName: 'だいず',
-        slots: {},
-        notes: existingNotes,
-        skipNotification: true
-      })
+    const saveRes = await submitScheduleData({
+      weekId: weekId,
+      userId: 'daizu-status',
+      displayName: 'だいず',
+      slots: {},
+      notes: existingNotes,
+      skipNotification: true
     });
 
     if (saveRes.ok) {

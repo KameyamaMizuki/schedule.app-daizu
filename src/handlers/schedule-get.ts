@@ -6,7 +6,6 @@
 import { ScheduleGetResponse } from '../types';
 import { getScheduleInput } from '../utils/dynamodb';
 import { getWeekInfo } from '../utils/weekId';
-import { getLineCredentials } from '../utils/secrets';
 import { withHandler, ok, err } from '../utils/handler';
 
 export const handler = withHandler(async (event) => {
@@ -16,8 +15,9 @@ export const handler = withHandler(async (event) => {
   if (!weekId || !userId) return err('Missing weekId or userId');
 
   const weekInfo = getWeekInfo(weekId);
-  const credentials = await getLineCredentials();
-  const isAdmin = userId === credentials.adminUserId;
+  // ADMIN_USER_ID 環境変数で判定（Secrets Manager 呼び出し不要）
+  const adminUserId = process.env.ADMIN_USER_ID || '';
+  const isAdmin = adminUserId !== '' && userId === adminUserId;
   const input = await getScheduleInput(weekId, userId);
 
   const response: ScheduleGetResponse = {

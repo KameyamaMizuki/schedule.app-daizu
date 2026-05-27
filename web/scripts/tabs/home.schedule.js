@@ -206,15 +206,10 @@ async function homeSubmitScheduleEdit() {
     homeShowThinking(3000),
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/schedule/submit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            weekId, userId, displayName: member.displayName,
-            slots: mergedSlots, notes: user?.notes || {}
-          })
+        await submitScheduleData({
+          weekId, userId, displayName: member.displayName,
+          slots: mergedSlots, notes: user?.notes || {}
         });
-        if (!res.ok) throw new Error('保存失敗');
         homeState = 'schedule_edit_done';
         homeSetRandomDogImage('happy');
         homeSetSpeechText('予定を変更しといたぞ！<br>いつもありがとうな！');
