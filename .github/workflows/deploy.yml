@@ -12,6 +12,7 @@ on:
 env:
   AWS_REGION: ap-northeast-1
   S3_BUCKET: family-schedule-web-kame-982312822872
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
