@@ -10,7 +10,7 @@
  * メタデータのみDynamoDBに保存
  */
 
-import { QueryCommand, PutCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, PutCommand, GetCommand, DeleteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -89,15 +89,53 @@ export const handler = withHandler(async (event) => {
       id: item.imageId,
       url: item.imageUrl,
       tag: item.tag,
-      createdAt: item.createdAt
+      createdAt: item.createdAt,
+      likes: item.likes || [],
+      comments: item.comments || []
     })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return ok({ images: items });
   }
 
-  // POST /chirol/images - S3アップロード後のメタデータ保存
+  // POST /chirol/images - メタデータ保存 / いいねトグル / コメント追加
   if (event.httpMethod === 'POST') {
-    const parsed = SaveMetaSchema.safeParse(JSON.parse(event.body || '{}'));
+    const body = JSON.parse(event.body || '{}');
+
+    // ── いいねトグル ──
+    if (body.action === 'like') {
+      const { imageId, userId } = body;
+      if (!imageId || !userId) return err('imageId と userId は必須です');
+      const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
+      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
+      if (!existing.Item) return err('Image not found', 404);
+      const likes: string[] = existing.Item.likes || [];
+      const idx = likes.indexOf(userId);
+      if (idx === -1) likes.push(userId); else likes.splice(idx, 1);
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME, Key: key,
+        UpdateExpression: 'SET likes = :likes',
+        ExpressionAttributeValues: { ':likes': likes }
+      }));
+      return ok({ likes });
+    }
+
+    // ── コメント追加 ──
+    if (body.action === 'addComment') {
+      const { imageId, userId, userName, text } = body;
+      if (!imageId || !userId || !text) return err('imageId, userId, text は必須です');
+      const commentId = `c_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      const comment = { id: commentId, userId, userName: userName || '', text: String(text).trim(), createdAt: new Date().toISOString() };
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` },
+        UpdateExpression: 'SET comments = list_append(if_not_exists(comments, :empty), :c)',
+        ExpressionAttributeValues: { ':c': [comment], ':empty': [] }
+      }));
+      return ok({ comment });
+    }
+
+    // ── 既存: メタデータ保存 ──
+    const parsed = SaveMetaSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message);
 
     const { s3Key, tag } = parsed.data;
@@ -113,9 +151,28 @@ export const handler = withHandler(async (event) => {
     return ok({ success: true, imageId, imageUrl, message: '追加したぜ。' });
   }
 
-  // DELETE /chirol/images - 画像削除
+  // DELETE /chirol/images - 画像削除 / コメント削除
   if (event.httpMethod === 'DELETE') {
-    const parsed = DeleteSchema.safeParse(JSON.parse(event.body || '{}'));
+    const body = JSON.parse(event.body || '{}');
+
+    // ── コメント削除 ──
+    if (body.commentId) {
+      const { imageId, commentId } = body;
+      if (!imageId) return err('imageId は必須です');
+      const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
+      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
+      if (!existing.Item) return err('Image not found', 404);
+      const comments = (existing.Item.comments || []).filter((c: { id: string }) => c.id !== commentId);
+      await docClient.send(new UpdateCommand({
+        TableName: TABLE_NAME, Key: key,
+        UpdateExpression: 'SET comments = :comments',
+        ExpressionAttributeValues: { ':comments': comments }
+      }));
+      return ok({ success: true });
+    }
+
+    // ── 既存: 画像削除 ──
+    const parsed = DeleteSchema.safeParse(body);
     if (!parsed.success) return err(parsed.error.issues[0].message);
 
     const { imageId } = parsed.data;

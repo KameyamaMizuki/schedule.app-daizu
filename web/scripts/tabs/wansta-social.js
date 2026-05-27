@@ -1,29 +1,23 @@
 // ========== ワンスタ — ソーシャル機能（ビューア・いいね・コメント） ==========
-// 依存: wansta.js (wanstaSelectedPhoto, wanstaCurrentAccount, wanstaPhotos, wanstaLikes, wanstaComments, renderWansta)
-
-var wanstaLikes = {}; // { photoId: [userId, ...] }
-var wanstaComments = {}; // { photoId: [{id, userId, userName, text, createdAt}, ...] }
+// 依存: wansta.js (wanstaSelectedPhoto, wanstaCurrentAccount, wanstaPhotos, wanstaHitokoto, renderWansta)
+// Phase 2: localStorage → DynamoDB 移行済み。likes/comments は各オブジェクトに直接保持。
 
 function loadWanstaInteractions() {
-  try {
-    wanstaLikes = JSON.parse(localStorage.getItem(AppConfig.STORAGE.WANSTA_LIKES) || '{}');
-    wanstaComments = JSON.parse(localStorage.getItem(AppConfig.STORAGE.WANSTA_COMMENTS) || '{}');
-  } catch (e) {
-    wanstaLikes = {};
-    wanstaComments = {};
-  }
-}
-
-function saveWanstaInteractions() {
-  localStorage.setItem(AppConfig.STORAGE.WANSTA_LIKES, JSON.stringify(wanstaLikes));
-  localStorage.setItem(AppConfig.STORAGE.WANSTA_COMMENTS, JSON.stringify(wanstaComments));
+  // DynamoDB移行後は不要。wansta.js から呼ばれるため互換性のため空関数として残す。
 }
 
 // ========== 写真ビューア ==========
 
 function wanstaOpenViewer(id, url, isStatic) {
   if (isStatic === undefined) isStatic = false;
-  wanstaSelectedPhoto = { id: id, url: url, isStatic: isStatic };
+  // 実際の写真オブジェクト（likes/comments付き）を配列から取得
+  var photos = wanstaPhotos[wanstaCurrentAccount] || [];
+  var photo = null;
+  for (var i = 0; i < photos.length; i++) {
+    if (photos[i].id === id) { photo = photos[i]; break; }
+  }
+  wanstaSelectedPhoto = photo || { id: id, url: url, isStatic: isStatic, likes: [], comments: [] };
+
   document.getElementById('wanstaViewerImg').src = url;
   document.getElementById('wanstaDeleteBtn').style.display = isStatic ? 'none' : 'inline';
 
@@ -49,84 +43,147 @@ function wanstaCloseViewer() {
 
 // ========== 写真いいね ==========
 
-function wanstaToggleLike() {
+async function wanstaToggleLike() {
   if (!wanstaSelectedPhoto || !currentUser) return;
+  if (wanstaSelectedPhoto.isStatic) return; // 静的写真はいいね不可
+
   var photoId = wanstaSelectedPhoto.id;
   var userId = currentUser.userId;
 
-  if (!wanstaLikes[photoId]) wanstaLikes[photoId] = [];
-
-  var idx = wanstaLikes[photoId].indexOf(userId);
-  if (idx === -1) {
-    wanstaLikes[photoId].push(userId);
-  } else {
-    wanstaLikes[photoId].splice(idx, 1);
-  }
-
-  saveWanstaInteractions();
+  // 楽観的更新
+  var likes = wanstaSelectedPhoto.likes ? wanstaSelectedPhoto.likes.slice() : [];
+  var idx = likes.indexOf(userId);
+  if (idx === -1) { likes.push(userId); } else { likes.splice(idx, 1); }
+  wanstaSelectedPhoto.likes = likes;
   wanstaUpdateLikeUI();
+
+  // API 呼び出し
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'like', imageId: photoId, userId: userId })
+    });
+    if (res.ok) {
+      var data = await res.json();
+      wanstaSelectedPhoto.likes = data.likes || likes;
+      wanstaUpdateLikeUI();
+    }
+  } catch (e) {
+    console.error('Like error:', e);
+  }
 }
 
 function wanstaUpdateLikeUI() {
   if (!wanstaSelectedPhoto) return;
-  var photoId = wanstaSelectedPhoto.id;
   var userId = currentUser ? currentUser.userId : '';
-  var likes = wanstaLikes[photoId] || [];
+  var likes = wanstaSelectedPhoto.likes || [];
   var isLiked = likes.indexOf(userId) !== -1;
 
   var btn = document.getElementById('wanstaLikeBtn');
-  btn.textContent = isLiked ? '❤️' : '🤍';
-  btn.classList.toggle('liked', isLiked);
+  if (btn) {
+    btn.textContent = isLiked ? '❤️' : '🤍';
+    btn.classList.toggle('liked', isLiked);
+  }
 
   var countEl = document.getElementById('wanstaLikesCount');
-  if (likes.length === 0) {
-    countEl.textContent = '';
-    countEl.style.display = 'none';
-  } else {
-    countEl.textContent = 'いいね ' + likes.length + '件';
-    countEl.style.display = 'block';
+  if (countEl) {
+    if (likes.length === 0) {
+      countEl.textContent = '';
+      countEl.style.display = 'none';
+    } else {
+      countEl.textContent = 'いいね ' + likes.length + '件';
+      countEl.style.display = 'block';
+    }
   }
 }
 
 // ========== 写真コメント ==========
 
-function wanstaAddComment() {
+async function wanstaAddComment() {
   if (!wanstaSelectedPhoto || !currentUser) return;
+  if (wanstaSelectedPhoto.isStatic) return; // 静的写真はコメント不可
   var input = document.getElementById('wanstaCommentInput');
   var text = input.value.trim();
   if (!text) return;
 
   var photoId = wanstaSelectedPhoto.id;
-  if (!wanstaComments[photoId]) wanstaComments[photoId] = [];
 
-  wanstaComments[photoId].push({
-    id: 'c_' + Date.now(),
+  // 楽観的追加
+  var tmpId = 'c_' + Date.now() + '_tmp';
+  var comment = {
+    id: tmpId,
     userId: currentUser.userId,
     userName: getDisplayName(currentUser),
     text: text,
     createdAt: new Date().toISOString()
-  });
-
-  saveWanstaInteractions();
+  };
+  if (!wanstaSelectedPhoto.comments) wanstaSelectedPhoto.comments = [];
+  wanstaSelectedPhoto.comments.push(comment);
   input.value = '';
   wanstaRenderComments();
+
+  // API 呼び出し
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'addComment',
+        imageId: photoId,
+        userId: currentUser.userId,
+        userName: getDisplayName(currentUser),
+        text: text
+      })
+    });
+    if (res.ok) {
+      var data = await res.json();
+      // 仮IDを正式IDで置換
+      for (var i = 0; i < wanstaSelectedPhoto.comments.length; i++) {
+        if (wanstaSelectedPhoto.comments[i].id === tmpId && data.comment) {
+          wanstaSelectedPhoto.comments[i] = data.comment;
+          break;
+        }
+      }
+      wanstaRenderComments();
+    }
+  } catch (e) {
+    console.error('Comment error:', e);
+  }
 }
 
-function wanstaDeleteComment(commentId) {
+async function wanstaDeleteComment(commentId) {
   if (!wanstaSelectedPhoto) return;
+  if (wanstaSelectedPhoto.isStatic) return;
   var photoId = wanstaSelectedPhoto.id;
-  if (!wanstaComments[photoId]) return;
 
-  wanstaComments[photoId] = wanstaComments[photoId].filter(function(c) { return c.id !== commentId; });
-  saveWanstaInteractions();
+  // 楽観的削除
+  wanstaSelectedPhoto.comments = (wanstaSelectedPhoto.comments || []).filter(function(c) { return c.id !== commentId; });
   wanstaRenderComments();
+
+  // API 呼び出し
+  try {
+    await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageId: photoId, commentId: commentId })
+    });
+  } catch (e) {
+    console.error('Delete comment error:', e);
+  }
 }
 
 function wanstaRenderComments() {
   if (!wanstaSelectedPhoto) return;
-  var photoId = wanstaSelectedPhoto.id;
-  var comments = wanstaComments[photoId] || [];
   var container = document.getElementById('wanstaCommentsList');
+  if (!container) return;
+
+  if (wanstaSelectedPhoto.isStatic) {
+    container.innerHTML = '<div class="wansta-no-comments">この写真にはコメントできません</div>';
+    return;
+  }
+
+  var comments = wanstaSelectedPhoto.comments || [];
   var currentUserId = currentUser ? currentUser.userId : '';
 
   if (comments.length === 0) {
@@ -197,15 +254,40 @@ async function wanstaDeletePhoto() {
 
 // ========== 一言いいね・コメント ==========
 
-function wanstaToggleHitokotoLike(hitokotoId) {
+function findHitokoto(hitokotoId) {
+  var list = wanstaHitokoto[wanstaCurrentAccount] || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === hitokotoId) return list[i];
+  }
+  return null;
+}
+
+async function wanstaToggleHitokotoLike(hitokotoId) {
   if (!currentUser) return;
-  var key = 'h_' + hitokotoId;
+  var h = findHitokoto(hitokotoId);
+  if (!h || h.isDefault) return; // デフォルト一言はいいね不可
+
   var userId = currentUser.userId;
-  if (!wanstaLikes[key]) wanstaLikes[key] = [];
-  var idx = wanstaLikes[key].indexOf(userId);
-  if (idx === -1) { wanstaLikes[key].push(userId); } else { wanstaLikes[key].splice(idx, 1); }
-  saveWanstaInteractions();
+  var likes = h.likes ? h.likes.slice() : [];
+  var idx = likes.indexOf(userId);
+  if (idx === -1) { likes.push(userId); } else { likes.splice(idx, 1); }
+  h.likes = likes;
   renderWansta();
+
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'like', hitokotoId: hitokotoId, dog: wanstaCurrentAccount, userId: userId })
+    });
+    if (res.ok) {
+      var data = await res.json();
+      h.likes = data.likes || likes;
+      renderWansta();
+    }
+  } catch (e) {
+    console.error('Hitokoto like error:', e);
+  }
 }
 
 function wanstaToggleHitokotoComments(hitokotoId) {
@@ -217,15 +299,17 @@ function wanstaToggleHitokotoComments(hitokotoId) {
 }
 
 function wanstaRenderHitokotoComments(hitokotoId) {
-  var key = 'h_' + hitokotoId;
-  var comments = wanstaComments[key] || [];
+  var h = findHitokoto(hitokotoId);
+  var comments = h ? (h.comments || []) : [];
   var container = document.getElementById('hitokotoCommentsList_' + hitokotoId);
   if (!container) return;
   var currentUserId = currentUser ? currentUser.userId : '';
+
   if (comments.length === 0) {
     container.innerHTML = '<div style="font-size:12px;color:#8e8e8e;padding:4px 0">コメントはまだないよ</div>';
     return;
   }
+
   var html = '';
   for (var i = 0; i < comments.length; i++) {
     var c = comments[i];
@@ -240,31 +324,75 @@ function wanstaRenderHitokotoComments(hitokotoId) {
   container.innerHTML = html;
 }
 
-function wanstaAddHitokotoComment(hitokotoId) {
+async function wanstaAddHitokotoComment(hitokotoId) {
   if (!currentUser) return;
+  var h = findHitokoto(hitokotoId);
+  if (!h || h.isDefault) return; // デフォルト一言はコメント不可
+
   var input = document.getElementById('hitokotoCommentInput_' + hitokotoId);
   var text = input ? input.value.trim() : '';
   if (!text) return;
-  var key = 'h_' + hitokotoId;
-  if (!wanstaComments[key]) wanstaComments[key] = [];
-  wanstaComments[key].push({
-    id: 'c_' + Date.now(),
+
+  // 楽観的追加
+  var tmpId = 'c_' + Date.now() + '_tmp';
+  var comment = {
+    id: tmpId,
     userId: currentUser.userId,
     userName: getDisplayName(currentUser),
     text: text,
     createdAt: new Date().toISOString()
-  });
-  saveWanstaInteractions();
+  };
+  if (!h.comments) h.comments = [];
+  h.comments.push(comment);
   if (input) input.value = '';
   wanstaRenderHitokotoComments(hitokotoId);
   renderWansta();
+
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'addComment',
+        hitokotoId: hitokotoId,
+        dog: wanstaCurrentAccount,
+        userId: currentUser.userId,
+        userName: getDisplayName(currentUser),
+        text: text
+      })
+    });
+    if (res.ok) {
+      var data = await res.json();
+      // 仮IDを正式IDで置換
+      for (var i = 0; i < h.comments.length; i++) {
+        if (h.comments[i].id === tmpId && data.comment) {
+          h.comments[i] = data.comment;
+          break;
+        }
+      }
+      wanstaRenderHitokotoComments(hitokotoId);
+    }
+  } catch (e) {
+    console.error('Hitokoto comment error:', e);
+  }
 }
 
-function wanstaDeleteHitokotoComment(hitokotoId, commentId) {
-  var key = 'h_' + hitokotoId;
-  if (!wanstaComments[key]) return;
-  wanstaComments[key] = wanstaComments[key].filter(function(c) { return c.id !== commentId; });
-  saveWanstaInteractions();
+async function wanstaDeleteHitokotoComment(hitokotoId, commentId) {
+  var h = findHitokoto(hitokotoId);
+  if (!h) return;
+
+  // 楽観的削除
+  h.comments = (h.comments || []).filter(function(c) { return c.id !== commentId; });
   wanstaRenderHitokotoComments(hitokotoId);
   renderWansta();
+
+  try {
+    await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hitokotoId: hitokotoId, dog: wanstaCurrentAccount, commentId: commentId })
+    });
+  } catch (e) {
+    console.error('Hitokoto delete comment error:', e);
+  }
 }

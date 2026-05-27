@@ -165,23 +165,26 @@ function renderWanstaHitokoto(hitokoto) {
   var sortedHitokoto = hitokoto.slice().sort(function(a, b) { return (b.createdAt || '').localeCompare(a.createdAt || ''); });
   for (var i = 0; i < sortedHitokoto.length; i++) {
     var item = sortedHitokoto[i];
-    var itemLikes = wanstaLikes['h_' + item.id] || [];
+    var itemLikes = item.likes || [];
     var isLiked = itemLikes.indexOf(currentUserId) !== -1;
-    var itemComments = wanstaComments['h_' + item.id] || [];
+    var itemComments = item.comments || [];
+    var canInteract = !item.isDefault; // デフォルト一言はいいね・コメント・削除不可
     html += '<div class="wansta-hitokoto-item" data-id="' + item.id + '">'
       + '<div class="wansta-hitokoto-text">' + escapeHtml(item.text) + '</div>'
       + '<div class="wansta-hitokoto-actions">'
-      + '<button class="hitokoto-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="wanstaToggleHitokotoLike(\'' + item.id + '\')">' + (isLiked ? '❤️' : '🤍') + ' ' + (itemLikes.length > 0 ? itemLikes.length : '') + '</button>'
-      + '<button class="hitokoto-comment-btn" onclick="wanstaToggleHitokotoComments(\'' + item.id + '\')">💬 ' + (itemComments.length > 0 ? itemComments.length : '') + '</button>'
-      + '<button class="wansta-hitokoto-delete" onclick="wanstaDeleteHitokoto(\'' + item.id + '\')">削除</button>'
+      + (canInteract ? '<button class="hitokoto-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="wanstaToggleHitokotoLike(\'' + item.id + '\')">' + (isLiked ? '❤️' : '🤍') + ' ' + (itemLikes.length > 0 ? itemLikes.length : '') + '</button>' : '')
+      + (canInteract ? '<button class="hitokoto-comment-btn" onclick="wanstaToggleHitokotoComments(\'' + item.id + '\')">💬 ' + (itemComments.length > 0 ? itemComments.length : '') + '</button>' : '')
+      + (canInteract ? '<button class="wansta-hitokoto-delete" onclick="wanstaDeleteHitokoto(\'' + item.id + '\')">削除</button>' : '')
       + '</div>'
-      + '<div class="hitokoto-comments-area" id="hitokotoComments_' + item.id + '" style="display:none">'
-      + '<div class="hitokoto-comments-list" id="hitokotoCommentsList_' + item.id + '"></div>'
-      + '<div class="hitokoto-comment-input-row">'
-      + '<input type="text" class="hitokoto-comment-input" id="hitokotoCommentInput_' + item.id + '" placeholder="コメント..." maxlength="100" onkeypress="if(event.key===\'Enter\')wanstaAddHitokotoComment(\'' + item.id + '\')">'
-      + '<button class="hitokoto-comment-submit" onclick="wanstaAddHitokotoComment(\'' + item.id + '\')">送信</button>'
-      + '</div>'
-      + '</div>'
+      + (canInteract
+        ? '<div class="hitokoto-comments-area" id="hitokotoComments_' + item.id + '" style="display:none">'
+          + '<div class="hitokoto-comments-list" id="hitokotoCommentsList_' + item.id + '"></div>'
+          + '<div class="hitokoto-comment-input-row">'
+          + '<input type="text" class="hitokoto-comment-input" id="hitokotoCommentInput_' + item.id + '" placeholder="コメント..." maxlength="100" onkeypress="if(event.key===\'Enter\')wanstaAddHitokotoComment(\'' + item.id + '\')">'
+          + '<button class="hitokoto-comment-submit" onclick="wanstaAddHitokotoComment(\'' + item.id + '\')">送信</button>'
+          + '</div>'
+          + '</div>'
+        : '')
       + '</div>';
   }
 
@@ -245,36 +248,49 @@ async function wanstaUploadPhoto() {
   try {
     var tag = wanstaCurrentAccount === 'daizu' ? 'wansta-daizu' : 'normal';
 
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
+    // 1. プリサインド URL を取得
+    var urlRes = await fetch(
+      API_BASE_URL + AppConfig.API.CHIROL_UPLOAD_URL + '?tag=' + tag + '&contentType=' + encodeURIComponent('image/jpeg')
+    );
+    if (!urlRes.ok) throw new Error('アップロード URL の取得に失敗しました');
+    var urlData = await urlRes.json();
+
+    // 2. base64 → Blob に変換して S3 へ直接 PUT
+    var blob = dataUrlToBlob(wanstaUploadData);
+    var uploadRes = await fetch(urlData.uploadUrl, {
+      method: 'PUT',
+      body: blob,
+      headers: { 'Content-Type': 'image/jpeg' }
+    });
+    if (!uploadRes.ok) throw new Error('S3 へのアップロードに失敗しました');
+
+    // 3. メタデータを保存
+    var saveRes = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageData: wanstaUploadData,
-        tag: tag
-      })
+      body: JSON.stringify({ s3Key: urlData.s3Key, tag: tag })
     });
+    if (!saveRes.ok) throw new Error('メタデータの保存に失敗しました');
 
-    if (res.ok) {
-      var data = await res.json();
-      wanstaPhotos[wanstaCurrentAccount].unshift({
-        id: data.imageId,
-        url: data.imageUrl,
-        tag: tag,
-        createdAt: new Date().toISOString()
-      });
-      wanstaCloseUpload();
-      renderWansta();
-    } else {
-      alert('アップロードに失敗しました');
-    }
+    wanstaPhotos[wanstaCurrentAccount].unshift({
+      id: urlData.imageId,
+      url: urlData.imageUrl,
+      tag: tag,
+      createdAt: new Date().toISOString()
+    });
+    wanstaCloseUpload();
+    renderWansta();
+    showToast('写真をアップロードしました');
   } catch (e) {
     console.error('Upload error:', e);
-    alert('アップロードに失敗しました');
+    alert('アップロードに失敗しました: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = 'アップロード';
   }
 }
+
+// dataUrlToBlob は core/utils.js に移動
 
 function wanstaCloseHitokotoModal() {
   document.getElementById('wanstaHitokotoModal').classList.remove('active');

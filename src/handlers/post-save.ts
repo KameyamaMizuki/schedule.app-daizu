@@ -11,7 +11,7 @@ import { FamilyPost, PostType } from '../types';
 import {
   createPost,
   getPost,
-  updatePostText,
+  updatePost,
   deletePost,
   addPostReaction,
   removePostReaction,
@@ -33,38 +33,44 @@ const CreateSchema = z.object({
   type: PostTypeSchema,
   userId: z.string().min(1),
   displayName: z.string().min(1),
-  text: z.string().min(1, '本文は必須です'),
+  // POST / YOUSU / 旧DIARY形式
+  text: z.string().optional(),
+  // DIARY 新形式（body が存在すれば新形式）
+  body: z.string().max(200000).optional(),
+  title: z.string().max(200).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  catchImageUrl: z.string().url().optional(),
   imageUrl: z.string().url().optional()
 }).superRefine((data, ctx) => {
-  const limit = data.type === 'DIARY' ? TEXT_LIMITS.DIARY : (data.type === 'YOUSU' ? TEXT_LIMITS.YOUSU : TEXT_LIMITS.POST);
-  if (data.text.length > limit) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.too_big,
-      maximum: limit,
-      type: 'string',
-      inclusive: true,
-      message: data.type === 'DIARY' ? 'データサイズが大きすぎます' : `${limit}文字以内で入力してください`,
-      path: ['text']
-    });
+  const isDiary = data.type === 'DIARY';
+  const hasContent = (data.text && data.text.length > 0) || (data.body && data.body.length > 0);
+  if (!hasContent) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: '本文は必須です', path: ['text'] });
+    return;
+  }
+  if (!isDiary && data.text && data.text.length > TEXT_LIMITS.POST) {
+    ctx.addIssue({ code: z.ZodIssueCode.too_big, maximum: TEXT_LIMITS.POST, type: 'string', inclusive: true, message: `${TEXT_LIMITS.POST}文字以内で入力してください`, path: ['text'] });
+  }
+  if (data.type === 'YOUSU' && data.text && data.text.length > TEXT_LIMITS.YOUSU) {
+    ctx.addIssue({ code: z.ZodIssueCode.too_big, maximum: TEXT_LIMITS.YOUSU, type: 'string', inclusive: true, message: `${TEXT_LIMITS.YOUSU}文字以内で入力してください`, path: ['text'] });
   }
 });
 
 const UpdateSchema = z.object({
-  text: z.string().min(1),
   type: PostTypeSchema,
   sk: z.string().min(1, 'sk は必須です'),
-  displayName: z.string().optional()  // LINE更新通知用
+  displayName: z.string().optional(),
+  // POST / YOUSU / 旧DIARY形式
+  text: z.string().optional(),
+  // DIARY 新形式
+  body: z.string().max(200000).optional(),
+  title: z.string().max(200).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  catchImageUrl: z.string().optional()
 }).superRefine((data, ctx) => {
-  const limit = data.type === 'DIARY' ? TEXT_LIMITS.DIARY : (data.type === 'YOUSU' ? TEXT_LIMITS.YOUSU : TEXT_LIMITS.POST);
-  if (data.text.length > limit) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.too_big,
-      maximum: limit,
-      type: 'string',
-      inclusive: true,
-      message: 'テキストが長すぎます',
-      path: ['text']
-    });
+  const hasContent = (data.text && data.text.length > 0) || (data.body !== undefined);
+  if (!hasContent) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: '本文は必須です', path: ['text'] });
   }
 });
 
@@ -97,10 +103,11 @@ export const handler = withHandler(async (event) => {
     const parsed = CreateSchema.safeParse(JSON.parse(event.body || '{}'));
     if (!parsed.success) return err(parsed.error.issues[0].message);
 
-    const { type, userId, displayName, text, imageUrl } = parsed.data;
+    const { type, userId, displayName, text, body, title, date, catchImageUrl, imageUrl } = parsed.data;
     const postId = generatePostId();
     const createdAt = new Date().toISOString();
     const sk = `${createdAt}#${postId}`;
+    const isNewDiary = type === 'DIARY' && body !== undefined;
 
     const post: FamilyPost = {
       PK: type,
@@ -108,7 +115,7 @@ export const handler = withHandler(async (event) => {
       postId,
       userId,
       displayName,
-      text,
+      text: isNewDiary ? '' : (text || ''),  // 新形式 DIARY は body に移行
       createdAt,
       reactions: { like: [] },
       comments: [],
@@ -116,6 +123,13 @@ export const handler = withHandler(async (event) => {
       ...(type === 'POST' ? { ttl: getTTLFromNow(TTL_POST_DAYS) } : {})
     };
     if (imageUrl) post.imageUrl = imageUrl;
+    // 新形式 DIARY の追加フィールドを保存
+    if (isNewDiary) {
+      post.body = body;
+      if (title) post.title = title;
+      if (date) post.date = date;
+      if (catchImageUrl) post.catchImageUrl = catchImageUrl;
+    }
 
     await createPost(post);
 
@@ -125,21 +139,14 @@ export const handler = withHandler(async (event) => {
         const credentials = await getLineCredentials();
         const config = await getSystemConfig();
         if (config?.groupId) {
-          // base64画像データ・タグを除去してプレビュー生成
-          const cleanText = text
-            .replace(/\[CATCH_IMG:[^\]]*\]/g, '')
-            .replace(/\[DATE:[^\]]*\]/g, '')
-            .replace(/\[TITLE:[^\]]*\]/g, '')
-            .replace(/\[PHOTO_POS:[^\]]*\]/g, '')
-            .replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '')
-            .replace(/<[^>]*>/g, '')
-            .trim();
-          const preview = cleanText.length > 50 ? cleanText.substring(0, 50) + '...' : cleanText;
+          // 新形式: title フィールドを使用。旧形式: text から抽出
+          const notifyTitle = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
+          const preview = notifyTitle;
 
           const flex = buildFlexBubble(
             '📔 ダイ日記が投稿されました',
             FLEX_COLORS.DIARY,
-            [`${displayName}さんが日記を書きました`, preview || '(写真付き)'],
+            [`${displayName}さんが日記を書きました`, preview],
             [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=diary` }]
           );
           const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
@@ -179,8 +186,20 @@ export const handler = withHandler(async (event) => {
     const parsed = UpdateSchema.safeParse(JSON.parse(event.body || '{}'));
     if (!parsed.success) return err(parsed.error.issues[0].message);
 
-    const { text, type, sk, displayName: updaterName } = parsed.data;
-    await updatePostText(type, sk, text.trim());
+    const { text, body, type, sk, displayName: updaterName, title, date, catchImageUrl } = parsed.data;
+    const isNewDiary = type === 'DIARY' && body !== undefined;
+
+    if (isNewDiary) {
+      await updatePost(type, sk, {
+        text: body || '',
+        body: body || '',
+        title: title ?? '',
+        date,
+        catchImageUrl: catchImageUrl ?? ''
+      });
+    } else {
+      await updatePost(type, sk, { text: (text || '').trim() });
+    }
 
     // DIARY/YOUSU 更新時のLINE通知（ベストエフォート）
     if ((type === 'DIARY' || type === 'YOUSU') && updaterName) {
@@ -192,19 +211,18 @@ export const handler = withHandler(async (event) => {
           const tabName = type === 'DIARY' ? 'diary' : 'yousu';
           const color = type === 'DIARY' ? FLEX_COLORS.DIARY : FLEX_COLORS.DAIZU;
           const icon = type === 'DIARY' ? '📔' : '🐕';
-          // base64・HTMLタグを除去してプレビュー生成
-          const cleanText = text
-            .replace(/\[CATCH_IMG:[^\]]*\]/g, '')
-            .replace(/\[DATE:[^\]]*\]/g, '')
-            .replace(/\[TITLE:[^\]]*\]/g, '')
-            .replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '')
-            .replace(/<[^>]*>/g, '')
-            .trim();
-          const preview = cleanText.length > 50 ? cleanText.substring(0, 50) + '...' : cleanText;
+          // 新形式: title フィールド使用。旧形式: text から抽出。YOUSU は本文プレビュー
+          let preview: string;
+          if (type === 'DIARY') {
+            preview = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
+          } else {
+            const src = text || '';
+            preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
+          }
           const flex = buildFlexBubble(
             `${icon} ${label}が更新されました`,
             color,
-            [`${updaterName}さんが${label}を更新しました`, preview || '(内容あり)'],
+            [`${updaterName}さんが${label}を更新しました`, preview],
             [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=${tabName}` }]
           );
           const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);

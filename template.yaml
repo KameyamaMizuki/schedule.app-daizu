@@ -3,8 +3,26 @@ Transform: AWS::Serverless-2016-10-31
 Description: Family Schedule LINE Bot with Chirol Character (LIFF)
 
 # 注意: sam deploy は CloudFormation ResourceExistenceCheck エラーで失敗するため使用不可。
-# このファイルは参考用。実際のデプロイは zip → aws lambda update-function-code で直接更新。
-# 実際の Lambda 関数名は FunctionName に記載の通り。
+# このファイルは参考用。実際のデプロイは GitHub Actions (push to main) で自動実行。
+# 手動デプロイ: scripts/deploy.sh を参照。
+#
+# 実際の Lambda 関数名・Handler は以下の通り（AWS コンソールと一致）:
+#   family-schedule-webhook-kame   / handlers/webhook.handler
+#   family-schedule-submit-kame    / handlers/schedule-submit.handler
+#   family-schedule-get-kame       / handlers/schedule-get.handler
+#   family-schedule-week-get-kame  / handlers/schedule-week-get.handler
+#   family-schedule-weekly-reminder-kame / handlers/weekly-reminder.handler
+#   chirol-hitokoto-kame           / handlers/chirol-hitokoto.handler
+#   chirol-image-kame              / handlers/chirol-image.handler
+#   post-get-kame                  / handlers/post-get.handler
+#   post-save-kame                 / handlers/post-save.handler
+#   wannade-save-kame              / handlers/wannade-save.handler
+#
+# IAM ロール:
+#   schedule 系: 各 CloudFormation 管理ロール（SAM が自動生成）
+#   dog-record-lambda-role-kame: chirol-*/post-*/wannade-* が使用
+#     インラインポリシー: dog-record-policy / FamilyPostsDynamoDBPolicy /
+#       LineSecretsPolicy / SystemConfigDynamoDBPolicy / WannadeRankingDynamoDBPolicy
 
 Parameters:
   LineSecretName:
@@ -47,12 +65,13 @@ Resources:
 
   # ============================================================
   # スケジュール系 Lambda Functions
+  # 実際の関数名: family-schedule-*-kame (SAM が付けたプレフィックス)
   # ============================================================
 
   WebhookFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: line-webhook-kame
+      FunctionName: family-schedule-webhook-kame
       CodeUri: ./
       Handler: handlers/webhook.handler
       Events:
@@ -74,7 +93,7 @@ Resources:
   ScheduleSubmitFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: schedule-submit-kame
+      FunctionName: family-schedule-submit-kame
       CodeUri: ./
       Handler: handlers/schedule-submit.handler
       Events:
@@ -98,7 +117,7 @@ Resources:
   ScheduleGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: schedule-get-kame
+      FunctionName: family-schedule-get-kame
       CodeUri: ./
       Handler: handlers/schedule-get.handler
       Events:
@@ -120,7 +139,7 @@ Resources:
   ScheduleWeekGetFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: schedule-week-get-kame
+      FunctionName: family-schedule-week-get-kame
       CodeUri: ./
       Handler: handlers/schedule-week-get.handler
       Events:
@@ -142,7 +161,7 @@ Resources:
   WeeklyReminderFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: weekly-reminder-kame
+      FunctionName: family-schedule-weekly-reminder-kame
       CodeUri: ./
       Handler: handlers/weekly-reminder.handler
       # EventBridge: cron(0 1 ? * FRI *) = 金曜 10:00 JST
@@ -162,6 +181,7 @@ Resources:
 
   # ============================================================
   # チロルキャラクター系 Lambda Functions
+  # IAM ロール: dog-record-lambda-role-kame（手動管理）
   # ============================================================
 
   ChirolHitokotoFunction:
@@ -189,6 +209,8 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /chirol/hitokoto
             Method: DELETE
+      # 実際の IAM: dog-record-lambda-role-kame
+      # dog-record-policy: ChirolData-kame への CRUD + UpdateItem
       Policies:
         - DynamoDBCrudPolicy:
             TableName: ChirolData-kame
@@ -199,8 +221,6 @@ Resources:
       FunctionName: chirol-image-kame
       CodeUri: ./
       Handler: handlers/chirol-image.handler
-      # sharp 不使用のため 256MB/30s に削減 (元: 1024MB/60s)
-      # AWS 実環境への反映: aws lambda update-function-configuration --function-name chirol-image-kame --timeout 30 --memory-size 256
       Events:
         ImageGetApi:
           Type: Api
@@ -226,6 +246,8 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /chirol/images
             Method: DELETE
+      # 実際の IAM: dog-record-lambda-role-kame
+      # dog-record-policy: ChirolData-kame + S3 family-schedule-web-kame-*
       Policies:
         - DynamoDBCrudPolicy:
             TableName: ChirolData-kame
@@ -233,7 +255,8 @@ Resources:
             BucketName: family-schedule-web-kame-982312822872
 
   # ============================================================
-  # つぶやき・ダイ日記系 Lambda Functions
+  # つぶやき・ダイ日記・様子系 Lambda Functions
+  # IAM ロール: dog-record-lambda-role-kame（手動管理）
   # ============================================================
 
   PostGetFunction:
@@ -249,6 +272,7 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /posts
             Method: GET
+      # 実際の IAM: dog-record-lambda-role-kame / FamilyPostsDynamoDBPolicy
       Policies:
         - DynamoDBReadPolicy:
             TableName: FamilyPosts-kame
@@ -290,9 +314,20 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /posts/{postId}/comment
             Method: POST
+      # 実際の IAM: dog-record-lambda-role-kame
+      # FamilyPostsDynamoDBPolicy / LineSecretsPolicy / SystemConfigDynamoDBPolicy
       Policies:
         - DynamoDBCrudPolicy:
             TableName: FamilyPosts-kame
+        - Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${LineSecretName}*'
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/SystemConfig-kame'
 
   WannadeSaveFunction:
     Type: AWS::Serverless::Function
@@ -313,6 +348,7 @@ Resources:
             RestApiId: !Ref ApiGateway
             Path: /wannade
             Method: POST
+      # 実際の IAM: dog-record-lambda-role-kame / WannadeRankingDynamoDBPolicy
       Policies:
         - DynamoDBCrudPolicy:
             TableName: WannadeRanking-kame

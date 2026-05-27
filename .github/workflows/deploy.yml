@@ -66,9 +66,9 @@ jobs:
             HANDLER_FILE="${entry##*:}"
             ZIP_PATH="/tmp/lambda-zips/${FUNC_NAME}.zip"
 
-            # ハンドラー JS + ソースマップを ZIP 化
-            zip -j "$ZIP_PATH" "dist/${HANDLER_FILE}" "dist/${HANDLER_FILE%.js}.js.map" 2>/dev/null || \
-            zip -j "$ZIP_PATH" "dist/${HANDLER_FILE}"
+            # dist/ ディレクトリ内から zip 化してパス構造を保持する（handlers/xxx.js）
+            # -j (junk paths) は使わない → Lambda が handlers/xxx.handler を解決できるよう保持
+            (cd dist && zip "$ZIP_PATH" "${HANDLER_FILE}")
 
             echo "Deploying ${FUNC_NAME}..."
             aws lambda update-function-code \

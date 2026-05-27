@@ -130,13 +130,52 @@ export async function getPost(type: PostType, sk: string): Promise<FamilyPost | 
   return result.Item as FamilyPost || null;
 }
 
+/** POST/YOUSU用: textのみ更新 */
 export async function updatePostText(type: PostType, sk: string, text: string): Promise<void> {
+  await updatePost(type, sk, { text });
+}
+
+/** 汎用: 指定フィールドのみ更新（DIARY新形式対応） */
+export async function updatePost(
+  type: PostType,
+  sk: string,
+  fields: { text?: string; body?: string; title?: string; date?: string; catchImageUrl?: string }
+): Promise<void> {
+  const sets: string[] = [];
+  const names: Record<string, string> = {};
+  const values: Record<string, unknown> = {};
+
+  if (fields.text !== undefined) {
+    sets.push('#text = :text');
+    names['#text'] = 'text';
+    values[':text'] = fields.text;
+  }
+  if (fields.body !== undefined) {
+    sets.push('body = :body');
+    values[':body'] = fields.body;
+  }
+  if (fields.title !== undefined) {
+    sets.push('title = :title');
+    values[':title'] = fields.title;
+  }
+  if (fields.date !== undefined) {
+    sets.push('#date = :date');
+    names['#date'] = 'date';
+    values[':date'] = fields.date;
+  }
+  if (fields.catchImageUrl !== undefined) {
+    sets.push('catchImageUrl = :catchImageUrl');
+    values[':catchImageUrl'] = fields.catchImageUrl;
+  }
+
+  if (sets.length === 0) return;
+
   await docClient.send(new UpdateCommand({
     TableName: TABLES.familyPosts,
     Key: { PK: type, SK: sk },
-    UpdateExpression: 'SET #text = :text',
-    ExpressionAttributeNames: { '#text': 'text' },
-    ExpressionAttributeValues: { ':text': text }
+    UpdateExpression: `SET ${sets.join(', ')}`,
+    ...(Object.keys(names).length > 0 ? { ExpressionAttributeNames: names } : {}),
+    ExpressionAttributeValues: values
   }));
 }
 

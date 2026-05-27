@@ -140,6 +140,48 @@ function seededRandom(seed) {
   };
 }
 
+// ========== 画像 S3 アップロード ==========
+
+/**
+ * base64 DataURL を Blob に変換
+ */
+function dataUrlToBlob(dataUrl) {
+  var parts = dataUrl.split(',');
+  var byteString = atob(parts[1]);
+  var ab = new ArrayBuffer(byteString.length);
+  var ia = new Uint8Array(ab);
+  for (var i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  return new Blob([ab], { type: 'image/jpeg' });
+}
+
+/**
+ * base64 DataURL を S3 にアップロードして URL を返す
+ * @param {string} dataUrl - base64 DataURL
+ * @param {string} tag - 'diary' | 'normal' | 'wansta-daizu' など
+ * @returns {Promise<string>} S3 URL
+ */
+async function uploadImageToS3(dataUrl, tag) {
+  tag = tag || 'diary';
+  var urlRes = await fetch(
+    API_BASE_URL + AppConfig.API.CHIROL_UPLOAD_URL +
+    '?tag=' + tag + '&contentType=' + encodeURIComponent('image/jpeg')
+  );
+  if (!urlRes.ok) throw new Error('アップロードURL取得失敗');
+  var urlData = await urlRes.json();
+
+  var blob = dataUrlToBlob(dataUrl);
+  var uploadRes = await fetch(urlData.uploadUrl, {
+    method: 'PUT',
+    body: blob,
+    headers: { 'Content-Type': 'image/jpeg' }
+  });
+  if (!uploadRes.ok) throw new Error('S3アップロード失敗');
+
+  return urlData.imageUrl;
+}
+
 // ========== 画像圧縮 ==========
 
 function compressImage(file, maxSize, quality) {

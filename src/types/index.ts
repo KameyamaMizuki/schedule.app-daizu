@@ -71,12 +71,17 @@ export interface FamilyPost {
   postId: string;
   userId: string;
   displayName: string;
-  text: string;
+  text: string;          // POST/YOUSU の本文。DIARY は body フィールドが優先（後方互換のため残す）
   imageUrl?: string;
   createdAt: string;
   reactions?: PostReactions;
   comments?: PostComment[];
   ttl?: number;
+  // ── 日記 v2 フィールド（body が存在すれば新形式） ──
+  body?: string;          // 日記本文 HTML（インライン画像は S3 URL）
+  title?: string;         // 日記タイトル
+  date?: string;          // 日付 YYYY-MM-DD
+  catchImageUrl?: string; // キャッチ画像 S3 URL
 }
 
 export interface CreatePostRequest {

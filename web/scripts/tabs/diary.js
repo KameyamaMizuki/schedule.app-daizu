@@ -65,12 +65,26 @@ function selectDiaryPhotoPosition(pos) {
 // renderDiaryPosts と diaryShowDetail の両方で使用
 function parseDiaryPost(post) {
   var dayNames = AppConfig.SCHEDULE.DAYS;
+
+  // ── 新形式: body フィールドが存在する ──
+  if (post.body !== undefined) {
+    var dateStr = post.date || (post.createdAt ? post.createdAt.substring(0, 10) : '');
+    var dNew = dateStr ? new Date(dateStr + 'T00:00:00') : new Date(post.createdAt);
+    return {
+      title: post.title || '',
+      dateStrShort: (dNew.getMonth() + 1) + '/' + dNew.getDate() + '(' + dayNames[dNew.getDay()] + ')',
+      dateStrLong: dNew.getFullYear() + '年' + (dNew.getMonth() + 1) + '月' + dNew.getDate() + '日(' + dayNames[dNew.getDay()] + ')',
+      textContent: post.body || '',
+      catchImgData: post.catchImageUrl || null  // S3 URL または null
+    };
+  }
+
+  // ── 旧形式: text フィールドにブラケット記法 ──
   var textContent = post.text || '';
   var title = '';
   var dateStrShort, dateStrLong;
   var catchImgData = null;
 
-  // DATE
   var dateMatch = textContent.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
   if (dateMatch) {
     var customDate = new Date(dateMatch[1] + 'T00:00:00');
@@ -83,33 +97,22 @@ function parseDiaryPost(post) {
     dateStrLong = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日(' + dayNames[d.getDay()] + ')';
   }
 
-  // TITLE
   var titleMatch = textContent.match(/^\[TITLE:([^\]]+)\]/);
   if (titleMatch) {
     title = titleMatch[1];
     textContent = textContent.replace(titleMatch[0], '');
   }
 
-  // PHOTO_POS (後方互換)
   var posMatch = textContent.match(/^\[PHOTO_POS:(top|middle|bottom)\]/);
-  if (posMatch) {
-    textContent = textContent.replace(posMatch[0], '');
-  }
+  if (posMatch) textContent = textContent.replace(posMatch[0], '');
 
-  // CATCH_IMG
   var catchImgMatch = textContent.match(/^\[CATCH_IMG:(data:[^\]]+)\]/);
   if (catchImgMatch) {
     catchImgData = catchImgMatch[1];
     textContent = textContent.replace(catchImgMatch[0], '');
   }
 
-  return {
-    title: title,
-    dateStrShort: dateStrShort,
-    dateStrLong: dateStrLong,
-    textContent: textContent,
-    catchImgData: catchImgData
-  };
+  return { title: title, dateStrShort: dateStrShort, dateStrLong: dateStrLong, textContent: textContent, catchImgData: catchImgData };
 }
 
 async function loadDiaryPosts(append) {
@@ -269,51 +272,59 @@ async function submitDiary() {
   }
 
   var btn = document.getElementById('diarySubmitBtn');
+  var originalLabel = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '投稿中...';
 
   try {
-    var finalText = htmlContent;
+    // 1. キャッチ画像をアップロード（base64 の場合のみ。S3 URL はそのまま使用）
+    btn.textContent = '画像アップロード中...';
+    var finalCatchImageUrl = null;
     if (diaryCatchImageData) {
-      finalText = '[CATCH_IMG:' + diaryCatchImageData + ']' + finalText;
+      if (diaryCatchImageData.startsWith('data:')) {
+        finalCatchImageUrl = await uploadImageToS3(diaryCatchImageData, 'diary');
+      } else {
+        finalCatchImageUrl = diaryCatchImageData; // 既に S3 URL（編集時など）
+      }
     }
-    if (title) {
-      finalText = '[TITLE:' + title + ']' + finalText;
-    }
-    if (selectedDate) {
-      finalText = '[DATE:' + selectedDate + ']' + finalText;
-    }
+
+    // 2. 本文中の base64 インライン画像を S3 にアップロード
+    var bodyHtml = await diaryUploadInlineImages(htmlContent);
+
+    btn.textContent = '投稿中...';
+
+    var editPost = diaryEditingPostId
+      ? diaryPosts.find(function(p) { return p.postId === diaryEditingPostId; })
+      : null;
+
+    var payload = {
+      type: 'DIARY',
+      displayName: getDisplayName(currentUser),
+      body: bodyHtml,
+      title: title,
+      date: selectedDate,
+      catchImageUrl: finalCatchImageUrl || ''
+    };
 
     var response;
     if (diaryEditingPostId) {
       // 編集モード: PUT
-      var editPost = diaryPosts.find(function(p) { return p.postId === diaryEditingPostId; });
       response = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + diaryEditingPostId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: finalText,
-          type: 'DIARY',
-          sk: editPost ? editPost.SK : '',
-          displayName: currentUser ? getDisplayName(currentUser) : '不明'
-        })
+        body: JSON.stringify(Object.assign({ sk: editPost ? editPost.SK : '' }, payload))
       });
     } else {
       // 新規作成: POST
       response = await fetch(API_BASE_URL + AppConfig.API.POSTS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'DIARY',
-          userId: currentUser.userId,
-          displayName: currentUser.displayName,
-          text: finalText
-        })
+        body: JSON.stringify(Object.assign({ userId: currentUser.userId }, payload))
       });
     }
 
     if (!response.ok) throw new Error(diaryEditingPostId ? '更新失敗' : '投稿失敗');
 
+    // リセット
     diaryEditingPostId = null;
     editor.innerHTML = '';
     if (titleInput) titleInput.value = '';
@@ -327,42 +338,63 @@ async function submitDiary() {
     alert((diaryEditingPostId ? '更新' : '投稿') + 'に失敗しました: ' + error.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = diaryEditingPostId ? '更新する' : '投稿する';
+    btn.textContent = originalLabel;
   }
+}
+
+/** 本文 HTML 内の base64 画像を S3 にアップロードして URL に置換 */
+async function diaryUploadInlineImages(html) {
+  var tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  var imgs = tempDiv.querySelectorAll('img[src^="data:"]');
+  for (var i = 0; i < imgs.length; i++) {
+    imgs[i].src = await uploadImageToS3(imgs[i].src, 'diary');
+  }
+  return tempDiv.innerHTML;
 }
 
 function editDiary(postId) {
   var post = diaryPosts.find(function(p) { return p.postId === postId; });
   if (!post) return;
 
-  // 投稿テキストからプレフィックスタグを解析して各フィールドに展開
-  var rawText = post.text || '';
   var editDate = '';
   var editTitle = '';
   var editCatchImg = null;
-  var editHtml = rawText;
+  var editHtml = '';
 
-  var dateMatch = editHtml.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
-  if (dateMatch) {
-    editDate = dateMatch[1];
-    editHtml = editHtml.replace(dateMatch[0], '');
+  if (post.body !== undefined) {
+    // ── 新形式 ──
+    editDate = post.date || (post.createdAt ? post.createdAt.substring(0, 10) : '');
+    editTitle = post.title || '';
+    editCatchImg = post.catchImageUrl || null;  // S3 URL または null
+    editHtml = post.body || '';
   } else {
-    editDate = post.createdAt ? post.createdAt.substring(0, 10) : '';
-  }
+    // ── 旧形式: text からパース ──
+    var rawText = post.text || '';
+    editHtml = rawText;
 
-  var titleMatch = editHtml.match(/^\[TITLE:([^\]]+)\]/);
-  if (titleMatch) {
-    editTitle = titleMatch[1];
-    editHtml = editHtml.replace(titleMatch[0], '');
-  }
+    var dateMatch = editHtml.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
+    if (dateMatch) {
+      editDate = dateMatch[1];
+      editHtml = editHtml.replace(dateMatch[0], '');
+    } else {
+      editDate = post.createdAt ? post.createdAt.substring(0, 10) : '';
+    }
 
-  var posMatch = editHtml.match(/^\[PHOTO_POS:(top|middle|bottom)\]/);
-  if (posMatch) editHtml = editHtml.replace(posMatch[0], '');
+    var titleMatch = editHtml.match(/^\[TITLE:([^\]]+)\]/);
+    if (titleMatch) {
+      editTitle = titleMatch[1];
+      editHtml = editHtml.replace(titleMatch[0], '');
+    }
 
-  var catchMatch = editHtml.match(/^\[CATCH_IMG:(data:[^\]]+)\]/);
-  if (catchMatch) {
-    editCatchImg = catchMatch[1];
-    editHtml = editHtml.replace(catchMatch[0], '');
+    var posMatch = editHtml.match(/^\[PHOTO_POS:(top|middle|bottom)\]/);
+    if (posMatch) editHtml = editHtml.replace(posMatch[0], '');
+
+    var catchMatch = editHtml.match(/^\[CATCH_IMG:(data:[^\]]+)\]/);
+    if (catchMatch) {
+      editCatchImg = catchMatch[1];  // base64（旧形式）— 更新時に S3 にアップロードされる
+      editHtml = editHtml.replace(catchMatch[0], '');
+    }
   }
 
   // フォームに値をセット
