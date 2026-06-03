@@ -6,12 +6,14 @@ on:
       - main
 
 # 必要な GitHub Secrets:
-#   ADMIN_USER_ID - LINE の管理者ユーザーID
+#   AWS_ACCESS_KEY_ID     - デプロイ用 IAM ユーザーのアクセスキー
+#   AWS_SECRET_ACCESS_KEY - デプロイ用 IAM ユーザーのシークレットキー
 #
-# AWS 認証は OIDC で行う（IAM キー不要）
-# 事前に以下を手動作成すること:
-#   1. IAM OIDC Identity Provider: token.actions.githubusercontent.com
+# TODO: OIDC 移行時は以下を実施
+#   1. IAM OIDC Identity Provider: token.actions.githubusercontent.com を作成
 #   2. IAM Role: github-actions-family-schedule-kame（リポジトリの trust policy を付与）
+#   3. AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY を削除
+#   4. Configure AWS credentials を role-to-assume 方式に変更
 
 env:
   AWS_REGION: ap-northeast-1
@@ -21,9 +23,6 @@ jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Checkout
@@ -44,21 +43,43 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::982312822872:role/github-actions-family-schedule-kame
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install SAM CLI
-        run: pip install aws-sam-cli
-
-      - name: Deploy with SAM
+      # Lambda 関数を個別に更新（ZIP → update-function-code）
+      - name: Package & Deploy Lambda functions
         run: |
-          sam deploy \
-            --config-file samconfig.toml \
-            --parameter-overrides \
-              "LineSecretName=line/credentials-kame" \
-              "AdminUserId=${{ secrets.ADMIN_USER_ID }}" \
-            --no-confirm-changeset \
-            --no-fail-on-empty-changeset
+          set -e
+          mkdir -p /tmp/lambda-zips
+
+          FUNCTIONS=(
+            "family-schedule-webhook-kame:handlers/webhook.js"
+            "family-schedule-submit-kame:handlers/schedule-submit.js"
+            "family-schedule-get-kame:handlers/schedule-get.js"
+            "family-schedule-week-get-kame:handlers/schedule-week-get.js"
+            "family-schedule-weekly-reminder-kame:handlers/weekly-reminder.js"
+            "chirol-hitokoto-kame:handlers/chirol-hitokoto.js"
+            "chirol-image-kame:handlers/chirol-image.js"
+            "post-get-kame:handlers/post-get.js"
+            "post-save-kame:handlers/post-save.js"
+            "wannade-save-kame:handlers/wannade-save.js"
+          )
+
+          for entry in "${FUNCTIONS[@]}"; do
+            FUNC_NAME="${entry%%:*}"
+            HANDLER_FILE="${entry##*:}"
+            ZIP_PATH="/tmp/lambda-zips/${FUNC_NAME}.zip"
+
+            (cd dist && zip "$ZIP_PATH" "${HANDLER_FILE}")
+
+            echo "Deploying ${FUNC_NAME}..."
+            aws lambda update-function-code \
+              --function-name "$FUNC_NAME" \
+              --zip-file "fileb://${ZIP_PATH}" \
+              --no-cli-pager \
+              --output text
+          done
 
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3
