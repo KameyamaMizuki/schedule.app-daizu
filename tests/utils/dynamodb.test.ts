@@ -22,8 +22,8 @@ describe('togglePostLike', () => {
     expect(result).toBe(true);
     expect(sendSpy).toHaveBeenCalledTimes(2);
     const updateInput = (sendSpy.mock.calls[1][0] as any).input;
-    expect(updateInput.ExpressionAttributeValues[':newLikes']).toContain('user2');
-    expect(updateInput.ExpressionAttributeValues[':newLikes']).toContain('user1');
+    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toContain('user2');
+    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toContain('user1');
   });
 
   it('liked のとき userId を likes から削除して false を返す', async () => {
@@ -35,7 +35,7 @@ describe('togglePostLike', () => {
 
     expect(result).toBe(false);
     const updateInput = (sendSpy.mock.calls[1][0] as any).input;
-    expect(updateInput.ExpressionAttributeValues[':newLikes']).toEqual(['user2']);
+    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toEqual(['user2']);
   });
 
   it('ConditionalCheckFailedException でリトライして成功する', async () => {

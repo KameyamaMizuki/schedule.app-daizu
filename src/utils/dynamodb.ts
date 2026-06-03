@@ -202,11 +202,14 @@ export async function togglePostLike(
       await docClient.send(new UpdateCommand({
         TableName: TABLES.familyPosts,
         Key: { PK: type, SK: sk },
-        UpdateExpression: 'SET reactions.#like = :newLikes',
+        UpdateExpression: 'SET reactions = :newReactions',
         ConditionExpression:
-          'reactions.#like = :currentLikes OR attribute_not_exists(reactions.#like)',
+          'reactions.#like = :currentLikes OR attribute_not_exists(reactions)',
         ExpressionAttributeNames: { '#like': 'like' },
-        ExpressionAttributeValues: { ':newLikes': newLikes, ':currentLikes': currentLikes }
+        ExpressionAttributeValues: {
+          ':newReactions': { like: newLikes },
+          ':currentLikes': currentLikes
+        }
       }));
       return !isLiked;
     } catch (e: any) {
