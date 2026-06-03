@@ -6,13 +6,23 @@
  *   lastKey: ページネーションキー（前回レスポンスの lastEvaluatedKey を JSON エンコードして渡す）
  */
 
-import { PostType } from '../types';
+import { z } from 'zod';
+import type { PostType } from '../types';
 import { getPostsByType } from '../utils/dynamodb';
-import { withHandler, ok } from '../utils/handler';
+import { withHandler, ok, err } from '../utils/handler';
+
+const TypeSchema = z.enum(['POST', 'DIARY', 'YOUSU']);
 
 export const handler = withHandler(async (event) => {
   const params = event.queryStringParameters || {};
-  const type: PostType = (params.type as PostType) || 'POST';
+
+  const rawType = params.type ?? 'POST';
+  const typeParsed = TypeSchema.safeParse(rawType);
+  if (!typeParsed.success) {
+    return err('type は POST/DIARY/YOUSU のいずれかを指定してください');
+  }
+  const type: PostType = typeParsed.data;
+
   const limit = Math.min(parseInt(params.limit || '50', 10), 100);
 
   // ページネーションキーのデコード（あれば）

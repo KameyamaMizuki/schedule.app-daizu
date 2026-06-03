@@ -56,8 +56,7 @@ export async function getAllScheduleInputs(weekId: string): Promise<ScheduleInpu
   const result = await docClient.send(new QueryCommand({
     TableName: TABLES.scheduleInputs,
     KeyConditionExpression: 'weekId = :weekId',
-    ExpressionAttributeValues: { ':weekId': weekId },
-    ConsistentRead: true
+    ExpressionAttributeValues: { ':weekId': weekId }
   }));
 
   return (result.Items as ScheduleInput[]) || [];
