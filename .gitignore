@@ -35,7 +35,7 @@ npm-debug.log*
 Thumbs.db
 
 # SAM
-samconfig.toml
+# samconfig.toml はチームで共有するため git 管理する
 packaged.yaml
 
 # Lambda packages
