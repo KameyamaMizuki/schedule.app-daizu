@@ -23,7 +23,7 @@ esbuild.build({
   entryPoints,
   bundle: true,
   platform: 'node',
-  target: 'node20',
+  target: 'node22',
   outdir,
   // AWS SDK v3 は Lambda Node.js 20 実行環境に同梱済み
   external: ['@aws-sdk/*'],
