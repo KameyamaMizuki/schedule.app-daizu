@@ -6,11 +6,12 @@
  * DELETE /chirol/hitokoto - 一言を削除
  */
 
-import { QueryCommand, PutCommand, DeleteCommand, GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, PutCommand, DeleteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
 import { docClient } from '../utils/dynamodb';
 import { withHandler, ok, err } from '../utils/handler';
 import { DB_KEYS, TEXT_LIMITS } from '../utils/constants';
+import { toggleLike, addComment, deleteComment } from '../utils/reactions';
 
 const TABLE_NAME = process.env.TABLE_CHIROL_DATA || 'ChirolData-kame';
 
@@ -61,14 +62,7 @@ export const handler = withHandler(async (event) => {
       const key = { PK: pk, SK: `${DB_KEYS.HITOKOTO_PREFIX}${hitokotoId}` };
       const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
       if (!existing.Item) return err('Hitokoto not found', 404);
-      const likes: string[] = existing.Item.likes || [];
-      const idx = likes.indexOf(userId);
-      if (idx === -1) likes.push(userId); else likes.splice(idx, 1);
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME, Key: key,
-        UpdateExpression: 'SET likes = :likes',
-        ExpressionAttributeValues: { ':likes': likes }
-      }));
+      const likes = await toggleLike(TABLE_NAME, key, String(userId));
       return ok({ likes });
     }
 
@@ -76,14 +70,10 @@ export const handler = withHandler(async (event) => {
     if (body.action === 'addComment') {
       const { hitokotoId, userId, userName, text } = body;
       if (!hitokotoId || !userId || !text) return err('hitokotoId, userId, text は必須です');
-      const commentId = `c_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-      const comment = { id: commentId, userId, userName: userName || '', text: String(text).trim(), createdAt: new Date().toISOString() };
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME,
-        Key: { PK: pk, SK: `${DB_KEYS.HITOKOTO_PREFIX}${hitokotoId}` },
-        UpdateExpression: 'SET comments = list_append(if_not_exists(comments, :empty), :c)',
-        ExpressionAttributeValues: { ':c': [comment], ':empty': [] }
-      }));
+      const key = { PK: pk, SK: `${DB_KEYS.HITOKOTO_PREFIX}${hitokotoId}` };
+      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
+      if (!existing.Item) return err('Hitokoto not found', 404);
+      const comment = await addComment(TABLE_NAME, key, { userId: String(userId), userName: String(userName ?? ''), text: String(text) });
       return ok({ comment });
     }
 
@@ -113,14 +103,11 @@ export const handler = withHandler(async (event) => {
       const { hitokotoId, commentId } = body;
       if (!hitokotoId) return err('hitokotoId は必須です');
       const key = { PK: pk, SK: `${DB_KEYS.HITOKOTO_PREFIX}${hitokotoId}` };
-      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
-      if (!existing.Item) return err('Hitokoto not found', 404);
-      const comments = (existing.Item.comments || []).filter((c: { id: string }) => c.id !== commentId);
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME, Key: key,
-        UpdateExpression: 'SET comments = :comments',
-        ExpressionAttributeValues: { ':comments': comments }
-      }));
+      try {
+        await deleteComment(TABLE_NAME, key, String(commentId));
+      } catch {
+        return err('Hitokoto not found', 404);
+      }
       return ok({ success: true });
     }
 

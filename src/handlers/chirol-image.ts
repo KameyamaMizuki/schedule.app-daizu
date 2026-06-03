@@ -10,7 +10,7 @@
  * メタデータのみDynamoDBに保存
  */
 
-import { QueryCommand, PutCommand, GetCommand, DeleteCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, PutCommand, GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { docClient } from '../utils/dynamodb';
 import { withHandler, ok, err } from '../utils/handler';
 import { DB_KEYS } from '../utils/constants';
+import { toggleLike, addComment, deleteComment } from '../utils/reactions';
 
 const s3Client = new S3Client({});
 
@@ -107,14 +108,7 @@ export const handler = withHandler(async (event) => {
       const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
       const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
       if (!existing.Item) return err('Image not found', 404);
-      const likes: string[] = existing.Item.likes || [];
-      const idx = likes.indexOf(userId);
-      if (idx === -1) likes.push(userId); else likes.splice(idx, 1);
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME, Key: key,
-        UpdateExpression: 'SET likes = :likes',
-        ExpressionAttributeValues: { ':likes': likes }
-      }));
+      const likes = await toggleLike(TABLE_NAME, key, String(userId));
       return ok({ likes });
     }
 
@@ -122,14 +116,10 @@ export const handler = withHandler(async (event) => {
     if (body.action === 'addComment') {
       const { imageId, userId, userName, text } = body;
       if (!imageId || !userId || !text) return err('imageId, userId, text は必須です');
-      const commentId = `c_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-      const comment = { id: commentId, userId, userName: userName || '', text: String(text).trim(), createdAt: new Date().toISOString() };
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME,
-        Key: { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` },
-        UpdateExpression: 'SET comments = list_append(if_not_exists(comments, :empty), :c)',
-        ExpressionAttributeValues: { ':c': [comment], ':empty': [] }
-      }));
+      const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
+      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
+      if (!existing.Item) return err('Image not found', 404);
+      const comment = await addComment(TABLE_NAME, key, { userId: String(userId), userName: String(userName ?? ''), text: String(text) });
       return ok({ comment });
     }
 
@@ -159,14 +149,11 @@ export const handler = withHandler(async (event) => {
       const { imageId, commentId } = body;
       if (!imageId) return err('imageId は必須です');
       const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
-      const existing = await docClient.send(new GetCommand({ TableName: TABLE_NAME, Key: key }));
-      if (!existing.Item) return err('Image not found', 404);
-      const comments = (existing.Item.comments || []).filter((c: { id: string }) => c.id !== commentId);
-      await docClient.send(new UpdateCommand({
-        TableName: TABLE_NAME, Key: key,
-        UpdateExpression: 'SET comments = :comments',
-        ExpressionAttributeValues: { ':comments': comments }
-      }));
+      try {
+        await deleteComment(TABLE_NAME, key, String(commentId));
+      } catch {
+        return err('Image not found', 404);
+      }
       return ok({ success: true });
     }
 
