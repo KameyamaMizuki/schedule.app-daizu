@@ -35,6 +35,16 @@ Parameters:
     Description: Comma-separated list of family member userIds
     Default: ""
 
+  S3BucketName:
+    Type: String
+    Default: family-schedule-web-kame-982312822872
+    Description: S3 bucket name for the static website
+
+  AdminUserId:
+    Type: String
+    Default: ""
+    Description: LINE userId of the admin user (used by schedule-get for isAdmin check)
+
 Globals:
   Function:
     Runtime: nodejs20.x
