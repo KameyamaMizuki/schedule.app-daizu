@@ -6,18 +6,24 @@ on:
       - main
 
 # 必要な GitHub Secrets:
-#   AWS_ACCESS_KEY_ID     - デプロイ用 IAM ユーザーのアクセスキー
-#   AWS_SECRET_ACCESS_KEY - デプロイ用 IAM ユーザーのシークレットキー
+#   ADMIN_USER_ID - LINE の管理者ユーザーID
+#
+# AWS 認証は OIDC で行う（IAM キー不要）
+# 事前に以下を手動作成すること:
+#   1. IAM OIDC Identity Provider: token.actions.githubusercontent.com
+#   2. IAM Role: github-actions-family-schedule-kame（リポジトリの trust policy を付与）
 
 env:
   AWS_REGION: ap-northeast-1
   S3_BUCKET: family-schedule-web-kame-982312822872
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
     name: Build & Deploy
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -26,7 +32,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -38,46 +44,21 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::982312822872:role/github-actions-family-schedule-kame
           aws-region: ${{ env.AWS_REGION }}
 
-      # Lambda 関数を個別に更新（ZIP → update-function-code）
-      # SAM deploy は使用不可のため直接更新
-      - name: Package & Deploy Lambda functions
+      - name: Install SAM CLI
+        run: pip install aws-sam-cli
+
+      - name: Deploy with SAM
         run: |
-          set -e
-          mkdir -p /tmp/lambda-zips
-
-          FUNCTIONS=(
-            "family-schedule-webhook-kame:handlers/webhook.js"
-            "family-schedule-submit-kame:handlers/schedule-submit.js"
-            "family-schedule-get-kame:handlers/schedule-get.js"
-            "family-schedule-week-get-kame:handlers/schedule-week-get.js"
-            "family-schedule-weekly-reminder-kame:handlers/weekly-reminder.js"
-            "chirol-hitokoto-kame:handlers/chirol-hitokoto.js"
-            "chirol-image-kame:handlers/chirol-image.js"
-            "post-get-kame:handlers/post-get.js"
-            "post-save-kame:handlers/post-save.js"
-            "wannade-save-kame:handlers/wannade-save.js"
-          )
-
-          for entry in "${FUNCTIONS[@]}"; do
-            FUNC_NAME="${entry%%:*}"
-            HANDLER_FILE="${entry##*:}"
-            ZIP_PATH="/tmp/lambda-zips/${FUNC_NAME}.zip"
-
-            # dist/ ディレクトリ内から zip 化してパス構造を保持する（handlers/xxx.js）
-            # -j (junk paths) は使わない → Lambda が handlers/xxx.handler を解決できるよう保持
-            (cd dist && zip "$ZIP_PATH" "${HANDLER_FILE}")
-
-            echo "Deploying ${FUNC_NAME}..."
-            aws lambda update-function-code \
-              --function-name "$FUNC_NAME" \
-              --zip-file "fileb://${ZIP_PATH}" \
-              --no-cli-pager \
-              --output text
-          done
+          sam deploy \
+            --config-file samconfig.toml \
+            --parameter-overrides \
+              "LineSecretName=line/credentials-kame" \
+              "AdminUserId=${{ secrets.ADMIN_USER_ID }}" \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
 
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3
@@ -105,4 +86,4 @@ jobs:
             --no-cli-pager
 
       - name: Deploy complete
-        run: echo "✅ Deploy complete. Lambda functions and S3 assets updated."
+        run: echo "Deploy complete. Lambda functions and S3 assets updated."
