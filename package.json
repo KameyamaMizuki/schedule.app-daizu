@@ -22,7 +22,7 @@
     "@aws-sdk/lib-dynamodb": "^3.971.0",
     "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@types/aws-lambda": "^8.10.145",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.0",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
