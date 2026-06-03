@@ -35,8 +35,12 @@ npm-debug.log*
 Thumbs.db
 
 # SAM
-# samconfig.toml はチームで共有するため git 管理する
+samconfig.toml
 packaged.yaml
+
+# Superpowers / Claude Code internal tooling
+.superpowers/
+docs/superpowers/
 
 # Lambda packages
 *.zip
