@@ -10,7 +10,7 @@
  *     常に最新データを取得。失敗時のみキャッシュを使用。
  */
 
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const CACHE_NAME = `app-${CACHE_VERSION}`;
 
 // インストール: 即座に有効化
@@ -37,6 +37,11 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (!url.protocol.startsWith('http')) return;
+
+  // presigned URL 発行エンドポイントはキャッシュ禁止（有効期限 300 秒のため）
+  if (url.pathname.includes('/chirol/upload-url')) {
+    return; // Service Worker をバイパスしてブラウザに直接リクエストさせる
+  }
 
   // API リクエストは Network First（常に最新データ）
   if (url.hostname.includes('execute-api.amazonaws.com')) {

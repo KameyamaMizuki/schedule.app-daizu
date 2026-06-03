@@ -61,7 +61,6 @@ export const handler = withHandler(async (event) => {
       Bucket: BUCKET_NAME,
       Key: s3Key,
       ContentType: contentType,
-      CacheControl: 'max-age=31536000'
     });
 
     const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: PRESIGNED_URL_EXPIRES });
