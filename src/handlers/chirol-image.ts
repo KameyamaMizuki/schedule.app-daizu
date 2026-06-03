@@ -151,8 +151,9 @@ export const handler = withHandler(async (event) => {
       const key = { PK: DB_KEYS.CHIROL, SK: `${DB_KEYS.IMAGE_PREFIX}${imageId}` };
       try {
         await deleteComment(TABLE_NAME, key, String(commentId));
-      } catch {
-        return err('Image not found', 404);
+      } catch (e: any) {
+        if (e.message === 'Item not found') return err('Image not found', 404);
+        throw e;
       }
       return ok({ success: true });
     }

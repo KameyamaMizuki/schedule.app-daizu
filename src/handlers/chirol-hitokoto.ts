@@ -105,8 +105,9 @@ export const handler = withHandler(async (event) => {
       const key = { PK: pk, SK: `${DB_KEYS.HITOKOTO_PREFIX}${hitokotoId}` };
       try {
         await deleteComment(TABLE_NAME, key, String(commentId));
-      } catch {
-        return err('Hitokoto not found', 404);
+      } catch (e: any) {
+        if (e.message === 'Item not found') return err('Hitokoto not found', 404);
+        throw e;
       }
       return ok({ success: true });
     }
