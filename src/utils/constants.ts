@@ -5,7 +5,9 @@
 /**
  * S3静的ウェブサイトのベースURL
  */
-export const S3_BASE_URL = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
+export const S3_BASE_URL =
+  process.env.S3_BASE_URL ||
+  'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
 
 /**
  * ダッシュボードURL生成
