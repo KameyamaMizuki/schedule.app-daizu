@@ -179,43 +179,42 @@ export async function deletePost(type: PostType, sk: string): Promise<void> {
   }));
 }
 
-export async function addPostReaction(type: PostType, sk: string, userId: string): Promise<void> {
-  // まず reactions オブジェクトが存在しない場合に初期化
-  await docClient.send(new UpdateCommand({
-    TableName: TABLES.familyPosts,
-    Key: { PK: type, SK: sk },
-    UpdateExpression: 'SET reactions = if_not_exists(reactions, :emptyReactions)',
-    ExpressionAttributeValues: {
-      ':emptyReactions': { like: [] }
+/**
+ * like をトグル（楽観的ロック付き）。返り値は操作後の liked 状態。
+ * ConditionalCheckFailedException 時は最大 3 回リトライ。
+ */
+export async function togglePostLike(
+  type: PostType,
+  sk: string,
+  userId: string
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const post = await getPost(type, sk);
+    if (!post) throw new Error('Post not found');
+
+    const currentLikes = post.reactions?.like ?? [];
+    const isLiked = currentLikes.includes(userId);
+    const newLikes = isLiked
+      ? currentLikes.filter(id => id !== userId)
+      : [...currentLikes, userId];
+
+    try {
+      await docClient.send(new UpdateCommand({
+        TableName: TABLES.familyPosts,
+        Key: { PK: type, SK: sk },
+        UpdateExpression: 'SET reactions.#like = :newLikes',
+        ConditionExpression:
+          'reactions.#like = :currentLikes OR attribute_not_exists(reactions.#like)',
+        ExpressionAttributeNames: { '#like': 'like' },
+        ExpressionAttributeValues: { ':newLikes': newLikes, ':currentLikes': currentLikes }
+      }));
+      return !isLiked;
+    } catch (e: any) {
+      if (e.name !== 'ConditionalCheckFailedException') throw e;
+      // ConditionalCheckFailedException: continue to next attempt or exhaust retries
     }
-  }));
-
-  // like リストに追加
-  await docClient.send(new UpdateCommand({
-    TableName: TABLES.familyPosts,
-    Key: { PK: type, SK: sk },
-    UpdateExpression: 'SET reactions.#like = list_append(if_not_exists(reactions.#like, :empty), :user)',
-    ExpressionAttributeNames: { '#like': 'like' },
-    ExpressionAttributeValues: {
-      ':user': [userId],
-      ':empty': []
-    }
-  }));
-}
-
-export async function removePostReaction(type: PostType, sk: string, userId: string): Promise<void> {
-  // まず現在のリアクションを取得
-  const post = await getPost(type, sk);
-  if (!post?.reactions?.like) return;
-
-  const newLikes = post.reactions.like.filter(id => id !== userId);
-  await docClient.send(new UpdateCommand({
-    TableName: TABLES.familyPosts,
-    Key: { PK: type, SK: sk },
-    UpdateExpression: 'SET reactions.#like = :likes',
-    ExpressionAttributeNames: { '#like': 'like' },
-    ExpressionAttributeValues: { ':likes': newLikes }
-  }));
+  }
+  throw new Error('Failed to toggle like after 3 retries');
 }
 
 export async function addPostComment(

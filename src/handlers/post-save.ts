@@ -13,8 +13,7 @@ import {
   getPost,
   updatePost,
   deletePost,
-  addPostReaction,
-  removePostReaction,
+  togglePostLike,
   addPostComment,
   getSystemConfig
 } from '../utils/dynamodb';
@@ -220,16 +219,13 @@ export const handler = withHandler(async (event) => {
     if (!parsed.success) return err(parsed.error.issues[0].message);
 
     const { userId, type, sk } = parsed.data;
-    const post = await getPost(type, sk);
-    if (!post) return err('Post not found', 404);
-
-    const isLiked = post.reactions?.like?.includes(userId);
-    if (isLiked) {
-      await removePostReaction(type, sk, userId);
-    } else {
-      await addPostReaction(type, sk, userId);
+    try {
+      const liked = await togglePostLike(type, sk, userId);
+      return ok({ liked });
+    } catch (e: any) {
+      if (e.message === 'Post not found') return err('Post not found', 404);
+      throw e;
     }
-    return ok({ liked: !isLiked });
   }
 
   // POST /posts/:postId/comment - コメント追加
