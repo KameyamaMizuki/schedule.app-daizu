@@ -173,16 +173,10 @@ function renderDiaryPosts() {
       + '<span class="diary-entry-author">' + escapeHtml(displayName) + '</span>'
       + '</div>'
       + (parsed.title ? '<div class="diary-entry-title">' + escapeHtml(parsed.title) + '</div>' : '')
-      + (function() {
-          var plain = sanitizedText.replace(/<[^>]+>/g, '').trim();
-          if (plain.length > 100) {
-            return '<div class="diary-text-wrapper collapsed" id="diary-text-wrap-' + post.postId + '" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">'
-              + '<div class="diary-entry-text">' + sanitizedText + '</div>'
-              + '<div class="diary-text-fade"><span class="diary-expand-label">もっと見る ▼</span></div>'
-              + '</div>';
-          }
-          return '<div class="diary-entry-text">' + sanitizedText + '</div>';
-        })()
+      + '<div class="diary-text-wrapper collapsed" id="diary-text-wrap-' + post.postId + '" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">'
+      + '<div class="diary-entry-text">' + sanitizedText + '</div>'
+      + '<div class="diary-text-fade" id="diary-text-fade-' + post.postId + '"><span class="diary-expand-label">もっと見る ▼</span></div>'
+      + '</div>'
       + '<div class="diary-entry-actions">'
       + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
@@ -204,9 +198,25 @@ function renderDiaryPosts() {
 
   container.innerHTML = html;
 
-  // 折りたたみ中のエントリ内の画像を非表示（sanitizeDiaryHtml が inline style を設定するため JS で上書き）
+  // 折りたたみ中のエントリ内の画像を非表示
   container.querySelectorAll('.diary-text-wrapper.collapsed .diary-entry-text img').forEach(function(img) {
     img.style.display = 'none';
+  });
+
+  // コンテナが visible なら: はみ出していない投稿の collapsed を解除
+  requestAnimationFrame(function() {
+    diaryPosts.forEach(function(post) {
+      var wrapper = document.getElementById('diary-text-wrap-' + post.postId);
+      if (!wrapper || wrapper.scrollHeight === 0) return; // 非表示なら skip
+      var fadeEl = document.getElementById('diary-text-fade-' + post.postId);
+      if (wrapper.scrollHeight <= 122) {
+        // コンテンツが収まっている → 折りたたみ不要
+        wrapper.classList.remove('collapsed');
+        wrapper.removeAttribute('onclick');
+        if (fadeEl) fadeEl.style.display = 'none';
+        wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'block'; });
+      }
+    });
   });
 }
 
