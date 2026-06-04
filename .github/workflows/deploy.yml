@@ -77,13 +77,16 @@ jobs:
               --output text
           done
 
-      # SW バージョンを git hash に自動置換（手動更新不要）
-      - name: Inject SW version
+      # SW バージョンとバンドル参照を git hash で自動更新（キャッシュバスト）
+      - name: Inject SW version and cache-bust bundle refs
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
-          sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" web/home.html
-          sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" web/dashboard.html
-          echo "SW version → ${GIT_HASH}"
+          for f in web/home.html web/dashboard.html; do
+            sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" "$f"
+            sed -i "s|\.bundle\.js[^\"']*|.bundle.js?v=${GIT_HASH}|g" "$f"
+            sed -i "s|\.bundle\.css[^\"']*|.bundle.css?v=${GIT_HASH}|g" "$f"
+          done
+          echo "SW version + bundle refs → ${GIT_HASH}"
 
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3

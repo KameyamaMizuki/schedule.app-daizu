@@ -177,7 +177,7 @@ function renderDiaryPosts() {
       + '<div class="diary-entry-text">' + sanitizedText + '</div>'
       + '<div class="diary-text-fade" id="diary-text-fade-' + post.postId + '"><span class="diary-expand-label">もっと見る ▼</span></div>'
       + '</div>'
-      + '<button class="diary-close-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</button>'
+      + '<div class="diary-close-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</div>'
       + '<div class="diary-entry-actions">'
       + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
