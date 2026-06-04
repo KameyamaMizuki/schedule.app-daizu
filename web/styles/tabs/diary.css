@@ -8,8 +8,10 @@
 .diary-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0ebe6}
 .diary-entry-date{font-weight:700;font-size:15px;color:#8d6e63}
 .diary-entry-author{font-size:13px;color:#a1887f;background:#f5f0eb;padding:4px 10px;border-radius:12px}
-.diary-entry-text{font-size:15px;color:#333;line-height:1.7;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
-.diary-entry .diary-entry-text img{display:none}
+.diary-entry-text{font-size:15px;color:#333;line-height:1.7}
+.diary-entry-text.collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.diary-expand-btn{width:100%;background:none;border:none;color:#8d6e63;font-size:13px;padding:6px 0 2px;cursor:pointer;text-align:center;font-weight:600;letter-spacing:.3px}
+.diary-expand-btn:active{opacity:.6}
 .diary-entry-actions{display:flex;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid #f0ebe6;font-size:13px;color:#8d6e63}
 .diary-entry-action{cursor:pointer;padding:6px 12px;border-radius:16px;background:#f5f0eb;transition:background 0.2s}
 .diary-entry-action:hover{background:#ebe5de}

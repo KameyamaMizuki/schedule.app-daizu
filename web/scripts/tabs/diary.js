@@ -173,7 +173,8 @@ function renderDiaryPosts() {
       + '<span class="diary-entry-author">' + escapeHtml(displayName) + '</span>'
       + '</div>'
       + (parsed.title ? '<div class="diary-entry-title">' + escapeHtml(parsed.title) + '</div>' : '')
-      + '<div class="diary-entry-text">' + sanitizedText + '</div>'
+      + '<div class="diary-entry-text collapsed" id="diary-text-' + post.postId + '">' + sanitizedText + '</div>'
+      + '<button class="diary-expand-btn" id="diary-expand-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">もっと見る ▼</button>'
       + '<div class="diary-entry-actions">'
       + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
@@ -194,6 +195,30 @@ function renderDiaryPosts() {
   }
 
   container.innerHTML = html;
+
+  // 長いエントリのみ「もっと見る」ボタンを表示し、画像を折りたたみ時は非表示にする
+  diaryPosts.forEach(function(post) {
+    var textEl = document.getElementById('diary-text-' + post.postId);
+    var btnEl = document.getElementById('diary-expand-' + post.postId);
+    if (!textEl || !btnEl) return;
+    textEl.querySelectorAll('img').forEach(function(img) { img.style.display = 'none'; });
+    if (textEl.scrollHeight > textEl.clientHeight) {
+      btnEl.style.display = 'block';
+    }
+  });
+}
+
+function toggleDiaryExpand(postId) {
+  var textEl = document.getElementById('diary-text-' + postId);
+  var btnEl = document.getElementById('diary-expand-' + postId);
+  if (!textEl || !btnEl) return;
+  var expanding = textEl.classList.contains('collapsed');
+  textEl.classList.toggle('collapsed', !expanding);
+  textEl.classList.toggle('expanded', expanding);
+  textEl.querySelectorAll('img').forEach(function(img) {
+    img.style.display = expanding ? 'block' : 'none';
+  });
+  btnEl.textContent = expanding ? '閉じる ▲' : 'もっと見る ▼';
 }
 
 async function loadMoreDiaryPosts() {
