@@ -177,6 +177,7 @@ function renderDiaryPosts() {
       + '<div class="diary-entry-text">' + sanitizedText + '</div>'
       + '<div class="diary-text-fade" id="diary-text-fade-' + post.postId + '"><span class="diary-expand-label">もっと見る ▼</span></div>'
       + '</div>'
+      + '<button class="diary-close-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</button>'
       + '<div class="diary-entry-actions">'
       + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
@@ -222,13 +223,26 @@ function renderDiaryPosts() {
 
 function toggleDiaryExpand(postId) {
   var wrapper = document.getElementById('diary-text-wrap-' + postId);
+  var fadeEl = document.getElementById('diary-text-fade-' + postId);
+  var closeBtn = document.getElementById('diary-close-' + postId);
   if (!wrapper) return;
-  wrapper.classList.remove('collapsed');
-  wrapper.removeAttribute('onclick');
-  // 展開後は画像を表示
-  wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) {
-    img.style.display = 'block';
-  });
+
+  var isCollapsed = wrapper.classList.contains('collapsed');
+  if (isCollapsed) {
+    // 展開
+    wrapper.classList.remove('collapsed');
+    wrapper.removeAttribute('onclick');
+    if (fadeEl) fadeEl.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'block';
+    wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'block'; });
+  } else {
+    // 折りたたむ
+    wrapper.classList.add('collapsed');
+    wrapper.setAttribute('onclick', 'event.stopPropagation();toggleDiaryExpand(\'' + postId + '\')');
+    if (fadeEl) fadeEl.style.display = '';
+    if (closeBtn) closeBtn.style.display = 'none';
+    wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'none'; });
+  }
 }
 
 async function loadMoreDiaryPosts() {
