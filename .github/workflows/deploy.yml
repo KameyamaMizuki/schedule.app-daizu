@@ -77,16 +77,19 @@ jobs:
               --output text
           done
 
-      # SW バージョンとバンドル参照を git hash で自動更新（キャッシュバスト）
-      - name: Inject SW version and cache-bust bundle refs
+      # git hash を各所に注入（キャッシュバスト）
+      - name: Inject git hash for cache busting
         run: |
           GIT_HASH=$(git rev-parse --short HEAD)
+          # sw.js の CACHE_VERSION を更新（最重要: ブラウザが sw.js の変化を検知して古いキャッシュを削除する）
+          sed -i "s/const CACHE_VERSION = '[^']*'/const CACHE_VERSION = '${GIT_HASH}'/g" web/sw.js
+          # HTML の APP_SW_VERSION とバンドル参照を更新（バックアップ機構）
           for f in web/home.html web/dashboard.html; do
             sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" "$f"
             sed -i "s|\.bundle\.js[^\"']*|.bundle.js?v=${GIT_HASH}|g" "$f"
             sed -i "s|\.bundle\.css[^\"']*|.bundle.css?v=${GIT_HASH}|g" "$f"
           done
-          echo "SW version + bundle refs → ${GIT_HASH}"
+          echo "Cache bust → ${GIT_HASH}"
 
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3
@@ -103,13 +106,13 @@ jobs:
             --cache-control "public, max-age=31536000, immutable" \
             --no-cli-pager
 
-          # HTML は短期キャッシュ
+          # HTML は常に最新を返す（no-cache = 毎回サーバー確認、SW版バージョン検知のため）
           aws s3 cp web/home.html s3://${{ env.S3_BUCKET }}/home.html \
-            --cache-control "public, max-age=300" \
+            --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8" \
             --no-cli-pager
           aws s3 cp web/dashboard.html s3://${{ env.S3_BUCKET }}/dashboard.html \
-            --cache-control "public, max-age=300" \
+            --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8" \
             --no-cli-pager
 
