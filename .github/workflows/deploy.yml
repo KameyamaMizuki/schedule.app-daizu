@@ -90,7 +90,7 @@ jobs:
         run: |
           aws s3 sync web/ s3://${{ env.S3_BUCKET }}/ \
             --delete \
-            --cache-control "public, max-age=86400" \
+            --cache-control "no-cache" \
             --exclude "images/*" \
             --exclude "chirol-images/*" \
             --no-cli-pager
