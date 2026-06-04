@@ -371,7 +371,7 @@
     (async function() {
       if (!('serviceWorker' in navigator)) return;
 
-      var APP_SW_VERSION = 'v16';
+      var APP_SW_VERSION = 'v17';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();
