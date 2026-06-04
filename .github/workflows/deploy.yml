@@ -77,6 +77,14 @@ jobs:
               --output text
           done
 
+      # SW バージョンを git hash に自動置換（手動更新不要）
+      - name: Inject SW version
+        run: |
+          GIT_HASH=$(git rev-parse --short HEAD)
+          sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" web/home.html
+          sed -i "s/var APP_SW_VERSION = '[^']*'/var APP_SW_VERSION = '${GIT_HASH}'/g" web/dashboard.html
+          echo "SW version → ${GIT_HASH}"
+
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3
         run: |
