@@ -99,3 +99,14 @@ export interface PostCommentRequest {
   displayName: string;
   text: string;
 }
+
+export interface AccountSettings {
+  userId: string;
+  displayName: string;
+  avatarType: 'photo' | 'emoji';
+  avatarUrl?: string;
+  avatarEmoji?: string;
+  birthday?: string;
+  pinHash?: string;
+  updatedAt: string;
+}
