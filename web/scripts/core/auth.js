@@ -6,6 +6,14 @@
  * dashboard.page.js / home.page.js の init() から呼ぶ
  */
 async function initAuth() {
+  // LINEトークン（?token=）があれば自動ログイン
+  var urlToken = new URLSearchParams(window.location.search).get('token');
+  if (urlToken) {
+    var ok = await _authByLineToken(urlToken);
+    if (ok) return;
+    // トークン無効なら通常フローへ
+  }
+
   // LIFF IDが未設定の場合はPINフローへ（LIFFアプリ未設定時のフォールバック）
   if (!LIFF_ID || LIFF_ID === 'LIFF_ID_PLACEHOLDER') {
     return _tryPcSession();
@@ -26,6 +34,32 @@ async function initAuth() {
 
   // 3. ブラウザでLIFF SDKが使えるがLIFF Client外（PCブラウザ等）
   return _tryPcSession();
+}
+
+/** LINEトークンで自動ログイン */
+async function _authByLineToken(token) {
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT + '/auth/line-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token })
+    });
+    var data = await res.json();
+    if (data.success && data.account) {
+      var member = familyMembers.find(function(m) { return m.userId === data.account.userId; });
+      if (member) {
+        currentUser = member;
+        savePcSession(member.userId);
+        // URLからトークンを削除（リロード時の再利用防止）
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+        await _onLoginSuccess();
+        return true;
+      }
+    }
+  } catch (e) {
+    console.warn('LINEトークン認証失敗:', e);
+  }
+  return false;
 }
 
 /** LIFF経由で自動ログイン */

@@ -4,6 +4,7 @@
  */
 
 import { APIGatewayProxyHandler } from 'aws-lambda';
+import { createHmac } from 'crypto';
 import { validateSignature } from '../utils/signature';
 import { getLineCredentials } from '../utils/secrets';
 import { getSystemConfig, saveSystemConfig, getAllScheduleInputs, getScheduleInput } from '../utils/dynamodb';
@@ -93,6 +94,27 @@ async function handleEvent(
     const dashboardUrl = getDashboardUrl();
     const homeUrl = getHomeUrl();
     const quickReply = getCommonQuickReply(dashboardUrl, homeUrl, credentials.liffUrl);
+
+    // 「ログイン」コマンド：10分有効なトークン付きログインURLを返信
+    if (text === 'ログイン' && webhookEvent.replyToken && userId) {
+      const tsB36 = Math.floor(Date.now() / 1000).toString(36);
+      const hmac = createHmac('sha256', credentials.channelSecret)
+        .update(`${tsB36}.${userId}`)
+        .digest('hex')
+        .slice(0, 16);
+      const token = `${tsB36}.${userId}.${hmac}`;
+      const loginUrl = `${getDashboardUrl()}?token=${token}`;
+      await replyFlexMessage(
+        webhookEvent.replyToken,
+        'ログインリンク',
+        buildFlexBubble('🔓 ログイン', FLEX_COLORS.INFO,
+          ['10分間有効なログインリンクです。', 'タップしてアプリを開いてください。'],
+          [{ label: 'アプリを開く', uri: loginUrl }]
+        ),
+        credentials.channelAccessToken
+      );
+      return;
+    }
 
     // 「ID」コマンド：ユーザーID返信
     if (text === 'ID' && webhookEvent.replyToken) {

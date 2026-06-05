@@ -1,15 +1,30 @@
 /**
- * GET  /account       — 全家族メンバーの設定を一括取得
- * PUT  /account       — 自分の設定を更新（name/avatar/birthday）
- * POST /account/auth  — PIN照合（PC用）
- * PUT  /account/pin   — PIN設定・変更
+ * GET  /account                — 全家族メンバーの設定を一括取得
+ * PUT  /account                — 自分の設定を更新（name/avatar/birthday）
+ * POST /account/auth           — PIN照合（PC用）
+ * PUT  /account/pin            — PIN設定・変更
+ * POST /account/auth/line-token — LINEトークン検証（自動ログイン用）
  */
 
 import bcrypt from 'bcryptjs';
+import { createHmac } from 'crypto';
 import { z } from 'zod';
 import { AccountSettings } from '../types';
 import { getAllAccountSettings, getAccountSettings, saveAccountSettings } from '../utils/dynamodb';
+import { getLineCredentials } from '../utils/secrets';
 import { withHandler, ok, err } from '../utils/handler';
+
+/** webhook.ts の generateLoginToken と対になる検証関数 */
+function verifyLoginToken(token: string, secret: string): string | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const [tsB36, userId, hmac] = parts;
+  const created = parseInt(tsB36, 36) * 1000;
+  if (isNaN(created) || Date.now() - created > 10 * 60 * 1000) return null;
+  const expected = createHmac('sha256', secret).update(`${tsB36}.${userId}`).digest('hex').slice(0, 16);
+  if (hmac !== expected) return null;
+  return userId;
+}
 
 const FAMILY_USER_IDS = [
   'U687f86855c46490c030499f5393c8a7e',
@@ -66,6 +81,19 @@ export const handler = withHandler(async (event) => {
     await saveAccountSettings(updated);
     const { pinHash: _, ...safe } = updated;
     return ok(safe);
+  }
+
+  // POST /account/auth/line-token — LINEトークン検証（自動ログイン）
+  if (method === 'POST' && path.endsWith('/line-token')) {
+    const { token } = JSON.parse(event.body || '{}');
+    if (!token) return ok({ success: false });
+    const credentials = await getLineCredentials();
+    const userId = verifyLoginToken(token, credentials.channelSecret);
+    if (!userId) return ok({ success: false });
+    const account = await getAccountSettings(userId);
+    if (!account) return ok({ success: false });
+    const { pinHash: _, ...safe } = account;
+    return ok({ success: true, account: safe });
   }
 
   // POST /account/auth — PIN照合

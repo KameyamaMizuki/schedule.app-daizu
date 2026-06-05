@@ -27,7 +27,7 @@ const BUCKET_NAME = process.env.CHIROL_IMAGE_BUCKET || 'family-schedule-web-kame
 const IMAGE_PREFIX = 'chirol-images/';
 const PRESIGNED_URL_EXPIRES = 300; // 5分
 
-const IMAGE_TAGS = ['normal', 'happy', 'thinking', 'sad', 'diary', 'wansta-daizu'] as const;
+const IMAGE_TAGS = ['normal', 'happy', 'thinking', 'sad', 'diary', 'wansta-daizu', 'avatar'] as const;
 type ImageTag = typeof IMAGE_TAGS[number];
 
 const TagSchema = z.enum(IMAGE_TAGS);
