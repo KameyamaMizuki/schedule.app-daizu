@@ -22,6 +22,7 @@ const HOME_JS = [
   'scripts/ui/sidebar.ui.js',
   'scripts/core/account.js',
   'scripts/core/auth.js',
+  'scripts/ui/pin-login.js',
   'scripts/ui/account-edit.js',
   'scripts/ui/user-select.js',
   'scripts/ui/crop-square.js',
@@ -43,6 +44,7 @@ const DASHBOARD_JS = [
   'scripts/ui/sidebar.ui.js',
   'scripts/core/account.js',
   'scripts/core/auth.js',
+  'scripts/ui/pin-login.js',
   'scripts/ui/account-edit.js',
   'scripts/ui/user-select.js',
   'scripts/ui/crop-square.js',
@@ -62,12 +64,14 @@ const DASHBOARD_JS = [
 const HOME_CSS = [
   'styles/base.css',
   'styles/crop.css',
+  'styles/pin-login.css',
   'styles/tabs/home.css',
 ];
 
 const DASHBOARD_CSS = [
   'styles/base.css',
   'styles/crop.css',
+  'styles/pin-login.css',
   'styles/tabs/schedule.css',
   'styles/tabs/yousu.css',
   'styles/tabs/diary.css',
