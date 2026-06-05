@@ -60,6 +60,7 @@ jobs:
             "post-get-kame:handlers/post-get.js"
             "post-save-kame:handlers/post-save.js"
             "wannade-save-kame:handlers/wannade-save.js"
+            "account-kame:handlers/account.js"
           )
 
           for entry in "${FUNCTIONS[@]}"; do
