@@ -6,11 +6,7 @@ const AppConfig = Object.freeze({
 
   /** localStorage キー */
   STORAGE: {
-    CURRENT_USER_ID:  'currentUserId',
-    CUSTOM_PHOTOS:    'customPhotos',
-    CUSTOM_AVATARS:   'customAvatars',
-    CUSTOM_NAMES:     'customNames',
-    FAMILY_BIRTHDAYS: 'familyBirthdays',
+    AUTH_SESSION: 'authSession',
     // WANSTA_LIKES / WANSTA_COMMENTS は Phase2 で DynamoDB に移行済みのため削除
   },
 
@@ -64,6 +60,7 @@ const AppConfig = Object.freeze({
     POSTS:           '/posts',
     CHIROL_UPLOAD_URL: '/chirol/upload-url',
     WANNADE:         '/wannade',
+    ACCOUNT:         '/account',
   },
 
   /** 画像圧縮プリセット */
@@ -92,9 +89,6 @@ const AppConfig = Object.freeze({
     /** ローディングプログレスバー */
     LOADING_BAR: 'linear-gradient(90deg,#e91e63,#ad1457)',
   },
-
-  /** デフォルトアバター絵文字（account-edit.js） */
-  DEFAULT_AVATARS: { '瑞季': '👧', '才子': '👩', '桃寧': '👨' },
 
   /** 犬画像パス（wansta.js / wansta-social.js / home.js 共通） */
   DOG_IMAGES: {
