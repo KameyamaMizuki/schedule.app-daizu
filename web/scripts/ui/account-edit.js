@@ -4,18 +4,6 @@
 // アイコン選択肢
 var availableEmojis = ['👧', '👩', '👨', '🧒', '👶', '🐕', '🐈', '🌸', '⭐', '🌙', '🔥', '💎'];
 
-function getAvatarPhoto(name) {
-  var customPhotos = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_PHOTOS) || '{}');
-  return customPhotos[name] || null;
-}
-
-function getAvatarEmoji(name) {
-  var customAvatars = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_AVATARS) || '{}');
-  if (customAvatars[name]) return customAvatars[name];
-  var defaultAvatars = AppConfig.DEFAULT_AVATARS;
-  return defaultAvatars[name] || '👤';
-}
-
 function openAccountModal() {
   var modal = document.getElementById('accountModal');
   var nameEl = document.getElementById('accountName');
