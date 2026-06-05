@@ -6,6 +6,11 @@
  * dashboard.page.js / home.page.js の init() から呼ぶ
  */
 async function initAuth() {
+  // LIFF IDが未設定の場合はPINフローへ（LIFFアプリ未設定時のフォールバック）
+  if (!LIFF_ID || LIFF_ID === 'LIFF_ID_PLACEHOLDER') {
+    return _tryPcSession();
+  }
+
   // 1. LIFF初期化
   try {
     await liff.init({ liffId: LIFF_ID });
