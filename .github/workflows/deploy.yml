@@ -91,6 +91,14 @@ jobs:
             sed -i "s|\.bundle\.css[^\"']*|.bundle.css?v=${GIT_HASH}|g" "$f"
           done
           echo "Cache bust → ${GIT_HASH}"
+          # LIFF IDをSecretsManagerから取得して注入
+          LIFF_URL=$(aws secretsmanager get-secret-value \
+            --secret-id line/credentials-kame \
+            --query SecretString --output text \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('LIFF_URL',''))")
+          LIFF_ID=${LIFF_URL##*/}
+          sed -i "s|LIFF_ID_PLACEHOLDER|${LIFF_ID}|g" web/home.html web/dashboard.html
+          echo "LIFF ID injected: ${LIFF_ID}"
 
       # Web ファイルを S3 に同期
       - name: Sync web assets to S3
