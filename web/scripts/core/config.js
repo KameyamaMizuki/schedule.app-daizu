@@ -7,7 +7,7 @@ const AppConfig = Object.freeze({
   /** localStorage キー */
   STORAGE: {
     AUTH_SESSION: 'authSession',
-    // WANSTA_LIKES / WANSTA_COMMENTS は Phase2 で DynamoDB に移行済みのため削除
+    FAMILY_BIRTHDAYS: 'familyBirthdays',
   },
 
   /** タイムアウト・遅延 (ms) */
