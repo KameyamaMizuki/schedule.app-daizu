@@ -58,8 +58,40 @@ async function _tryPcSession() {
       }
     }
   } catch (e) { /* 無視 */ }
-  // セッションなし → PINログイン画面を表示
-  _showPinLogin();
+  // セッションなし → モバイル/LINEはユーザー選択、PCはPIN
+  var isMobile = /iphone|ipad|android|line/i.test(navigator.userAgent);
+  if (isMobile) {
+    _showUserSelect();
+  } else {
+    _showPinLogin();
+  }
+}
+
+/** モバイル用：ユーザー選択モーダル（LIFF未設定時のフォールバック） */
+function _showUserSelect() {
+  var modal = document.getElementById('userSelectModal');
+  var container = document.getElementById('userSelectButtons');
+  if (!modal || !container) { _showPinLogin(); return; }
+
+  container.innerHTML = familyMembers.map(function(member) {
+    var emoji = getAvatarEmoji(member.userId);
+    return '<button class="user-select-btn" onclick="authSelectUser(\'' + member.userId + '\')" style="display:flex;align-items:center;justify-content:center;gap:10px">'
+      + '<span style="font-size:24px">' + emoji + '</span>'
+      + '<span>' + getDisplayName(member) + '</span>'
+      + '</button>';
+  }).join('');
+
+  modal.classList.add('active');
+}
+
+/** ユーザー選択モーダルから選択されたときの処理 */
+async function authSelectUser(userId) {
+  var member = familyMembers.find(function(m) { return m.userId === userId; });
+  if (!member) return;
+  currentUser = member;
+  savePcSession(userId);
+  document.getElementById('userSelectModal').classList.remove('active');
+  await _onLoginSuccess();
 }
 
 /** ログイン成功後の共通処理 */
