@@ -267,10 +267,16 @@
         <h3 id="accountName" onclick="startEditAccount()" style="cursor:pointer">ユーザー名</h3>
         <p class="account-subtitle">タップして編集</p>
         <p id="accountBirthday" class="account-subtitle" style="margin-top:4px;font-size:13px">🎂 生年月日: 未設定</p>
-        <div class="account-switch">
-          <p>アカウント切り替え</p>
-          <div id="accountSwitchButtons" class="account-switch-buttons"></div>
+        <button class="account-action-btn" onclick="openPinSetting()">🔑 PIN設定・変更</button>
+        <div id="pinSettingSection" style="display:none;margin-top:10px">
+          <input type="password" id="pinInput" maxlength="4" pattern="\d{4}"
+            placeholder="新しいPIN（4桁）" class="account-name-input" inputmode="numeric">
+          <div class="account-edit-buttons">
+            <button class="account-edit-cancel" onclick="openPinSetting()">キャンセル</button>
+            <button class="account-edit-save" id="accountSaveBtn" onclick="savePin()">設定する</button>
+          </div>
         </div>
+        <button class="account-action-btn" onclick="shareAppLink()" style="margin-top:8px">🔗 アプリリンクを共有</button>
       </div>
       <!-- 編集モード -->
       <div id="accountEditMode" style="display:none">

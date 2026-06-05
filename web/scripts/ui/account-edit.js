@@ -1,57 +1,16 @@
-// ui/account-edit.js — アカウントモーダル（表示・編集・切り替え）
-// 依存: core/config.js, core/state.js, core/utils.js (compressImage), ui/user-select.js (updateHeaderAvatar)
+// ui/account-edit.js — アカウントモーダル（表示・編集）
+// アカウント切り替えなし。自分の設定のみ編集。サーバー保存。
+// 依存: core/config.js, core/state.js, core/account.js, ui/user-select.js
 
-// アイコン選択肢
-var availableEmojis = ['👧', '👩', '👨', '🧒', '👶', '🐕', '🐈', '🌸', '⭐', '🌙', '🔥', '💎'];
+var _editingPhoto = null;
+var _editingEmoji = null;
+var _editingIconType = 'photo';
+var _availableEmojis = ['👧','👩','👨','🧒','👶','🐕','🐈','🌸','⭐','🌙','🔥','💎'];
 
 function openAccountModal() {
+  if (!currentUser) return;
   var modal = document.getElementById('accountModal');
-  var nameEl = document.getElementById('accountName');
-  var avatarEl = document.getElementById('accountAvatar');
-  var avatarImg = document.getElementById('accountAvatarImg');
-  var buttonsContainer = document.getElementById('accountSwitchButtons');
-
-  if (currentUser) {
-    nameEl.textContent = getDisplayName(currentUser);
-    var photoUrl = getAvatarPhoto(currentUser.displayName);
-    if (photoUrl) {
-      avatarEl.style.display = 'none';
-      avatarImg.src = photoUrl;
-      avatarImg.style.display = 'block';
-    } else {
-      avatarImg.style.display = 'none';
-      avatarEl.style.display = 'block';
-      avatarEl.textContent = getAvatarEmoji(currentUser.displayName);
-    }
-  } else {
-    nameEl.textContent = '未選択';
-    avatarImg.style.display = 'none';
-    avatarEl.style.display = 'block';
-    avatarEl.textContent = '👤';
-  }
-
-  // 生年月日の表示
-  var birthdayEl = document.getElementById('accountBirthday');
-  if (birthdayEl) {
-    var savedBirthdays = JSON.parse(localStorage.getItem(AppConfig.STORAGE.FAMILY_BIRTHDAYS) || '{}');
-    var birthday = currentUser ? savedBirthdays[currentUser.displayName] : null;
-    birthdayEl.textContent = birthday ? '🎂 生年月日: ' + birthday : '🎂 生年月日: 未設定';
-  }
-
-  // 切り替えボタン生成
-  buttonsContainer.innerHTML = familyMembers.map(function(member) {
-    var isCurrent = currentUser && currentUser.userId === member.userId;
-    var memberPhoto = getAvatarPhoto(member.displayName);
-    var avatarHtml = memberPhoto
-      ? '<img src="' + memberPhoto + '" class="avatar-img">'
-      : '<span class="avatar">' + getAvatarEmoji(member.displayName) + '</span>';
-    return '<button class="account-switch-btn ' + (isCurrent ? 'current' : '') + '" onclick="switchAccount(\'' + member.userId + '\')">'
-      + avatarHtml
-      + '<span style="flex:1;text-align:left">' + getDisplayName(member) + '</span>'
-      + (isCurrent ? '<span>✓</span>' : '')
-      + '</button>';
-  }).join('');
-
+  _renderAccountView();
   modal.classList.add('active');
 }
 
@@ -59,64 +18,64 @@ function closeAccountModal() {
   document.getElementById('accountModal').classList.remove('active');
 }
 
-function switchAccount(userId) {
-  currentUser = familyMembers.find(function(m) { return m.userId === userId; });
-  if (currentUser) {
-    localStorage.setItem(AppConfig.STORAGE.CURRENT_USER_ID, currentUser.userId);
-    updateHeaderAvatar();
-    window.yousuLoaded = false;
-    window.diaryLoaded = false;
-  }
-  closeAccountModal();
-}
+function _renderAccountView() {
+  var photo = getAvatarPhoto(currentUser.userId);
+  var emoji = getAvatarEmoji(currentUser.userId);
+  var settings = accountSettingsCache[currentUser.userId] || {};
 
-var editingAccountEmoji = null;
-var editingAccountPhoto = null;
-var editingAccountIconType = 'photo';
+  document.getElementById('accountViewMode').style.display = 'block';
+  document.getElementById('accountEditMode').style.display = 'none';
+
+  var avatarEl = document.getElementById('accountAvatar');
+  var avatarImg = document.getElementById('accountAvatarImg');
+  if (photo) {
+    avatarEl.style.display = 'none';
+    avatarImg.src = photo; avatarImg.style.display = 'block';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarEl.style.display = 'block';
+    avatarEl.textContent = emoji;
+  }
+  document.getElementById('accountName').textContent = getDisplayName(currentUser);
+
+  var birthdayEl = document.getElementById('accountBirthday');
+  if (birthdayEl) birthdayEl.textContent = settings.birthday ? '🎂 ' + settings.birthday : '🎂 生年月日: 未設定';
+}
 
 function startEditAccount() {
   if (!currentUser) return;
+  var settings = accountSettingsCache[currentUser.userId] || {};
+  _editingPhoto = settings.avatarUrl || null;
+  _editingEmoji = settings.avatarEmoji || '👤';
+  _editingIconType = settings.avatarType || 'photo';
 
   document.getElementById('accountViewMode').style.display = 'none';
   document.getElementById('accountEditMode').style.display = 'block';
-
-  var currentPhoto = getAvatarPhoto(currentUser.displayName);
-  var currentEmoji = getAvatarEmoji(currentUser.displayName);
-  editingAccountPhoto = currentPhoto;
-  editingAccountEmoji = currentEmoji;
-
-  editingAccountIconType = 'photo';
-  switchAccountIconTab(editingAccountIconType);
-
-  var preview = document.getElementById('accountPhotoPreview');
-  var previewImg = document.getElementById('accountPreviewImg');
-  var removeBtn = document.getElementById('accountPhotoRemove');
-  if (currentPhoto) {
-    previewImg.src = currentPhoto;
-    preview.classList.add('has-photo');
-    removeBtn.style.display = 'block';
-  } else {
-    previewImg.src = '';
-    preview.classList.remove('has-photo');
-    removeBtn.style.display = 'none';
-  }
-
-  var picker = document.getElementById('accountEmojiPicker');
-  picker.innerHTML = availableEmojis.map(function(emoji) {
-    return '<div class="account-emoji-option ' + (emoji === currentEmoji ? 'selected' : '') + '" onclick="selectAccountEmoji(\'' + emoji + '\')">' + emoji + '</div>';
-  }).join('');
-
   document.getElementById('accountNameInput').value = getDisplayName(currentUser);
 
   var birthdayInput = document.getElementById('accountBirthdayInput');
-  if (birthdayInput) {
-    var savedBirthdays = JSON.parse(localStorage.getItem(AppConfig.STORAGE.FAMILY_BIRTHDAYS) || '{}');
-    birthdayInput.value = savedBirthdays[currentUser.displayName] || '';
+  if (birthdayInput) birthdayInput.value = settings.birthday || '';
+
+  switchAccountIconTab(_editingIconType);
+
+  var preview = document.getElementById('accountPhotoPreview');
+  var previewImg = document.getElementById('accountPreviewImg');
+  if (_editingPhoto) {
+    previewImg.src = _editingPhoto;
+    preview.classList.add('has-photo');
+    document.getElementById('accountPhotoRemove').style.display = 'block';
+  } else {
+    previewImg.src = ''; preview.classList.remove('has-photo');
+    document.getElementById('accountPhotoRemove').style.display = 'none';
   }
+
+  document.getElementById('accountEmojiPicker').innerHTML = _availableEmojis.map(function(e) {
+    return '<div class="account-emoji-option' + (e === _editingEmoji ? ' selected' : '') + '" onclick="selectAccountEmoji(\'' + e + '\')">' + e + '</div>';
+  }).join('');
 }
 
 function switchAccountIconTab(tab) {
-  editingAccountIconType = tab;
+  _editingIconType = tab;
   document.getElementById('accountIconPhotoTab').classList.toggle('active', tab === 'photo');
   document.getElementById('accountIconEmojiTab').classList.toggle('active', tab === 'emoji');
   document.getElementById('accountPhotoPicker').style.display = tab === 'photo' ? 'flex' : 'none';
@@ -126,31 +85,24 @@ function switchAccountIconTab(tab) {
 async function accountPhotoSelected(event) {
   var file = event.target.files[0];
   if (!file) return;
-
   try {
-    editingAccountPhoto = await compressImage(file, AppConfig.IMAGE.AVATAR_PHOTO.maxWidth, AppConfig.IMAGE.AVATAR_PHOTO.quality);
+    _editingPhoto = await compressImage(file, AppConfig.IMAGE.AVATAR_PHOTO.maxWidth, AppConfig.IMAGE.AVATAR_PHOTO.quality);
     var preview = document.getElementById('accountPhotoPreview');
-    var previewImg = document.getElementById('accountPreviewImg');
-    previewImg.src = editingAccountPhoto;
+    document.getElementById('accountPreviewImg').src = _editingPhoto;
     preview.classList.add('has-photo');
     document.getElementById('accountPhotoRemove').style.display = 'block';
-  } catch (e) {
-    console.error('Photo compress error:', e);
-    alert('画像の読み込みに失敗しました');
-  }
+  } catch (e) { alert('画像の読み込みに失敗しました'); }
 }
 
 function removeAccountPhoto() {
-  editingAccountPhoto = null;
-  var preview = document.getElementById('accountPhotoPreview');
-  var previewImg = document.getElementById('accountPreviewImg');
-  previewImg.src = '';
-  preview.classList.remove('has-photo');
+  _editingPhoto = null;
+  document.getElementById('accountPreviewImg').src = '';
+  document.getElementById('accountPhotoPreview').classList.remove('has-photo');
   document.getElementById('accountPhotoRemove').style.display = 'none';
 }
 
 function selectAccountEmoji(emoji) {
-  editingAccountEmoji = emoji;
+  _editingEmoji = emoji;
   document.querySelectorAll('.account-emoji-option').forEach(function(el) {
     el.classList.toggle('selected', el.textContent === emoji);
   });
@@ -159,51 +111,86 @@ function selectAccountEmoji(emoji) {
 function cancelEditAccount() {
   document.getElementById('accountViewMode').style.display = 'block';
   document.getElementById('accountEditMode').style.display = 'none';
-  editingAccountPhoto = null;
 }
 
-function saveAccountEdit() {
+async function saveAccountEdit() {
   if (!currentUser) return;
-
   var newName = document.getElementById('accountNameInput').value.trim();
-  if (!newName) {
-    alert('表示名を入力してください');
-    return;
-  }
+  if (!newName) { alert('表示名を入力してください'); return; }
 
-  if (editingAccountIconType === 'photo' && editingAccountPhoto) {
-    var customPhotos = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_PHOTOS) || '{}');
-    customPhotos[currentUser.displayName] = editingAccountPhoto;
-    localStorage.setItem(AppConfig.STORAGE.CUSTOM_PHOTOS, JSON.stringify(customPhotos));
-    var customAvatars = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_AVATARS) || '{}');
-    delete customAvatars[currentUser.displayName];
-    localStorage.setItem(AppConfig.STORAGE.CUSTOM_AVATARS, JSON.stringify(customAvatars));
+  var btn = document.getElementById('accountSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '保存中...'; }
+
+  try {
+    var avatarUrl = null;
+    if (_editingIconType === 'photo' && _editingPhoto && _editingPhoto.startsWith('data:')) {
+      avatarUrl = await uploadImageToS3(_editingPhoto, 'avatar');
+    } else if (_editingIconType === 'photo' && _editingPhoto) {
+      avatarUrl = _editingPhoto;
+    }
+
+    var birthdayInput = document.getElementById('accountBirthdayInput');
+    var payload = {
+      userId: currentUser.userId,
+      displayName: newName,
+      avatarType: _editingIconType,
+      avatarUrl: avatarUrl || '',
+      avatarEmoji: _editingIconType === 'emoji' ? _editingEmoji : '',
+      birthday: birthdayInput ? (birthdayInput.value || '') : ''
+    };
+
+    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('保存失敗');
+    var updated = await res.json();
+    accountSettingsCache[currentUser.userId] = updated;
+
+    cancelEditAccount();
+    _renderAccountView();
+    updateHeaderAvatar();
+  } catch (e) {
+    alert('設定の保存に失敗しました: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '保存'; }
+  }
+}
+
+function openPinSetting() {
+  var section = document.getElementById('pinSettingSection');
+  if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+async function savePin() {
+  if (!currentUser) return;
+  var input = document.getElementById('pinInput');
+  var pin = input ? input.value.trim() : '';
+  if (!/^\d{4}$/.test(pin)) { alert('PINは4桁の数字で入力してください'); return; }
+
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT + '/pin', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.userId, pin: pin })
+    });
+    if (!res.ok) throw new Error('PIN設定失敗');
+    alert('PINを設定しました');
+    if (input) input.value = '';
+    openPinSetting();
+  } catch (e) {
+    alert('PIN設定に失敗しました: ' + e.message);
+  }
+}
+
+function shareAppLink() {
+  var url = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com/home.html';
+  if (navigator.share) {
+    navigator.share({ title: 'スケジュールアプリ', url: url });
   } else {
-    var customAvatars2 = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_AVATARS) || '{}');
-    customAvatars2[currentUser.displayName] = editingAccountEmoji;
-    localStorage.setItem(AppConfig.STORAGE.CUSTOM_AVATARS, JSON.stringify(customAvatars2));
-    if (editingAccountIconType === 'emoji' || !editingAccountPhoto) {
-      var customPhotos2 = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_PHOTOS) || '{}');
-      delete customPhotos2[currentUser.displayName];
-      localStorage.setItem(AppConfig.STORAGE.CUSTOM_PHOTOS, JSON.stringify(customPhotos2));
-    }
+    navigator.clipboard.writeText(url).then(function() {
+      alert('リンクをコピーしました！');
+    });
   }
-
-  var customNames = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_NAMES) || '{}');
-  customNames[currentUser.userId] = newName;
-  localStorage.setItem(AppConfig.STORAGE.CUSTOM_NAMES, JSON.stringify(customNames));
-
-  var birthdayInput = document.getElementById('accountBirthdayInput');
-  if (birthdayInput) {
-    var savedBirthdays = JSON.parse(localStorage.getItem(AppConfig.STORAGE.FAMILY_BIRTHDAYS) || '{}');
-    if (birthdayInput.value) {
-      savedBirthdays[currentUser.displayName] = birthdayInput.value;
-    } else {
-      delete savedBirthdays[currentUser.displayName];
-    }
-    localStorage.setItem(AppConfig.STORAGE.FAMILY_BIRTHDAYS, JSON.stringify(savedBirthdays));
-  }
-
-  cancelEditAccount();
-  openAccountModal();
 }

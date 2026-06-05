@@ -214,3 +214,5 @@ body{font-family:-apple-system,sans-serif;background:#f5f5f5;-webkit-font-smooth
 .submenu.active{display:block}
 .nav-subitem{padding:12px 20px 12px 36px;font-size:14px;color:#6c757d;cursor:pointer}
 .nav-subitem:hover{background:#e9ecef;color:#495057}
+.account-action-btn{width:100%;padding:10px 0;margin-top:6px;background:#f5f0eb;border:none;border-radius:10px;color:#5d4037;font-size:14px;font-weight:600;cursor:pointer;text-align:center}
+.account-action-btn:active{background:#ebe5de}
