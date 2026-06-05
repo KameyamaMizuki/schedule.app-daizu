@@ -1,31 +1,60 @@
-// core/account.js — アカウント設定の一元管理
-// 依存: core/state.js (familyMembers)
-//
-// このファイルが担う責務:
-//   - カスタム表示名の取得 (getDisplayName / getDisplayNameByUserId)
-//   - 全タブで統一してカスタム名を参照するためのAPI提供
+// core/account.js — アカウント設定の取得（サーバーキャッシュ版）
+// Phase 1完了後にAPI呼び出しが有効になる。それまではfamilyMembersのdisplayNameをフォールバックとして使用。
+
+// 全家族メンバーのアカウント設定をキャッシュするマップ: userId → AccountSettings
+var accountSettingsCache = {};
 
 /**
- * メンバーのカスタム表示名を取得する。
- * アカウント設定で変更した名前があればそちらを優先し、
- * なければ state.js の displayName (デフォルト名) を返す。
- * @param {Object} member - familyMembers の各エントリ { userId, displayName, ... }
- * @returns {string}
+ * サーバーから全家族メンバーのアカウント設定を一括取得してキャッシュ
  */
-function getDisplayName(member) {
-  const customNames = JSON.parse(localStorage.getItem(AppConfig.STORAGE.CUSTOM_NAMES) || '{}');
-  return customNames[member.userId] || member.displayName;
+async function loadAccountSettings() {
+  try {
+    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT);
+    if (!res.ok) return;
+    var data = await res.json();
+    (data.accounts || []).forEach(function(a) {
+      accountSettingsCache[a.userId] = a;
+    });
+  } catch (e) {
+    console.warn('アカウント設定の取得に失敗（フォールバック使用）:', e);
+  }
 }
 
 /**
- * userId からカスタム表示名を取得する。
- * API レスポンス等で userId のみ分かっている場合に使用する。
- * familyMembers に存在しない userId の場合は null を返す。
- * @param {string} userId
- * @returns {string|null}
+ * メンバーの表示名を返す（サーバー設定 > state.jsのデフォルト）
+ */
+function getDisplayName(member) {
+  var settings = accountSettingsCache[member.userId];
+  return (settings && settings.displayName) || member.displayName;
+}
+
+/**
+ * userId から表示名を返す
  */
 function getDisplayNameByUserId(userId) {
-  const member = familyMembers.find(m => m.userId === userId);
+  var member = familyMembers.find(function(m) { return m.userId === userId; });
   if (!member) return null;
   return getDisplayName(member);
+}
+
+/**
+ * メンバーのアバター写真URL（S3）を返す
+ */
+function getAvatarPhoto(userId) {
+  var settings = accountSettingsCache[userId];
+  return (settings && settings.avatarType === 'photo' && settings.avatarUrl) ? settings.avatarUrl : null;
+}
+
+/**
+ * メンバーのアバター絵文字を返す
+ */
+function getAvatarEmoji(userId) {
+  var settings = accountSettingsCache[userId];
+  if (settings && settings.avatarType === 'emoji' && settings.avatarEmoji) {
+    return settings.avatarEmoji;
+  }
+  // フォールバック
+  var fallbacks = { '瑞季': '👧', '才子': '👩', '桃寧': '👨' };
+  var member = familyMembers.find(function(m) { return m.userId === userId; });
+  return member ? (fallbacks[member.displayName] || '👤') : '👤';
 }
