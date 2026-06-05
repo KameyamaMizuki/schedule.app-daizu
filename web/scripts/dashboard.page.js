@@ -16,7 +16,7 @@ function goToHome() {
 }
 
 async function init() {
-  initCurrentUser();
+  await initAuth();
 
   // クエリパラメータからタブを読み取る（リッチメニュー/LIFF経由）
   var urlParams = new URLSearchParams(window.location.search);

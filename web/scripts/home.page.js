@@ -1,5 +1,5 @@
 // home.page.js — home.html ページ初期化
-(function() {
+(async function() {
   'use strict';
 
   // タブバーのdata-routeクリックでdashboard.htmlへ遷移
@@ -29,6 +29,6 @@
   }
 
   // ユーザー初期化 + ホームタブ初期化
-  initCurrentUser();
+  await initAuth();
   initHomeTab();
 })();
