@@ -44,6 +44,10 @@ export const DB_KEYS = {
   DAIZU_STATUS_USER: 'daizu-status',
 } as const;
 
+// ========== DynamoDB テーブル名 ==========
+
+export const TABLE_ACCOUNT_SETTINGS = process.env.TABLE_ACCOUNT_SETTINGS || 'AccountSettings-kame';
+
 // ========== TTL ==========
 
 /** スケジュールデータの TTL（秒） — 12週間 */
