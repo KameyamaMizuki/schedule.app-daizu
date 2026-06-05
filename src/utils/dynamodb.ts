@@ -9,15 +9,17 @@ import {
   GetCommand,
   QueryCommand,
   UpdateCommand,
-  DeleteCommand
+  DeleteCommand,
+  ScanCommand
 } from '@aws-sdk/lib-dynamodb';
 import {
   ScheduleInput,
   SystemConfig,
   FamilyPost,
-  PostType
+  PostType,
+  AccountSettings
 } from '../types';
-import { DB_KEYS, TTL_SCHEDULE_WEEKS, getTTLFromNow } from './constants';
+import { DB_KEYS, TTL_SCHEDULE_WEEKS, getTTLFromNow, TABLE_ACCOUNT_SETTINGS } from './constants';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 export const docClient = DynamoDBDocumentClient.from(client);
@@ -232,5 +234,30 @@ export async function addPostComment(
       ':comment': [comment],
       ':empty': []
     }
+  }));
+}
+
+/** 全家族メンバーのAccountSettingsを取得 */
+export async function getAllAccountSettings(): Promise<AccountSettings[]> {
+  const result = await docClient.send(new ScanCommand({
+    TableName: TABLE_ACCOUNT_SETTINGS
+  }));
+  return (result.Items || []) as AccountSettings[];
+}
+
+/** 特定ユーザーのAccountSettingsを取得 */
+export async function getAccountSettings(userId: string): Promise<AccountSettings | null> {
+  const result = await docClient.send(new GetCommand({
+    TableName: TABLE_ACCOUNT_SETTINGS,
+    Key: { userId }
+  }));
+  return result.Item as AccountSettings || null;
+}
+
+/** AccountSettingsを保存・更新 */
+export async function saveAccountSettings(settings: AccountSettings): Promise<void> {
+  await docClient.send(new PutCommand({
+    TableName: TABLE_ACCOUNT_SETTINGS,
+    Item: settings
   }));
 }
