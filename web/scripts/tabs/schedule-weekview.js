@@ -141,6 +141,14 @@ function createWeekView(config) {
         btn.textContent = '編集';
         btn.style.background = '#e91e8c';
       }
+      // カレンダータブの日別表示が古いキャッシュを参照し続けるバグを修正
+      // （保存した週のキャッシュを破棄し、表示中ならグリッド・詳細を再描画）
+      if (typeof scheduleCalendarData !== 'undefined') {
+        delete scheduleCalendarData[weekId];
+        if (window.calendarLoaded && typeof renderScheduleCalendarGrid === 'function') {
+          renderScheduleCalendarGrid();
+        }
+      }
       // まずメモリのデータで即座に表示を更新（DB整合性遅延対策）
       load(true);
       // バックグラウンドでDBから最新を取得
