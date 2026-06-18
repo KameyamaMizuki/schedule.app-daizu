@@ -1,22 +1,22 @@
 /* ========== ホームタブ用CSS ========== */
 .home-container{display:flex;flex-direction:column;align-items:center;padding:16px;max-width:400px;margin:0 auto}
 .dog-area{position:relative;margin-bottom:6px}
-.dog-image{width:280px;height:280px;border-radius:50%;object-fit:cover;border:4px solid var(--color-surface);box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:swing 2s ease-in-out infinite;transition:opacity 0.5s ease}
+.dog-image{width:280px;height:280px;border-radius:50%;object-fit:cover;border:5px solid #A8D5A2;box-shadow:0 0 0 8px rgba(168,213,162,0.18),0 6px 24px rgba(0,0,0,0.12);animation:swing 2s ease-in-out infinite;transition:opacity 0.5s ease}
 .dog-image.fade-out{opacity:0}
 @keyframes swing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
-.speech-bubble{position:relative;background:var(--color-surface);border-radius:16px;padding:10px 16px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);max-width:280px;text-align:center;transition:opacity 0.5s ease}
+.speech-bubble{position:relative;background:var(--color-surface);border-radius:20px;padding:12px 18px;margin-top:10px;box-shadow:0 2px 12px rgba(0,0,0,0.09);max-width:280px;text-align:center;transition:opacity 0.5s ease;border:1.5px solid rgba(168,213,162,0.4)}
 .speech-bubble::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid var(--color-surface)}
 .speech-bubble p{font-size:14px;line-height:1.5;color:var(--color-text-primary);font-weight:500}
 .speech-bubble .highlight{color:#43a047;font-weight:700}
 .speech-bubble.fade-out{opacity:0}
 .menu-buttons{display:none;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:320px;margin-top:12px}
 .menu-buttons.active{display:grid}
-.menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px 8px;background:var(--color-surface);border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.07);cursor:pointer;color:var(--color-text-primary);transition:all 0.2s ease;min-height:56px;gap:1px}
-.menu-btn:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+.menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px 10px;background:var(--color-surface);border:none;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.04);cursor:pointer;color:var(--color-text-primary);transition:all 0.2s ease;min-height:64px;gap:2px}
+.menu-btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.13)}
 .menu-btn:active{transform:scale(0.97)}
 .menu-btn .icon{font-size:20px}
-.menu-btn .label{font-size:12px;font-weight:700;margin-top:1px}
-.menu-btn .desc{font-size:9px;font-weight:400;color:var(--color-text-faint);margin-top:0}
+.menu-btn .label{font-size:12px;font-weight:700;margin-top:2px;letter-spacing:0.01em}
+.menu-btn .desc{font-size:10px;font-weight:400;color:var(--color-text-faint);margin-top:1px}
 .menu-btn.kiroku{grid-column:1/-1;flex-direction:row;min-height:auto;padding:8px 16px;gap:8px;justify-content:center}
 .menu-btn.kiroku .icon{font-size:18px}
 .menu-btn.kiroku .label{font-size:12px}
@@ -24,16 +24,16 @@
 .home-fab{position:fixed;bottom:76px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(102,187,106,0.4);z-index:100;display:none}
 .home-fab:active{transform:scale(0.95)}
 .home-fab.active{display:flex;align-items:center;justify-content:center}
-.menu-btn.uranau{background:linear-gradient(145deg,#f3e5f5 0%,#e1bee7 100%);color:#6a1b9a}
-.menu-btn.uranau .desc{color:#ab47bc}
-.menu-btn.asobu{background:linear-gradient(145deg,#e8f5e9 0%,#c8e6c9 100%);color:#2e7d32}
-.menu-btn.asobu .desc{color:#66bb6a}
-.menu-btn.shitteru{background:linear-gradient(145deg,#e3f2fd 0%,#bbdefb 100%);color:#1565c0}
-.menu-btn.shitteru .desc{color:#42a5f5}
-.menu-btn.daizu-yousu{background:linear-gradient(145deg,#fff3e0 0%,#ffe0b2 100%);color:#e65100}
-.menu-btn.daizu-yousu .desc{color:#ff9800}
-.menu-btn.kiroku{background:linear-gradient(145deg,#efebe9 0%,#d7ccc8 100%);color:#5d4037}
-.menu-btn.kiroku .desc{color:#a1887f}
+.menu-btn.uranau{background:linear-gradient(145deg,#f0e8f8 0%,#ddd0f0 100%);color:#5c35a0;border:1.5px solid rgba(92,53,160,0.1)}
+.menu-btn.uranau .desc{color:#8b62c4}
+.menu-btn.asobu{background:linear-gradient(145deg,#e6f4ea 0%,#c3e6cb 100%);color:#2a6e32;border:1.5px solid rgba(42,110,50,0.12)}
+.menu-btn.asobu .desc{color:#52a860}
+.menu-btn.shitteru{background:linear-gradient(145deg,#e1f0fb 0%,#b8d9f5 100%);color:#155a9e;border:1.5px solid rgba(21,90,158,0.1)}
+.menu-btn.shitteru .desc{color:#3d8fd4}
+.menu-btn.daizu-yousu{background:linear-gradient(145deg,#fff5e4 0%,#ffe4b8 100%);color:#c45a00;border:1.5px solid rgba(196,90,0,0.12)}
+.menu-btn.daizu-yousu .desc{color:#e07800}
+.menu-btn.kiroku{background:linear-gradient(145deg,#f0ece8 0%,#d9cfc9 100%);color:#5d4037;border:1.5px solid rgba(93,64,55,0.1)}
+.menu-btn.kiroku .desc{color:#8d6e63}
 .progress-container{display:none;width:100%;max-width:280px;margin-top:20px}
 .progress-container.active{display:block}
 .progress-bar{height:8px;background:var(--color-border);border-radius:4px;overflow:hidden}
