@@ -42,7 +42,10 @@ function diaryShowDetail(postId) {
     + '</div>'
     + '<div class="diary-comment-section">'
     + commentsHtml
-    + '<input type="text" class="diary-comment-input" placeholder="コメントを入力..." onkeypress="handleDiaryCommentKeypress(event, \'' + post.postId + '\', \'' + sk + '\')">'
+    + '<div class="diary-comment-input-row">'
+    + '<input type="text" id="diaryCommentInput" class="diary-comment-input" placeholder="コメントを入力..." onkeypress="handleDiaryCommentKeypress(event, \'' + post.postId + '\', \'' + sk + '\')">'
+    + '<button class="diary-comment-submit" onclick="submitDiaryComment(\'' + post.postId + '\', \'' + sk + '\')">送信</button>'
+    + '</div>'
     + '</div>'
     + (isOwner
       ? '<div class="diary-detail-actions">'
@@ -101,9 +104,14 @@ async function toggleDiaryLike(postId, sk) {
   }
 }
 
-async function handleDiaryCommentKeypress(event, postId, sk) {
+function handleDiaryCommentKeypress(event, postId, sk) {
   if (event.key !== 'Enter') return;
-  var input = event.target;
+  submitDiaryComment(postId, sk);
+}
+
+async function submitDiaryComment(postId, sk) {
+  var input = document.getElementById('diaryCommentInput');
+  if (!input) return;
   var text = input.value.trim();
   if (!text || !currentUser) return;
 

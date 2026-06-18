@@ -98,5 +98,8 @@ body.modal-open{position:fixed;width:100%;overflow:hidden}
 .diary-comment-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border-soft)}
 .diary-comment{padding:8px 0;font-size:13px;color:var(--color-text-primary);border-bottom:1px solid var(--color-brown-light)}
 .diary-comment strong{color:var(--color-brown-dark)}
-.diary-comment-input{width:100%;padding:10px 12px;border:1px solid var(--color-border-soft);border-radius:10px;font-size:13px;margin-top:8px;box-sizing:border-box}
+.diary-comment-input-row{display:flex;gap:6px;margin-top:8px}
+.diary-comment-input{flex:1;width:auto;padding:10px 12px;border:1px solid var(--color-border-soft);border-radius:10px;font-size:13px;box-sizing:border-box}
 .diary-comment-input:focus{border-color:#8d6e63;outline:none}
+.diary-comment-submit{background:#3F6E5B;color:#fff;border:none;border-radius:16px;padding:0 16px;font-size:13px;font-weight:600;cursor:pointer}
+.diary-comment-submit:disabled{background:#A9C2B8;cursor:default}
