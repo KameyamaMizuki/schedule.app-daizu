@@ -1,18 +1,18 @@
-.pin-login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px}
-.pin-login-title{font-size:20px;font-weight:700;color:#5d4037;margin-bottom:32px}
+.pin-login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--color-surface);z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.pin-login-title{font-size:20px;font-weight:700;color:var(--color-brown-dark);margin-bottom:32px}
 .pin-login-label{font-size:15px;color:#8d6e63;margin-bottom:20px}
 .pin-dots{display:flex;gap:16px;margin-bottom:32px}
-.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid #8d6e63;background:#fff;transition:background .15s}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid #8d6e63;background:var(--color-surface);transition:background .15s}
 .pin-dot.filled{background:#8d6e63}
 .pin-numpad{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
-.pin-key{width:72px;height:72px;border-radius:50%;border:none;background:#f5f0eb;font-size:22px;font-weight:600;color:#5d4037;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.pin-key{width:72px;height:72px;border-radius:50%;border:none;background:var(--color-brown-light);font-size:22px;font-weight:600;color:var(--color-brown-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
 .pin-key:active{background:#d7ccc8}
 .pin-key.delete{font-size:16px;color:#a1887f}
 .pin-welcome{display:none;flex-direction:column;align-items:center;gap:20px;text-align:center}
-.pin-welcome-name{font-size:24px;font-weight:700;color:#5d4037}
+.pin-welcome-name{font-size:24px;font-weight:700;color:var(--color-brown-dark)}
 .pin-welcome-msg{font-size:16px;color:#8d6e63}
 .pin-welcome-btn{padding:14px 32px;border:none;border-radius:24px;font-size:16px;font-weight:600;cursor:pointer}
 .pin-welcome-go{background:#8d6e63;color:#fff}
-.pin-welcome-retry{background:#f5f0eb;color:#5d4037;margin-top:8px}
+.pin-welcome-retry{background:var(--color-brown-light);color:var(--color-brown-dark);margin-top:8px}
 .pin-error{color:#e53935;font-size:13px;min-height:20px;margin-top:-16px;margin-bottom:8px}
 .pin-loading{color:#8d6e63;font-size:14px}

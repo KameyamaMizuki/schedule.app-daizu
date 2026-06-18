@@ -162,8 +162,8 @@ function homeStartScheduleEdit(dateStr) {
   homeSetSpeechText(`${dateDisplay} の予定を変更するぜ！<br>誰の予定を変えるんだ？`);
   homeHideAllAreas();
   let html = '<div style="margin-bottom:16px">';
-  html += '<label style="display:block;font-size:13px;color:#666;margin-bottom:8px;font-weight:600">メンバーを選択</label>';
-  html += `<select id="homeEditMember" style="width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:14px" onchange="homeShowMemberSlots('${dateStr}')">`;
+  html += '<label style="display:block;font-size:13px;color:var(--color-text-muted);margin-bottom:8px;font-weight:600">メンバーを選択</label>';
+  html += `<select id="homeEditMember" style="width:100%;padding:12px;border:2px solid var(--color-border);border-radius:8px;font-size:14px" onchange="homeShowMemberSlots('${dateStr}')">`;
   html += '<option value="">選んでくれ</option>';
   familyMembers.forEach(m => { html += `<option value="${m.userId}">${m.displayName}</option>`; });
   html += '</select></div><div id="homeMemberSlots"></div>';

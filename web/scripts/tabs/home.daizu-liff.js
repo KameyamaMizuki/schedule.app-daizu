@@ -118,6 +118,6 @@ function closeDaizuLiff() {
   // window.close() が効かない場合のフォールバック
   var container = document.querySelector('.daizu-liff-container');
   if (container) {
-    container.innerHTML = '<p style="color:#666;font-size:16px;margin-top:40px">この画面を閉じてLINEに戻ってください</p>';
+    container.innerHTML = '<p style="color:var(--color-text-muted);font-size:16px;margin-top:40px">この画面を閉じてLINEに戻ってください</p>';
   }
 }

@@ -194,7 +194,7 @@ async function loadWannadeRanking() {
 function renderWannadeRanking(rankings) {
   const container = document.getElementById('wannadeRankingList');
   if (!rankings || rankings.length === 0) {
-    container.innerHTML = '<p style="color:#666;font-size:13px">まだランキングがありません</p>';
+    container.innerHTML = '<p style="color:var(--color-text-muted);font-size:13px">まだランキングがありません</p>';
     return;
   }
 

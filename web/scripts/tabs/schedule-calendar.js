@@ -22,15 +22,15 @@ async function renderScheduleCalendar() {
   const year = scheduleCalendarMonth.getFullYear();
   const month = scheduleCalendarMonth.getMonth();
 
-  let html = '<div class="calendar-container" style="background:#fff;border-radius:8px;padding:16px;margin-bottom:16px">';
+  let html = '<div class="calendar-container" style="background:var(--color-surface);border-radius:8px;padding:16px;margin-bottom:16px">';
   html += '<div class="calendar-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
   html += `<button onclick="changeScheduleCalendarMonth(-1)" style="background:${AppConfig.CALENDAR_COLORS.PRIMARY};color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px">◀</button>`;
-  html += `<h2 style="font-size:16px;color:#495057;margin:0">${year}年${month + 1}月</h2>`;
+  html += `<h2 style="font-size:16px;color:var(--color-text-strong);margin:0">${year}年${month + 1}月</h2>`;
   html += `<button onclick="changeScheduleCalendarMonth(1)" style="background:${AppConfig.CALENDAR_COLORS.PRIMARY};color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px">▶</button>`;
   html += '</div>';
   html += '<div class="calendar-grid" id="scheduleCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>';
   html += '</div>';
-  html += '<div id="scheduleCalendarDetail" style="background:#fff;border-radius:8px;padding:16px"></div>';
+  html += '<div id="scheduleCalendarDetail" style="background:var(--color-surface);border-radius:8px;padding:16px"></div>';
 
   container.innerHTML = html;
   // 日記プリロードとグリッド描画を並列実行
@@ -67,7 +67,7 @@ async function renderScheduleCalendarGrid() {
   const startDayOfWeek = firstDay.getDay();
   const prevMonthLastDay = new Date(year, month, 0).getDate();
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
-    html += `<div style="text-align:center;padding:10px 4px;color:#ccc;font-size:14px">${prevMonthLastDay - i}</div>`;
+    html += `<div style="text-align:center;padding:10px 4px;color:var(--color-text-faint);font-size:14px">${prevMonthLastDay - i}</div>`;
   }
 
   // 当月の日
@@ -78,8 +78,8 @@ async function renderScheduleCalendarGrid() {
     const isSelected = scheduleCalendarSelectedDate && formatDateForApi(scheduleCalendarSelectedDate) === dateStr;
     const dayOfWeek = date.getDay();
 
-    let bgColor = isSelected ? AppConfig.CALENDAR_COLORS.PRIMARY : isToday ? AppConfig.CALENDAR_COLORS.TODAY_BG : '#fff';
-    let textColor = isSelected ? '#fff' : dayOfWeek === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dayOfWeek === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : '#333';
+    let bgColor = isSelected ? AppConfig.CALENDAR_COLORS.PRIMARY : isToday ? 'var(--color-today-bg)' : 'var(--color-surface)';
+    let textColor = isSelected ? '#fff' : dayOfWeek === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dayOfWeek === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : 'var(--color-text-primary)';
     let fontWeight = isToday || isSelected ? '600' : '400';
 
     // スケジュール状態インジケーター
@@ -96,7 +96,7 @@ async function renderScheduleCalendarGrid() {
   // 次月の日
   const endDayOfWeek = lastDay.getDay();
   for (let i = 1; i < 7 - endDayOfWeek; i++) {
-    html += `<div style="text-align:center;padding:10px 4px;color:#ccc;font-size:14px">${i}</div>`;
+    html += `<div style="text-align:center;padding:10px 4px;color:var(--color-text-faint);font-size:14px">${i}</div>`;
   }
 
   grid.innerHTML = html;
@@ -170,8 +170,8 @@ async function selectScheduleCalendarDate(dateStr) {
     if (prevCell) {
       const d = new Date(prevDate + 'T00:00:00+09:00');
       const dow = d.getDay();
-      prevCell.style.background = prevDate === todayStr ? AppConfig.CALENDAR_COLORS.TODAY_BG : '#fff';
-      prevCell.style.color = dow === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dow === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : '#333';
+      prevCell.style.background = prevDate === todayStr ? 'var(--color-today-bg)' : 'var(--color-surface)';
+      prevCell.style.color = dow === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dow === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : 'var(--color-text-primary)';
       prevCell.style.fontWeight = prevDate === todayStr ? '600' : '400';
     }
   }
@@ -194,7 +194,7 @@ async function showScheduleCalendarDetail(dateStr) {
   const weekId = getWeekId(date);
   const data = scheduleCalendarData[weekId];
 
-  let html = `<h3 style="font-size:14px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid ${AppConfig.CALENDAR_COLORS.PRIMARY};color:#495057">${dateDisplay} の予定</h3>`;
+  let html = `<h3 style="font-size:14px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid ${AppConfig.CALENDAR_COLORS.PRIMARY};color:var(--color-text-strong)">${dateDisplay} の予定</h3>`;
 
   if (!data || !data.users) {
     html += `<p style="color:${AppConfig.CALENDAR_COLORS.WEEKDAY};text-align:center">データがありません</p>`;
@@ -203,21 +203,21 @@ async function showScheduleCalendarDetail(dateStr) {
     const timeLabels = AppConfig.SCHEDULE.LABEL_MAP;
 
     html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html += '<thead><tr><th style="padding:6px;text-align:left;border:1px solid #dee2e6;background:#f8f9fa">時間</th>';
+    html += '<thead><tr><th style="padding:6px;text-align:left;border:1px solid var(--color-border-soft);background:var(--color-surface-alt)">時間</th>';
     familyMembers.forEach(m => {
-      html += `<th style="padding:6px;text-align:center;border:1px solid #dee2e6;background:#f8f9fa">${getDisplayName(m)}</th>`;
+      html += `<th style="padding:6px;text-align:center;border:1px solid var(--color-border-soft);background:var(--color-surface-alt)">${getDisplayName(m)}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     timeSlots.forEach(slot => {
-      html += `<tr><td style="padding:6px;border:1px solid #dee2e6;font-weight:600">${timeLabels[slot]}</td>`;
+      html += `<tr><td style="padding:6px;border:1px solid var(--color-border-soft);font-weight:600">${timeLabels[slot]}</td>`;
       familyMembers.forEach(member => {
         const user = data.users.find(u => u.userId === member.userId);
         const key = `${dateStr}:${slot}`;
         const isAvailable = user && user.slots && user.slots[key];
-        const bgColor = isAvailable ? '#d4edda' : '#f8d7da';
-        const textColor = isAvailable ? '#155724' : '#721c24';
-        html += `<td style="padding:6px;text-align:center;border:1px solid #dee2e6;background:${bgColor};color:${textColor}">${isAvailable ? '◯' : '✕'}</td>`;
+        const bgColor = isAvailable ? 'var(--color-available-bg)' : 'var(--color-unavailable-bg)';
+        const textColor = isAvailable ? 'var(--color-available-text)' : 'var(--color-unavailable-text)';
+        html += `<td style="padding:6px;text-align:center;border:1px solid var(--color-border-soft);background:${bgColor};color:${textColor}">${isAvailable ? '◯' : '✕'}</td>`;
       });
       html += '</tr>';
     });
@@ -230,7 +230,7 @@ async function showScheduleCalendarDetail(dateStr) {
       if (user.notes && user.notes[dateStr]) {
         const calMember = familyMembers.find(m => m.userId === user.userId);
         const calName = calMember ? getDisplayName(calMember) : user.displayName;
-        notesHtml.push(`<div style="margin-top:8px;padding:8px;background:#e8f5e9;border-left:3px solid #4caf50;border-radius:4px;font-size:12px"><strong>${calName}:</strong> ${user.notes[dateStr]}</div>`);
+        notesHtml.push(`<div style="margin-top:8px;padding:8px;background:var(--color-available-bg);border-left:3px solid #4caf50;border-radius:4px;font-size:12px"><strong>${calName}:</strong> ${user.notes[dateStr]}</div>`);
       }
     });
     if (notesHtml.length > 0) {
@@ -243,9 +243,9 @@ async function showScheduleCalendarDetail(dateStr) {
     const daizuUser = data.users.find(u => u.userId === 'daizu-status');
     const daizuNote = daizuUser && daizuUser.notes ? (daizuUser.notes[dateStr] || '') : '';
     if (daizuNote) {
-      html += '<div style="margin-top:12px;padding:10px 12px;background:#fff;border-radius:8px;border-left:4px solid #ff9800;font-size:13px">';
+      html += '<div style="margin-top:12px;padding:10px 12px;background:var(--color-surface);border-radius:8px;border-left:4px solid #ff9800;font-size:13px">';
       html += '<div style="font-weight:600;color:#e65100;margin-bottom:4px">🐕 だいずの様子</div>';
-      html += `<div style="white-space:pre-wrap;color:#333">${escapeHtml(daizuNote)}</div>`;
+      html += `<div style="white-space:pre-wrap;color:var(--color-text-primary)">${escapeHtml(daizuNote)}</div>`;
       html += '</div>';
     }
   }
@@ -267,7 +267,7 @@ async function showScheduleCalendarDetail(dateStr) {
       const preview = text.replace(/<[^>]*>/g, '').substring(0, 60);
       const calMember = familyMembers.find(m => m.userId === post.userId);
       const calName = calMember ? getDisplayName(calMember) : post.displayName;
-      html += `<div onclick="switchTab('diary');setTimeout(function(){diaryShowDetail('${post.postId}')},300)" style="padding:8px;margin:4px 0;background:#f5f0eb;border-radius:6px;cursor:pointer;font-size:12px">
+      html += `<div onclick="switchTab('diary');setTimeout(function(){diaryShowDetail('${post.postId}')},300)" style="padding:8px;margin:4px 0;background:var(--color-brown-light);border-radius:6px;cursor:pointer;font-size:12px">
         <strong>${escapeHtml(title || calName)}</strong>: ${escapeHtml(preview)}${preview.length >= 60 ? '...' : ''}
       </div>`;
     });

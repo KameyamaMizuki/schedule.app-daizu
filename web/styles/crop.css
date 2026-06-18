@@ -5,7 +5,7 @@
 .crop-header h3{margin:0;font-size:16px}
 .crop-close{background:none;border:none;color:#fff;font-size:28px;cursor:pointer}
 .crop-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;touch-action:none}
-.crop-hint{font-size:12px;color:#aaa;flex:1;text-align:center}
+.crop-hint{font-size:12px;color:var(--color-text-faint);flex:1;text-align:center}
 .crop-image{max-width:100%;max-height:100%;object-fit:contain}
 .crop-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
 .crop-box{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,0.5);cursor:move}

@@ -190,7 +190,7 @@ function renderAdjust() {
   let html = '';
 
   html += '<div class="week-selector-section">';
-  html += `<span id="currentWeekDisplay" style="font-weight:600;font-size:14px;color:#495057">入力週: ${monday.getFullYear()}/${String(monday.getMonth() + 1).padStart(2, '0')}/${String(monday.getDate()).padStart(2, '0')}(${dayNames[monday.getDay()]})〜${sunday.getFullYear()}/${String(sunday.getMonth() + 1).padStart(2, '0')}/${String(sunday.getDate()).padStart(2, '0')}(${dayNames[sunday.getDay()]})</span>`;
+  html += `<span id="currentWeekDisplay" style="font-weight:600;font-size:14px;color:var(--color-text-strong)">入力週: ${monday.getFullYear()}/${String(monday.getMonth() + 1).padStart(2, '0')}/${String(monday.getDate()).padStart(2, '0')}(${dayNames[monday.getDay()]})〜${sunday.getFullYear()}/${String(sunday.getMonth() + 1).padStart(2, '0')}/${String(sunday.getDate()).padStart(2, '0')}(${dayNames[sunday.getDay()]})</span>`;
   html += '<button class="period-change-btn" onclick="openWeekPicker()">期間変更</button>';
   html += '</div>';
 
@@ -229,7 +229,7 @@ function renderAdjust() {
       html += `</div>`;
 
       const noteValue = schedule.notes[dateStr] || '';
-      html += `<input type="text" class="note-input" placeholder="備考" data-user="${schedule.userId}" data-date="${dateStr}" value="${noteValue}" style="width:100%;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:12px;margin-top:6px">`;
+      html += `<input type="text" class="note-input" placeholder="備考" data-user="${schedule.userId}" data-date="${dateStr}" value="${noteValue}" style="width:100%;padding:6px;border:1px solid var(--color-border-soft);border-radius:4px;font-size:12px;margin-top:6px">`;
 
       html += `</div>`;
     });
@@ -440,7 +440,7 @@ function renderEditForm(schedules, container) {
       html += `</div>`;
 
       const noteValue = schedule.notes[dateStr] || '';
-      html += `<input type="text" class="note-input" placeholder="備考" data-user="${schedule.userId}" data-date="${dateStr}" value="${noteValue}" style="width:100%;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:12px;margin-top:6px">`;
+      html += `<input type="text" class="note-input" placeholder="備考" data-user="${schedule.userId}" data-date="${dateStr}" value="${noteValue}" style="width:100%;padding:6px;border:1px solid var(--color-border-soft);border-radius:4px;font-size:12px;margin-top:6px">`;
       html += `</div>`;
     });
 

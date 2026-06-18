@@ -306,7 +306,7 @@ function wanstaRenderHitokotoComments(hitokotoId) {
   var currentUserId = currentUser ? currentUser.userId : '';
 
   if (comments.length === 0) {
-    container.innerHTML = '<div style="font-size:12px;color:#8e8e8e;padding:4px 0">コメントはまだないよ</div>';
+    container.innerHTML = '<div style="font-size:12px;color:var(--color-text-faint);padding:4px 0">コメントはまだないよ</div>';
     return;
   }
 
@@ -317,7 +317,7 @@ function wanstaRenderHitokotoComments(hitokotoId) {
     var hcName = hcMember ? getDisplayName(hcMember) : c.userName;
     var canDelete = c.userId === currentUserId;
     html += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:6px">'
-      + '<div style="flex:1"><span style="font-weight:600;font-size:12px;color:#262626">' + escapeHtml(hcName) + '</span> <span style="font-size:12px;color:#444">' + escapeHtml(c.text) + '</span></div>'
+      + '<div style="flex:1"><span style="font-weight:600;font-size:12px;color:var(--color-text-primary)">' + escapeHtml(hcName) + '</span> <span style="font-size:12px;color:var(--color-text-primary)">' + escapeHtml(c.text) + '</span></div>'
       + (canDelete ? '<button style="background:none;border:none;color:#e74c3c;font-size:10px;cursor:pointer;padding:0" onclick="wanstaDeleteHitokotoComment(\'' + hitokotoId + '\',\'' + c.id + '\')">✕</button>' : '')
       + '</div>';
   }

@@ -17,6 +17,7 @@ const WEB = path.join(__dirname, '..', 'web');
 const HOME_JS = [
   'scripts/routes.js',
   'scripts/core/config.js',
+  'scripts/core/theme.js',
   'scripts/core/state.js',
   'scripts/core/utils.js',
   'scripts/ui/sidebar.ui.js',
@@ -39,6 +40,7 @@ const HOME_JS = [
 const DASHBOARD_JS = [
   'scripts/routes.js',
   'scripts/core/config.js',
+  'scripts/core/theme.js',
   'scripts/core/state.js',
   'scripts/core/utils.js',
   'scripts/ui/sidebar.ui.js',

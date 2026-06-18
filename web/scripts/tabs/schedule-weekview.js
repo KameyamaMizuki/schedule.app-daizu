@@ -34,7 +34,7 @@ function createWeekView(config) {
       var dayNames = AppConfig.SCHEDULE.DAYS;
 
       var html = '<div class="week-selector-section">';
-      html += '<span style="font-weight:600;font-size:14px;color:#495057">表示週: ';
+      html += '<span style="font-weight:600;font-size:14px;color:var(--color-text-strong)">表示週: ';
       html += monday.getFullYear() + '/' + String(monday.getMonth() + 1).padStart(2, '0') + '/' + String(monday.getDate()).padStart(2, '0') + '(' + dayNames[monday.getDay()] + ')';
       html += '〜';
       html += sunday.getFullYear() + '/' + String(sunday.getMonth() + 1).padStart(2, '0') + '/' + String(sunday.getDate()).padStart(2, '0') + '(' + dayNames[sunday.getDay()] + ')';
@@ -253,13 +253,13 @@ function createWeekView(config) {
       });
 
       if (absentDays.length > 0) {
-        html += '<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:#856404">';
+        html += '<div style="background:var(--color-note-bg);border-left:4px solid #ffc107;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:var(--color-note-text)">';
         html += '⚠️ 担当者不在の日: ' + absentDays.join(', ');
         html += '</div>';
       }
 
       if (editMode) {
-        html += '<div style="background:#e8f4fd;border-left:4px solid #e91e8c;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:#495057">';
+        html += '<div style="background:var(--color-surface-alt);border-left:4px solid #e91e8c;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:var(--color-text-strong)">';
         html += '<strong>編集モード</strong><br>';
         html += '・◯/✕をタップで予定を切り替え<br>';
         html += '・備考欄に補足情報を入力できます<br>';
@@ -302,13 +302,13 @@ function createWeekView(config) {
 
         // 備考表示・編集
         if (editMode) {
-          html += '<div style="margin:8px 0 16px 0;padding:8px;background:#f8f9fa;border-radius:4px">';
-          html += '<div style="font-size:12px;color:#6c757d;margin-bottom:6px">備考（' + (date.getMonth() + 1) + '/' + date.getDate() + '）:</div>';
+          html += '<div style="margin:8px 0 16px 0;padding:8px;background:var(--color-surface-alt);border-radius:4px">';
+          html += '<div style="font-size:12px;color:var(--color-text-faint);margin-bottom:6px">備考（' + (date.getMonth() + 1) + '/' + date.getDate() + '）:</div>';
           weekSchedules.forEach(function(schedule) {
             var noteValue = schedule.notes && schedule.notes[dateStr] ? schedule.notes[dateStr] : '';
             html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
             html += '<span style="font-size:12px;min-width:60px">' + getDisplayNameByUserId(schedule.userId) + ':</span>';
-            html += '<input type="text" data-user="' + schedule.userId + '" data-date="' + dateStr + '" class="' + config.noteInputClass + '" value="' + noteValue.replace(/"/g, '&quot;') + '" placeholder="備考を入力" style="flex:1;padding:6px;border:1px solid #ced4da;border-radius:4px;font-size:12px">';
+            html += '<input type="text" data-user="' + schedule.userId + '" data-date="' + dateStr + '" class="' + config.noteInputClass + '" value="' + noteValue.replace(/"/g, '&quot;') + '" placeholder="備考を入力" style="flex:1;padding:6px;border:1px solid var(--color-border-soft);border-radius:4px;font-size:12px">';
             html += '</div>';
           });
           html += '</div>';
