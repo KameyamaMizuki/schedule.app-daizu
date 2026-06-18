@@ -300,6 +300,13 @@ body{font-family:'M PLUS Rounded 1c',-apple-system,sans-serif;background:var(--c
 .header.orange h1{text-shadow:1px 1px 2px rgba(0,0,0,0.1)}
 .tab.active.orange{color:#ff9800;border-bottom-color:#ff9800}
 
+/* サイドバーアイコン */
+.nav-item i,.nav-subitem i{font-size:18px;vertical-align:-0.15em;margin-right:8px;opacity:0.85}
+.sidebar-close i{font-size:24px}
+.hamburger i{font-size:22px}
+.account-action-btn i{font-size:15px;vertical-align:-0.1em;margin-right:4px}
+.account-icon-tab i{font-size:14px;vertical-align:-0.1em;margin-right:3px}
+
 /* サイドバー */
 .sidebar{position:fixed;top:0;left:-280px;width:280px;height:100%;background:var(--color-surface);z-index:2000;transition:left 0.3s ease;box-shadow:2px 0 8px rgba(0,0,0,.1)}
 .sidebar.active{left:0}

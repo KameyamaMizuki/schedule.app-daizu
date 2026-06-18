@@ -12,12 +12,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet">
   <link rel="stylesheet" href="styles/dashboard.bundle.css">
 </head>
 <body>
 <div id="pinLoginOverlay" class="pin-login-overlay"></div>
   <div class="header" id="mainHeader">
-    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <button class="hamburger" onclick="toggleSidebar()"><i class="ph-bold ph-list"></i></button>
     <h1 id="headerTitle">スケジュール管理</h1>
     <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替">🌓</button>
     <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
@@ -29,14 +30,14 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h2>メニュー</h2>
-      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+      <button class="sidebar-close" onclick="toggleSidebar()"><i class="ph-bold ph-x"></i></button>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item" onclick="window.location.href='home.html'">🏠 ホーム</div>
-      <div class="nav-item" onclick="navigateTo('schedule')">📅 スケジュール</div>
-      <div class="nav-item" onclick="navigateTo('yousu')">🐕 様子</div>
-      <div class="nav-item" onclick="navigateTo('diary')">📓 ダイ日記</div>
-      <div class="nav-item" onclick="navigateTo('wansta')">📷 WANsta</div>
+      <div class="nav-item" onclick="window.location.href='home.html'"><i class="ph-bold ph-house"></i> ホーム</div>
+      <div class="nav-item" onclick="navigateTo('schedule')"><i class="ph-bold ph-calendar"></i> スケジュール</div>
+      <div class="nav-item" onclick="navigateTo('yousu')"><i class="ph-bold ph-paw-print"></i> 様子</div>
+      <div class="nav-item" onclick="navigateTo('diary')"><i class="ph-bold ph-book-open"></i> ダイ日記</div>
+      <div class="nav-item" onclick="navigateTo('wansta')"><i class="ph-bold ph-camera"></i> WANsta</div>
     </nav>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

@@ -14,14 +14,14 @@
 .menu-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 8px 10px;background:var(--color-surface);border:none;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.04);cursor:pointer;color:var(--color-text-primary);transition:all 0.2s ease;min-height:64px;gap:2px}
 .menu-btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.13)}
 .menu-btn:active{transform:scale(0.97)}
-.menu-btn .icon{font-size:20px}
+.menu-btn .icon{font-size:24px;line-height:1;display:block}
 .menu-btn .label{font-size:12px;font-weight:700;margin-top:2px;letter-spacing:0.01em}
 .menu-btn .desc{font-size:10px;font-weight:400;color:var(--color-text-faint);margin-top:1px}
 .menu-btn.kiroku{grid-column:1/-1;flex-direction:row;min-height:auto;padding:8px 16px;gap:8px;justify-content:center}
 .menu-btn.kiroku .icon{font-size:18px}
 .menu-btn.kiroku .label{font-size:12px}
 .menu-btn.kiroku .desc{font-size:9px}
-.home-fab{position:fixed;bottom:76px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(102,187,106,0.4);z-index:100;display:none}
+.home-fab{position:fixed;bottom:76px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(102,187,106,0.4);z-index:100;display:none}
 .home-fab:active{transform:scale(0.95)}
 .home-fab.active{display:flex;align-items:center;justify-content:center}
 .menu-btn.uranau{background:linear-gradient(145deg,#f0e8f8 0%,#ddd0f0 100%);color:#5c35a0;border:1.5px solid rgba(92,53,160,0.1)}
@@ -89,7 +89,7 @@
 .chirol-choice-area.active{display:flex;flex-direction:column;gap:12px}
 .chirol-choice-btn{display:flex;align-items:center;padding:16px 20px;background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;cursor:pointer;font-size:15px;font-weight:600;color:var(--color-text-primary);transition:all 0.2s}
 .chirol-choice-btn:hover{border-color:#8d6e63;background:#efebe9}
-.chirol-choice-btn .icon{font-size:24px;margin-right:12px}
+.chirol-choice-btn .icon{font-size:22px;margin-right:12px;vertical-align:-0.1em}
 .chirol-choice-btn.cancel{border-color:#ffcdd2;color:#c62828}
 .chirol-choice-btn.cancel:hover{background:#ffebee}
 

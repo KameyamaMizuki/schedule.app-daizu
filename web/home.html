@@ -13,12 +13,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet">
   <link rel="stylesheet" href="styles/home.bundle.css">
 </head>
 <body>
 <div id="pinLoginOverlay" class="pin-login-overlay"></div>
   <div class="header green" id="mainHeader">
-    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <button class="hamburger" onclick="toggleSidebar()"><i class="ph-bold ph-list"></i></button>
     <h1 id="headerTitle">ホーム</h1>
     <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替">🌓</button>
     <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
@@ -30,14 +31,14 @@
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h2>メニュー</h2>
-      <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+      <button class="sidebar-close" onclick="toggleSidebar()"><i class="ph-bold ph-x"></i></button>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item" onclick="navigateTo('home')">🏠 ホーム</div>
-      <div class="nav-item" onclick="navigateTo('schedule')">📅 スケジュール</div>
-      <div class="nav-item" onclick="navigateTo('yousu')">🐕 様子</div>
-      <div class="nav-item" onclick="navigateTo('diary')">📓 ダイ日記</div>
-      <div class="nav-item" onclick="navigateTo('wansta')">📷 WANsta</div>
+      <div class="nav-item" onclick="navigateTo('home')"><i class="ph-bold ph-house"></i> ホーム</div>
+      <div class="nav-item" onclick="navigateTo('schedule')"><i class="ph-bold ph-calendar"></i> スケジュール</div>
+      <div class="nav-item" onclick="navigateTo('yousu')"><i class="ph-bold ph-paw-print"></i> 様子</div>
+      <div class="nav-item" onclick="navigateTo('diary')"><i class="ph-bold ph-book-open"></i> ダイ日記</div>
+      <div class="nav-item" onclick="navigateTo('wansta')"><i class="ph-bold ph-camera"></i> WANsta</div>
     </nav>
   </div>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -74,27 +75,27 @@
       <!-- メニューボタン -->
       <div id="homeMenuButtons" class="menu-buttons active">
         <button class="menu-btn uranau" onclick="homeStartUranau()">
-          <span class="icon">🔮</span>
+          <i class="ph-bold ph-shooting-star icon"></i>
           <span class="label">うらなう</span>
           <span class="desc">今日の運勢は？</span>
         </button>
         <button class="menu-btn asobu" onclick="homeStartAsobu()">
-          <span class="icon">🐾</span>
+          <i class="ph-bold ph-hand-waving icon"></i>
           <span class="label">あそぶ</span>
           <span class="desc">なでなでタイム</span>
         </button>
         <button class="menu-btn shitteru" onclick="homeStartChirolInfo()">
-          <span class="icon">📝</span>
+          <i class="ph-bold ph-note-pencil icon"></i>
           <span class="label">しってる</span>
           <span class="desc">写真・一言を追加</span>
         </button>
         <button class="menu-btn daizu-yousu" onclick="homeStartDaizuYousu()">
-          <span class="icon">🐕</span>
+          <i class="ph-bold ph-paw-print icon"></i>
           <span class="label">だいずのようす</span>
           <span class="desc">今日の記録</span>
         </button>
         <button class="menu-btn kiroku" onclick="navigateTo('diary')">
-          <span class="icon">📓</span>
+          <i class="ph-bold ph-book-open icon"></i>
           <span class="label">ダイ日記</span>
           <span class="desc">日記を見る・書く</span>
         </button>
@@ -133,15 +134,15 @@
       <div id="dogSelectArea" class="chirol-choice-area">
         <p style="margin-bottom:12px;color:#5d4037;font-weight:600">誰のことを教える？</p>
         <button class="chirol-choice-btn" onclick="selectDogForInfo('chirol')">
-          <span class="icon">🐕</span>
+          <i class="ph-bold ph-paw-print icon"></i>
           <span>チロル</span>
         </button>
         <button class="chirol-choice-btn" onclick="selectDogForInfo('daizu')">
-          <span class="icon">🐕</span>
+          <i class="ph-bold ph-paw-print icon"></i>
           <span>だいず</span>
         </button>
         <button class="chirol-choice-btn cancel" onclick="chirolCancel()">
-          <span class="icon">🚫</span>
+          <i class="ph-bold ph-x-circle icon"></i>
           <span>やっぱやめる</span>
         </button>
       </div>
@@ -150,15 +151,15 @@
       <div id="chirolChoiceArea" class="chirol-choice-area">
         <p id="infoTargetLabel" style="margin-bottom:12px;color:#5d4037;font-weight:600">チロルに何を追加する？</p>
         <button class="chirol-choice-btn" onclick="chirolStartImage()">
-          <span class="icon">📷</span>
+          <i class="ph-bold ph-camera icon"></i>
           <span>写真を追加する</span>
         </button>
         <button class="chirol-choice-btn" onclick="chirolStartHitokoto()">
-          <span class="icon">💬</span>
+          <i class="ph-bold ph-chat-circle-text icon"></i>
           <span>一言を追加する</span>
         </button>
         <button class="chirol-choice-btn cancel" onclick="chirolBackToDogSelect()">
-          <span class="icon">⬅️</span>
+          <i class="ph-bold ph-arrow-left icon"></i>
           <span>戻る</span>
         </button>
       </div>
@@ -244,7 +245,7 @@
         <button class="back-btn" onclick="wannadeBackToHome()" style="margin-top:16px">ホームに戻る</button>
       </div>
       <!-- ホームFABボタン -->
-      <button class="home-fab" id="homeFab" onclick="homeReturnToInitial()">🏠</button>
+      <button class="home-fab" id="homeFab" onclick="homeReturnToInitial()"><i class="ph-bold ph-house"></i></button>
     </div>
   </div>
 
@@ -271,7 +272,7 @@
         <h3 id="accountName" onclick="startEditAccount()" style="cursor:pointer">ユーザー名</h3>
         <p class="account-subtitle">タップして編集</p>
         <p id="accountBirthday" class="account-subtitle" style="margin-top:4px;font-size:13px">🎂 生年月日: 未設定</p>
-        <button class="account-action-btn" onclick="openPinSetting()">🔑 PIN設定・変更</button>
+        <button class="account-action-btn" onclick="openPinSetting()"><i class="ph-bold ph-key"></i> PIN設定・変更</button>
         <div id="pinSettingSection" style="display:none;margin-top:10px">
           <input type="password" id="pinInput" maxlength="4" pattern="\d{4}"
             placeholder="新しいPIN（4桁）" class="account-name-input" inputmode="numeric">
@@ -280,14 +281,14 @@
             <button class="account-edit-save" id="accountSaveBtn" onclick="savePin()">設定する</button>
           </div>
         </div>
-        <button class="account-action-btn" onclick="shareAppLink()" style="margin-top:8px">🔗 アプリリンクを共有</button>
+        <button class="account-action-btn" onclick="shareAppLink()" style="margin-top:8px"><i class="ph-bold ph-link"></i> アプリリンクを共有</button>
       </div>
       <!-- 編集モード -->
       <div id="accountEditMode" style="display:none">
         <p style="font-size:14px;color:#666;margin-bottom:12px">アイコンを選択</p>
         <div class="account-icon-tabs">
-          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')">📷 写真</div>
-          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')">😊 絵文字</div>
+          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')"><i class="ph-bold ph-camera"></i> 写真</div>
+          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')"><i class="ph-bold ph-smiley"></i> 絵文字</div>
         </div>
         <div id="accountPhotoPicker" class="account-photo-picker">
           <input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="accountPhotoSelected(event)">
