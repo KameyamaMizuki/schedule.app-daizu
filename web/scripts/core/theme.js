@@ -1,7 +1,7 @@
 (function () {
   var KEY = 'kame-theme';
   var ORDER = ['auto', 'light', 'dark'];
-  var ICON = { auto: '🌓', light: '☀️', dark: '🌙' };
+  var ICON_CLASS = { auto: 'ph-sun-horizon', light: 'ph-sun', dark: 'ph-moon' };
   var LABEL = { auto: 'テーマ（自動：端末に合わせる）', light: 'テーマ：ライト', dark: 'テーマ：ダーク' };
 
   function read() {
@@ -15,7 +15,12 @@
     else root.setAttribute('data-theme', mode);
     try { localStorage.setItem(KEY, mode); } catch (e) {}
     var btn = document.getElementById('themeToggleBtn');
-    if (btn) { btn.textContent = ICON[mode]; btn.setAttribute('aria-label', LABEL[mode]); btn.title = LABEL[mode]; }
+    if (btn) {
+      var iconEl = btn.querySelector('i');
+      if (iconEl) iconEl.className = 'ph-bold ' + ICON_CLASS[mode];
+      btn.setAttribute('aria-label', LABEL[mode]);
+      btn.title = LABEL[mode];
+    }
   }
 
   window.cycleTheme = function () {

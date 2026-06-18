@@ -144,7 +144,7 @@ function renderWanstaPhotos(photos) {
 
   if (photos.length === 0) {
     html += '<div class="wansta-empty" style="grid-column:1/-1">'
-      + '<div class="icon">📷</div>'
+      + '<div class="icon"><i class="ph-bold ph-camera"></i></div>'
       + '<div>まだ写真がないよ</div>'
       + '</div>';
   }
@@ -173,7 +173,7 @@ function renderWanstaHitokoto(hitokoto) {
       + '<div class="wansta-hitokoto-text">' + escapeHtml(item.text) + '</div>'
       + '<div class="wansta-hitokoto-actions">'
       + (canInteract ? '<button class="hitokoto-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="wanstaToggleHitokotoLike(\'' + item.id + '\')">' + (isLiked ? '❤️' : '🤍') + ' ' + (itemLikes.length > 0 ? itemLikes.length : '') + '</button>' : '')
-      + (canInteract ? '<button class="hitokoto-comment-btn" onclick="wanstaToggleHitokotoComments(\'' + item.id + '\')">💬 ' + (itemComments.length > 0 ? itemComments.length : '') + '</button>' : '')
+      + (canInteract ? '<button class="hitokoto-comment-btn" onclick="wanstaToggleHitokotoComments(\'' + item.id + '\')"><i class="ph-bold ph-chat-circle-text"></i> ' + (itemComments.length > 0 ? itemComments.length : '') + '</button>' : '')
       + (canInteract ? '<button class="wansta-hitokoto-delete" onclick="wanstaDeleteHitokoto(\'' + item.id + '\')">削除</button>' : '')
       + '</div>'
       + (canInteract
@@ -189,7 +189,7 @@ function renderWanstaHitokoto(hitokoto) {
   }
 
   if (hitokoto.length === 0) {
-    html += '<div class="wansta-empty"><div class="icon">💬</div><div>まだ一言がないよ</div></div>';
+    html += '<div class="wansta-empty"><div class="icon"><i class="ph-bold ph-chat-circle-text"></i></div><div>まだ一言がないよ</div></div>';
   }
 
   list.innerHTML = html;

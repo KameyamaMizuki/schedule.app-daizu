@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>かめさんち</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#81c784">
+  <meta name="theme-color" content="#3F6E5B">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="スケジュール">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/vendor/phosphor/style.css">
   <link rel="stylesheet" href="styles/home.bundle.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
   <div class="header green" id="mainHeader">
     <button class="hamburger" onclick="toggleSidebar()"><i class="ph-bold ph-list"></i></button>
     <h1 id="headerTitle">ホーム</h1>
-    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替">🌓</button>
+    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替"><i class="ph-bold ph-sun-horizon"></i></button>
     <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
       <span id="headerUserAvatar" class="header-avatar">👤</span>
     </button>
@@ -55,12 +55,12 @@
   <div id="homeContent" class="content active">
     <div class="home-container">
       <!-- 犬の画像 -->
-      <div class="dog-area">
+      <div class="dog-area reveal">
         <img id="homeDogImage" class="dog-image" src="images/dog/chirol/normal/IMG_3707.webp" alt="犬" onclick="homeDogTapped()" style="cursor:pointer" onerror="this.src='images/dog/chirol/normal/IMG_3707.webp'">
       </div>
 
       <!-- 吹き出し -->
-      <div id="homeSpeechBubble" class="speech-bubble">
+      <div id="homeSpeechBubble" class="speech-bubble reveal">
         <p id="homeSpeechText">今日は <span class="highlight" id="homeTodayDate">-</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！</p>
       </div>
 
@@ -73,7 +73,7 @@
       </div>
 
       <!-- メニューボタン -->
-      <div id="homeMenuButtons" class="menu-buttons active">
+      <div id="homeMenuButtons" class="menu-buttons active reveal-stagger">
         <button class="menu-btn uranau" onclick="homeStartUranau()">
           <i class="ph-bold ph-shooting-star icon"></i>
           <span class="label">うらなう</span>
@@ -178,7 +178,7 @@
           <input type="file" id="chirolImageInput" accept="image/*" style="display:none" onchange="chirolImageSelected(event)">
           <img id="chirolImagePreview" class="image-preview" src="" alt="">
           <div class="image-placeholder">
-            <div class="icon">📷</div>
+            <div class="icon"><i class="ph-bold ph-camera"></i></div>
             <span>タップして写真を選択</span>
           </div>
         </label>
@@ -262,7 +262,7 @@
   <!-- アカウントモーダル -->
   <div id="accountModal" class="account-modal">
     <div class="account-modal-content">
-      <button class="account-modal-close" onclick="closeAccountModal()">×</button>
+      <button class="account-modal-close" onclick="closeAccountModal()"><i class="ph-bold ph-x"></i></button>
       <!-- 表示モード -->
       <div id="accountViewMode">
         <div id="accountAvatarContainer" onclick="startEditAccount()" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;margin-bottom:8px">
@@ -294,7 +294,7 @@
           <input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="accountPhotoSelected(event)">
           <div class="account-photo-preview" id="accountPhotoPreview" onclick="document.getElementById('accountPhotoInput').click()">
             <img id="accountPreviewImg" src="" alt="プレビュー">
-            <div class="placeholder">📷<br>タップして<br>写真を選択</div>
+            <div class="placeholder"><i class="ph-bold ph-camera"></i><br>タップして<br>写真を選択</div>
           </div>
           <button class="account-photo-btn" onclick="document.getElementById('accountPhotoInput').click()">写真を変更</button>
           <button class="account-photo-remove" id="accountPhotoRemove" onclick="removeAccountPhoto()" style="display:none">写真を削除</button>
@@ -317,7 +317,7 @@
     <div class="crop-header">
       <h3>正方形に切り抜き</h3>
       <span class="crop-hint">ドラッグ移動・ピンチで拡縮</span>
-      <button class="crop-close" onclick="closeCropModal()">×</button>
+      <button class="crop-close" onclick="closeCropModal()"><i class="ph-bold ph-x"></i></button>
     </div>
     <div class="crop-container">
       <canvas id="cropCanvas"></canvas>

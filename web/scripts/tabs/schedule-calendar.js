@@ -243,8 +243,8 @@ async function showScheduleCalendarDetail(dateStr) {
     const daizuUser = data.users.find(u => u.userId === 'daizu-status');
     const daizuNote = daizuUser && daizuUser.notes ? (daizuUser.notes[dateStr] || '') : '';
     if (daizuNote) {
-      html += '<div style="margin-top:12px;padding:10px 12px;background:var(--color-surface);border-radius:8px;border-left:4px solid #ff9800;font-size:13px">';
-      html += '<div style="font-weight:600;color:#e65100;margin-bottom:4px">🐕 だいずの様子</div>';
+      html += '<div style="margin-top:12px;padding:10px 12px;background:var(--color-surface);border-radius:8px;border-left:4px solid #3F6E5B;font-size:13px">';
+      html += '<div style="font-weight:600;color:#274A3D;margin-bottom:4px"><i class="ph-bold ph-paw-print"></i> だいずの様子</div>';
       html += `<div style="white-space:pre-wrap;color:var(--color-text-primary)">${escapeHtml(daizuNote)}</div>`;
       html += '</div>';
     }
@@ -258,7 +258,7 @@ async function showScheduleCalendarDetail(dateStr) {
   });
 
   if (dayDiaries.length > 0) {
-    html += `<h4 style="margin-top:16px;font-size:13px;color:#8d6e63;border-bottom:1px solid #f0ebe6;padding-bottom:6px">📔 ダイ日記 (${dayDiaries.length}件)</h4>`;
+    html += `<h4 style="margin-top:16px;font-size:13px;color:#3F6E5B;border-bottom:1px solid #ECE2D2;padding-bottom:6px"><i class="ph-bold ph-book-open"></i> ダイ日記 (${dayDiaries.length}件)</h4>`;
     dayDiaries.forEach(post => {
       let text = post.text || '';
       const titleMatch = text.match(/\[TITLE:([^\]]+)\]/);

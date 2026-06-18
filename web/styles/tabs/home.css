@@ -1,13 +1,15 @@
 /* ========== ホームタブ用CSS ========== */
-.home-container{display:flex;flex-direction:column;align-items:center;padding:16px;max-width:400px;margin:0 auto}
-.dog-area{position:relative;margin-bottom:6px}
-.dog-image{width:280px;height:280px;border-radius:50%;object-fit:cover;border:5px solid #A8D5A2;box-shadow:0 0 0 8px rgba(168,213,162,0.18),0 6px 24px rgba(0,0,0,0.12);animation:swing 2s ease-in-out infinite;transition:opacity 0.5s ease}
+#homeContent.content{padding:16px 12px;background:var(--color-surface-alt)}
+.home-container{display:flex;flex-direction:column;align-items:center;padding:28px 16px 24px;max-width:400px;margin:0 auto;background:var(--color-surface);border-radius:28px;box-shadow:0 2px 10px rgba(43,36,32,0.05),0 16px 36px rgba(43,36,32,0.06);position:relative}
+.dog-area{position:relative;margin-bottom:6px;padding:18px}
+.dog-area::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(168,213,162,0.35) 0%,rgba(168,213,162,0.12) 55%,transparent 78%);z-index:0}
+.dog-image{position:relative;z-index:1;width:280px;height:280px;border-radius:50%;object-fit:cover;border:5px solid #A8D5A2;box-shadow:0 0 0 8px rgba(168,213,162,0.18),0 6px 24px rgba(0,0,0,0.12);animation:swing 2s ease-in-out infinite;transition:opacity 0.5s ease}
 .dog-image.fade-out{opacity:0}
 @keyframes swing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
-.speech-bubble{position:relative;background:var(--color-surface);border-radius:20px;padding:12px 18px;margin-top:10px;box-shadow:0 2px 12px rgba(0,0,0,0.09);max-width:280px;text-align:center;transition:opacity 0.5s ease;border:1.5px solid rgba(168,213,162,0.4)}
-.speech-bubble::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid var(--color-surface)}
-.speech-bubble p{font-size:14px;line-height:1.5;color:var(--color-text-primary);font-weight:500}
-.speech-bubble .highlight{color:#43a047;font-weight:700}
+.speech-bubble{position:relative;background:var(--color-bg);border-radius:20px;padding:12px 18px;margin-top:10px;box-shadow:0 2px 12px rgba(0,0,0,0.07);max-width:280px;text-align:center;transition:opacity 0.5s ease;border:1.5px solid rgba(168,213,162,0.4)}
+.speech-bubble::before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid var(--color-bg)}
+.speech-bubble p{font-family:var(--font-display);font-size:16px;line-height:1.6;color:var(--color-text-primary);font-weight:500}
+.speech-bubble .highlight{color:#3F6E5B;font-weight:700}
 .speech-bubble.fade-out{opacity:0}
 .menu-buttons{display:none;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;max-width:320px;margin-top:12px}
 .menu-buttons.active{display:grid}
@@ -21,7 +23,7 @@
 .menu-btn.kiroku .icon{font-size:18px}
 .menu-btn.kiroku .label{font-size:12px}
 .menu-btn.kiroku .desc{font-size:9px}
-.home-fab{position:fixed;bottom:76px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#66bb6a 0%,#43a047 100%);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(102,187,106,0.4);z-index:100;display:none}
+.home-fab{position:fixed;bottom:76px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#3F6E5B 0%,#274A3D 100%);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(63,110,91,0.4);z-index:100;display:none}
 .home-fab:active{transform:scale(0.95)}
 .home-fab.active{display:flex;align-items:center;justify-content:center}
 .menu-btn.uranau{background:linear-gradient(145deg,#f0e8f8 0%,#ddd0f0 100%);color:#5c35a0;border:1.5px solid rgba(92,53,160,0.1)}
@@ -37,7 +39,7 @@
 .progress-container{display:none;width:100%;max-width:280px;margin-top:20px}
 .progress-container.active{display:block}
 .progress-bar{height:8px;background:var(--color-border);border-radius:4px;overflow:hidden}
-.progress-bar-inner{height:100%;background:linear-gradient(90deg,#81c784,#aed581);border-radius:4px;animation:progress 3s ease-in-out}
+.progress-bar-inner{height:100%;background:linear-gradient(90deg,#3F6E5B,#274A3D);border-radius:4px;animation:progress 3s ease-in-out}
 @keyframes progress{0%{width:0%}100%{width:100%}}
 .progress-text{text-align:center;font-size:13px;color:var(--color-text-muted);margin-top:8px}
 .input-area{display:none;width:100%;max-width:300px;margin-top:15px}
@@ -45,33 +47,33 @@
 .input-area .form-group{margin-bottom:12px}
 .input-area label{display:block;font-size:13px;color:var(--color-text-muted);margin-bottom:6px;font-weight:600}
 .input-area input,.input-area textarea,.input-area select{width:100%;padding:12px;border:2px solid var(--color-border);border-radius:8px;font-size:14px;transition:border-color 0.2s}
-.input-area input:focus,.input-area textarea:focus,.input-area select:focus{outline:none;border-color:#81c784}
+.input-area input:focus,.input-area textarea:focus,.input-area select:focus{outline:none;border-color:#3F6E5B}
 .input-area textarea{min-height:80px;resize:vertical}
 .time-row{display:flex;gap:8px}
 .time-row select{flex:1}
-.home-submit{width:100%;padding:14px;background:linear-gradient(135deg,#81c784 0%,#aed581 100%);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+.home-submit{width:100%;padding:14px;background:linear-gradient(135deg,#3F6E5B 0%,#274A3D 100%);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
 .home-submit:disabled{background:var(--color-border);cursor:not-allowed}
 .back-btn{width:100%;padding:12px;background:var(--color-surface);color:var(--color-text-muted);border:2px solid var(--color-border);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:all 0.2s}
 .back-btn:hover{background:var(--color-bg);border-color:var(--color-border)}
 .record-type-buttons{display:flex;gap:10px;margin-bottom:12px}
 .record-type-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 12px;background:var(--color-surface);border:2px solid var(--color-border);border-radius:12px;cursor:pointer;transition:all 0.2s}
-.record-type-btn:hover{border-color:#81c784;background:#f1f8e9}
+.record-type-btn:hover{border-color:#3F6E5B;background:#f1f8e9}
 .record-type-btn .icon{font-size:24px;margin-bottom:6px}
 .record-type-btn span:last-child{font-size:13px;font-weight:600;color:var(--color-text-primary)}
 .choice-buttons{display:none;flex-direction:column;gap:10px;width:100%;max-width:280px;margin-top:15px}
 .choice-buttons.active{display:flex}
 .choice-btn{padding:12px 20px;background:var(--color-surface);border:2px solid var(--color-border);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
-.choice-btn:hover{border-color:#81c784;background:#f1f8e9}
-.choice-btn.primary{background:linear-gradient(135deg,#81c784 0%,#aed581 100%);color:#fff;border:none}
+.choice-btn:hover{border-color:#3F6E5B;background:#f1f8e9}
+.choice-btn.primary{background:linear-gradient(135deg,#3F6E5B 0%,#274A3D 100%);color:#fff;border:none}
 .calendar-area{display:none;width:100%;max-width:300px;margin-top:15px;background:var(--color-surface);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 .calendar-area.active{display:block}
 .calendar-area .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .calendar-area .calendar-header h3{font-size:14px;color:var(--color-text-primary)}
-.calendar-nav-btn{background:#81c784;color:#fff;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px}
-.calendar-confirm-btn{width:100%;padding:12px;background:linear-gradient(135deg,#81c784 0%,#aed581 100%);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
+.calendar-nav-btn{background:#3F6E5B;color:#fff;border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px}
+.calendar-confirm-btn{width:100%;padding:12px;background:linear-gradient(135deg,#3F6E5B 0%,#274A3D 100%);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px}
 .schedule-display{display:none;width:100%;max-width:300px;margin-top:15px;background:var(--color-surface);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
 .schedule-display.active{display:block}
-.schedule-display h4{font-size:14px;color:var(--color-text-primary);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #81c784}
+.schedule-display h4{font-size:14px;color:var(--color-text-primary);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #3F6E5B}
 .schedule-display .schedule-table{width:100%;border-collapse:collapse;font-size:12px}
 .schedule-display .schedule-table th,.schedule-display .schedule-table td{padding:8px 4px;text-align:center;border:1px solid var(--color-border)}
 .schedule-display .schedule-table th{background:var(--color-bg);font-weight:600}
@@ -82,7 +84,7 @@
 .home-slot-group{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .home-slot-checkbox{display:flex;align-items:center;padding:8px 12px;background:var(--color-bg);border-radius:6px;cursor:pointer;font-size:13px}
 .home-slot-checkbox input{width:18px;height:18px;margin-right:6px}
-.home-slot-checkbox input:checked + span{color:#43a047;font-weight:600}
+.home-slot-checkbox input:checked + span{color:#3F6E5B;font-weight:600}
 
 /* 知ってるチロル用CSS */
 .chirol-choice-area{display:none;width:100%;max-width:280px;margin-top:15px}
@@ -136,7 +138,7 @@
 .uranau-member-btn:hover{background:#fce4ec;border-color:#f48fb1}
 .uranau-member-btn .name{color:var(--color-text-primary)}
 .uranau-member-btn .status{color:#4caf50;font-size:14px}
-.uranau-member-btn .status.new{color:#ff9800;background:#fff3e0;padding:2px 8px;border-radius:10px;font-size:12px}
+.uranau-member-btn .status.new{color:#C66A3D;background:#fbe9e0;padding:2px 8px;border-radius:10px;font-size:12px}
 .uranau-submit-btn{padding:12px 32px;background:linear-gradient(135deg,#f48fb1 0%,#f8bbd9 100%);color:#fff;border:none;border-radius:24px;font-size:16px;font-weight:600;cursor:pointer}
 .uranau-result-card{background:var(--color-surface);border-radius:16px;padding:16px 20px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.1);margin-bottom:12px;max-width:100%}
 .uranau-result-card h3{color:#ad1457;margin:0 0 8px 0;font-size:15px}
@@ -197,11 +199,11 @@
 .home-daizu-yousu-area{display:none;width:100%;max-width:300px;margin-top:22px}
 .home-daizu-yousu-area.active{display:block}
 .daizu-yousu-bubble{position:relative;margin-bottom:12px}
-.daizu-yousu-bubble-content{background:var(--color-surface);border:2px solid #ffb74d;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(255,152,0,0.15)}
-.daizu-yousu-bubble-tail{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:12px solid #ffb74d}
+.daizu-yousu-bubble-content{background:var(--color-surface);border:2px solid #3F6E5B;border-radius:16px;padding:14px;box-shadow:0 2px 8px rgba(63,110,91,0.15)}
+.daizu-yousu-bubble-tail{position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:12px solid #3F6E5B}
 .daizu-yousu-bubble-tail::after{content:'';position:absolute;top:2px;left:-10px;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid var(--color-surface)}
-.home-daizu-yousu-area textarea{width:100%;padding:10px;border:2px solid #ffcc80;border-radius:10px;font-size:14px;min-height:80px;resize:vertical;transition:border-color 0.2s;box-sizing:border-box;font-family:inherit}
-.home-daizu-yousu-area textarea:focus{outline:none;border-color:#ff9800}
+.home-daizu-yousu-area textarea{width:100%;padding:10px;border:2px solid #9CC9B6;border-radius:10px;font-size:14px;min-height:80px;resize:vertical;transition:border-color 0.2s;box-sizing:border-box;font-family:inherit}
+.home-daizu-yousu-area textarea:focus{outline:none;border-color:#3F6E5B}
 .home-daizu-yousu-area .char-count{text-align:right;font-size:12px;color:var(--color-text-faint);margin-top:4px}
 
 /* だいずLIFF入力フォーム */

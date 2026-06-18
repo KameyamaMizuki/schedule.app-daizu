@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>管理ダッシュボード</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#667eea">
+  <meta name="theme-color" content="#3F6E5B">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ダッシュボード">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/vendor/phosphor/style.css">
   <link rel="stylesheet" href="styles/dashboard.bundle.css">
 </head>
 <body>
@@ -20,7 +20,7 @@
   <div class="header" id="mainHeader">
     <button class="hamburger" onclick="toggleSidebar()"><i class="ph-bold ph-list"></i></button>
     <h1 id="headerTitle">スケジュール管理</h1>
-    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替">🌓</button>
+    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替"><i class="ph-bold ph-sun-horizon"></i></button>
     <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
       <span id="headerUserAvatar" class="header-avatar">👤</span>
     </button>
@@ -74,52 +74,52 @@
 
   <!-- 様子タブ -->
   <div id="yousuContent" class="content">
-    <div class="yousu-container" id="yousuContainer">
+    <div class="yousu-container reveal" id="yousuContainer">
       <div class="loading">読み込み中...</div>
     </div>
   </div>
 
   <!-- ダイ日記タブ -->
   <div id="diaryContent" class="content">
-    <div class="diary-container">
+    <div class="diary-container reveal">
       <div id="diaryPosts" class="diary-posts">
         <div class="loading">読み込み中...</div>
       </div>
       <!-- 投稿ボタン（フローティング） -->
-      <button class="diary-fab" onclick="toggleDiaryInput()">📝</button>
+      <button class="diary-fab" onclick="toggleDiaryInput()"><i class="ph-bold ph-note-pencil"></i></button>
       <!-- 投稿フォーム（非表示） -->
       <div id="diaryInputArea" class="diary-input-area" style="display:none">
         <div class="diary-input-header">
-          <span id="diaryInputTitle">📝 日記を書く</span>
-          <button class="diary-close-btn" onclick="toggleDiaryInput()">✕</button>
+          <span id="diaryInputTitle"><i class="ph-bold ph-note-pencil"></i> 日記を書く</span>
+          <button class="diary-close-btn" onclick="toggleDiaryInput()"><i class="ph-bold ph-x"></i></button>
         </div>
         <!-- 日付選択 -->
         <div class="diary-date-row">
-          <span class="diary-date-label">📅 日付</span>
+          <span class="diary-date-label"><i class="ph-bold ph-calendar"></i> 日付</span>
           <input type="date" id="diaryDateInput" class="diary-date-input">
         </div>
         <!-- タイトル入力 -->
         <input type="text" id="diaryTitleInput" class="diary-title-input" placeholder="タイトル（任意）" maxlength="50">
         <!-- キャッチ画像（タイトル下・任意） -->
         <div class="diary-catch-section">
-          <button id="diaryCatchSelectBtn" class="diary-catch-select-btn" onclick="diaryOpenCatchInput()">📷 キャッチ画像を選ぶ（任意）</button>
+          <button id="diaryCatchSelectBtn" class="diary-catch-select-btn" onclick="diaryOpenCatchInput()"><i class="ph-bold ph-camera"></i> キャッチ画像を選ぶ（任意）</button>
           <div id="diaryCatchPreview" class="diary-catch-preview" style="display:none">
             <img id="diaryCatchPreviewImg" src="" alt="キャッチ画像">
-            <button class="diary-photo-remove" onclick="diaryCatchRemove()">✕</button>
+            <button class="diary-photo-remove" onclick="diaryCatchRemove()"><i class="ph-bold ph-x"></i></button>
           </div>
         </div>
         <!-- 写真選択 -->
         <input type="file" id="diaryPhotoInput" accept="image/*" style="display:none" onchange="diaryPhotoSelected(event)">
         <div id="diaryPhotoPreview" class="diary-photo-preview" style="display:none">
           <img id="diaryPreviewImg" src="" alt="プレビュー">
-          <button class="diary-photo-remove" onclick="diaryRemovePhoto()">✕</button>
+          <button class="diary-photo-remove" onclick="diaryRemovePhoto()"><i class="ph-bold ph-x"></i></button>
         </div>
         <!-- リッチテキストツールバー -->
         <div class="diary-editor-toolbar">
           <button class="diary-toolbar-btn" onclick="diaryFormatText('bold')" title="太字"><b>B</b></button>
           <button class="diary-toolbar-btn" onclick="diaryFormatText('italic')" title="斜体"><i>I</i></button>
           <div class="diary-toolbar-sep"></div>
-          <button class="diary-toolbar-btn" onclick="diaryInsertPhoto()" title="写真を挿入">📷 挿入</button>
+          <button class="diary-toolbar-btn" onclick="diaryInsertPhoto()" title="写真を挿入"><i class="ph-bold ph-camera"></i> 挿入</button>
         </div>
         <!-- リッチテキストエディタ -->
         <div class="diary-editor-wrapper">
@@ -132,7 +132,7 @@
 
   <!-- ワンスタタブ -->
   <div id="wanstaContent" class="content">
-    <div class="wansta-container">
+    <div class="wansta-container reveal">
       <!-- アカウント切り替え -->
       <div class="wansta-account-switch">
         <button class="wansta-switch-btn active" id="wanstaChirolBtn" onclick="wanstaSwitchAccount('chirol')">
@@ -150,15 +150,15 @@
         <div class="wansta-account-info">
           <div id="wanstaAccountName" class="wansta-account-name">チロル</div>
           <div class="wansta-account-stats">
-            <div>📷 <span id="wanstaPhotoCount">0</span>枚</div>
-            <div>💬 <span id="wanstaHitokotoCount">0</span>件</div>
+            <div><i class="ph-bold ph-camera"></i> <span id="wanstaPhotoCount">0</span>枚</div>
+            <div><i class="ph-bold ph-chat-circle-text"></i> <span id="wanstaHitokotoCount">0</span>件</div>
           </div>
         </div>
       </div>
       <!-- タブ切り替え -->
       <div class="wansta-tabs">
-        <div class="wansta-tab active" id="wanstaPhotoTab" onclick="wanstaSwitchTab('photo')">📷 写真</div>
-        <div class="wansta-tab" id="wanstaHitokotoTab" onclick="wanstaSwitchTab('hitokoto')">💬 一言</div>
+        <div class="wansta-tab active" id="wanstaPhotoTab" onclick="wanstaSwitchTab('photo')"><i class="ph-bold ph-camera"></i> 写真</div>
+        <div class="wansta-tab" id="wanstaHitokotoTab" onclick="wanstaSwitchTab('hitokoto')"><i class="ph-bold ph-chat-circle-text"></i> 一言</div>
       </div>
       <!-- 写真グリッド -->
       <div id="wanstaPhotoGrid" class="wansta-photo-grid">
@@ -180,16 +180,16 @@
         <img id="wanstaViewerAvatar" class="wansta-viewer-avatar" src="" alt="">
         <span id="wanstaViewerName" class="wansta-viewer-name">チロル</span>
       </div>
-      <button class="wansta-viewer-close" onclick="wanstaCloseViewer()">×</button>
+      <button class="wansta-viewer-close" onclick="wanstaCloseViewer()"><i class="ph-bold ph-x"></i></button>
     </div>
     <div class="wansta-viewer-body">
       <img id="wanstaViewerImg" src="" alt="写真">
     </div>
     <div class="wansta-viewer-actions">
       <button class="wansta-action-btn" id="wanstaLikeBtn" onclick="wanstaToggleLike()">🤍</button>
-      <button class="wansta-action-btn" onclick="document.getElementById('wanstaCommentInput').focus()">💬</button>
+      <button class="wansta-action-btn" onclick="document.getElementById('wanstaCommentInput').focus()"><i class="ph-bold ph-chat-circle-text"></i></button>
       <div class="wansta-action-spacer"></div>
-      <button class="wansta-action-btn wansta-action-delete" id="wanstaDeleteBtn" onclick="wanstaDeletePhoto()">🗑️</button>
+      <button class="wansta-action-btn wansta-action-delete" id="wanstaDeleteBtn" onclick="wanstaDeletePhoto()"><i class="ph-bold ph-trash"></i></button>
     </div>
     <div class="wansta-likes" id="wanstaLikesCount">いいね 0件</div>
     <div class="wansta-comments" id="wanstaCommentsList"></div>
@@ -203,14 +203,14 @@
   <div id="wanstaUploadModal" class="wansta-upload-modal">
     <div class="wansta-upload-content">
       <div class="wansta-upload-header">
-        <h3>📷 写真を追加</h3>
-        <button class="wansta-upload-close" onclick="wanstaCloseUpload()">×</button>
+        <h3><i class="ph-bold ph-camera"></i> 写真を追加</h3>
+        <button class="wansta-upload-close" onclick="wanstaCloseUpload()"><i class="ph-bold ph-x"></i></button>
       </div>
       <input type="file" id="wanstaPhotoInput" accept="image/*" style="display:none" onchange="wanstaPhotoSelected(event)">
       <div class="wansta-upload-preview" id="wanstaUploadPreview" onclick="document.getElementById('wanstaPhotoInput').click()">
         <img id="wanstaPreviewImg" src="" alt="プレビュー">
         <div class="placeholder">
-          <div class="icon">📷</div>
+          <div class="icon"><i class="ph-bold ph-camera"></i></div>
           <div>タップして写真を選択</div>
         </div>
       </div>
@@ -221,7 +221,7 @@
   <!-- ワンスタ一言追加モーダル -->
   <div id="wanstaHitokotoModal" class="wansta-hitokoto-modal">
     <div class="wansta-hitokoto-content">
-      <h3>💬 一言を追加</h3>
+      <h3><i class="ph-bold ph-chat-circle-text"></i> 一言を追加</h3>
       <textarea id="wanstaHitokotoInput" class="wansta-hitokoto-input" placeholder="今日の一言..." maxlength="100" rows="3"></textarea>
       <button class="wansta-hitokoto-submit" id="wanstaHitokotoSubmitBtn" onclick="wanstaSubmitHitokoto()">追加する</button>
       <button class="back-btn" onclick="wanstaCloseHitokotoModal()" style="margin-top:8px">キャンセル</button>
@@ -246,7 +246,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="editModalTitle">スケジュール編集</h2>
-        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        <button class="modal-close" onclick="closeEditModal()"><i class="ph-bold ph-x"></i></button>
       </div>
       <div class="modal-body" id="editModalBody">
         <div class="loading">読み込み中...</div>
@@ -271,7 +271,7 @@
   <!-- アカウントモーダル -->
   <div id="accountModal" class="account-modal">
     <div class="account-modal-content">
-      <button class="account-modal-close" onclick="closeAccountModal()">×</button>
+      <button class="account-modal-close" onclick="closeAccountModal()"><i class="ph-bold ph-x"></i></button>
       <!-- 表示モード -->
       <div id="accountViewMode">
         <div id="accountAvatarContainer" onclick="startEditAccount()" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;margin-bottom:8px">
@@ -281,7 +281,7 @@
         <h3 id="accountName" onclick="startEditAccount()" style="cursor:pointer">ユーザー名</h3>
         <p class="account-subtitle">タップして編集</p>
         <p id="accountBirthday" class="account-subtitle" style="margin-top:4px;font-size:13px">🎂 生年月日: 未設定</p>
-        <button class="account-action-btn" onclick="openPinSetting()">🔑 PIN設定・変更</button>
+        <button class="account-action-btn" onclick="openPinSetting()"><i class="ph-bold ph-key"></i> PIN設定・変更</button>
         <div id="pinSettingSection" style="display:none;margin-top:10px">
           <input type="password" id="pinInput" maxlength="4" pattern="\d{4}"
             placeholder="新しいPIN（4桁）" class="account-name-input" inputmode="numeric">
@@ -290,22 +290,22 @@
             <button class="account-edit-save" id="accountSaveBtn" onclick="savePin()">設定する</button>
           </div>
         </div>
-        <button class="account-action-btn" onclick="shareAppLink()" style="margin-top:8px">🔗 アプリリンクを共有</button>
+        <button class="account-action-btn" onclick="shareAppLink()" style="margin-top:8px"><i class="ph-bold ph-link"></i> アプリリンクを共有</button>
       </div>
       <!-- 編集モード -->
       <div id="accountEditMode" style="display:none">
         <p style="font-size:14px;color:#666;margin-bottom:12px">アイコンを選択</p>
         <!-- アイコンタイプ切り替え -->
         <div class="account-icon-tabs">
-          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')">📷 写真</div>
-          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')">😊 絵文字</div>
+          <div class="account-icon-tab active" id="accountIconPhotoTab" onclick="switchAccountIconTab('photo')"><i class="ph-bold ph-camera"></i> 写真</div>
+          <div class="account-icon-tab" id="accountIconEmojiTab" onclick="switchAccountIconTab('emoji')"><i class="ph-bold ph-smiley"></i> 絵文字</div>
         </div>
         <!-- 写真ピッカー -->
         <div id="accountPhotoPicker" class="account-photo-picker">
           <input type="file" id="accountPhotoInput" accept="image/*" style="display:none" onchange="accountPhotoSelected(event)">
           <div class="account-photo-preview" id="accountPhotoPreview" onclick="document.getElementById('accountPhotoInput').click()">
             <img id="accountPreviewImg" src="" alt="プレビュー">
-            <div class="placeholder">📷<br>タップして<br>写真を選択</div>
+            <div class="placeholder"><i class="ph-bold ph-camera"></i><br>タップして<br>写真を選択</div>
           </div>
           <button class="account-photo-btn" onclick="document.getElementById('accountPhotoInput').click()">写真を変更</button>
           <button class="account-photo-remove" id="accountPhotoRemove" onclick="removeAccountPhoto()" style="display:none">写真を削除</button>
@@ -329,7 +329,7 @@
     <div class="crop-header">
       <h3>正方形に切り抜き</h3>
       <span class="crop-hint">ドラッグ移動・ピンチで拡縮</span>
-      <button class="crop-close" onclick="closeCropModal()">×</button>
+      <button class="crop-close" onclick="closeCropModal()"><i class="ph-bold ph-x"></i></button>
     </div>
     <div class="crop-container">
       <canvas id="cropCanvas"></canvas>
@@ -345,7 +345,7 @@
     <div class="diary-crop-header">
       <h3>写真をトリミング</h3>
       <span class="diary-crop-info">ドラッグで移動、ピンチで拡大縮小</span>
-      <button class="crop-close" onclick="closeDiaryCropModal()">×</button>
+      <button class="crop-close" onclick="closeDiaryCropModal()"><i class="ph-bold ph-x"></i></button>
     </div>
     <div class="diary-crop-ratio">
       <button class="diary-ratio-btn" onclick="setDiaryCropRatio('free')" data-ratio="free">自由</button>

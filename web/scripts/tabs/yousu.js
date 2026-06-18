@@ -57,7 +57,7 @@ function renderYousuTab() {
   html += '<div class="yousu-banner">';
   html += '<img class="yousu-banner-img" src="' + randomImg + '" alt="だいず" onerror="this.style.display=\'none\'">';
   html += '<div>';
-  html += '<div class="yousu-banner-text">🐕 だいずの様子</div>';
+  html += '<div class="yousu-banner-text"><i class="ph-bold ph-paw-print"></i> だいずの様子</div>';
   html += '<div class="yousu-banner-sub">毎日の記録</div>';
   html += '</div>';
   html += '</div>';
@@ -65,7 +65,7 @@ function renderYousuTab() {
   // 今日の入力カード
   html += '<div class="yousu-today">';
   html += '<div class="yousu-today-label">';
-  html += '<span>📝 ' + todayLabel + '</span>';
+  html += '<span><i class="ph-bold ph-note-pencil"></i> ' + todayLabel + '</span>';
   html += '</div>';
   html += '<textarea id="yousuTodayInput" class="yousu-today-textarea" placeholder="今日のだいずの様子を入力..." maxlength="200"></textarea>';
   html += '<div class="yousu-input-footer">';
@@ -105,7 +105,7 @@ function renderYousuTab() {
     html += '</div>';
   } else {
     html += '<div class="yousu-empty">';
-    html += '<div class="yousu-empty-icon">🐕</div>';
+    html += '<div class="yousu-empty-icon"><i class="ph-bold ph-paw-print"></i></div>';
     html += '<div class="yousu-empty-text">まだ記録がありません<br>今日のだいずの様子を記録してみましょう</div>';
     html += '</div>';
   }
@@ -152,8 +152,8 @@ function renderYousuPost(post) {
     }
     if (isOwner && !isLegacy) {
       html += '<span class="yousu-entry-actions">';
-      html += '<button class="yousu-action-btn" onclick="yousuStartEdit(\'' + escapeHtml(post.SK) + '\')">✏️</button>';
-      html += '<button class="yousu-action-btn" onclick="yousuDeletePost(\'' + post.postId + '\',\'' + escapeHtml(post.SK) + '\')">🗑️</button>';
+      html += '<button class="yousu-action-btn" onclick="yousuStartEdit(\'' + escapeHtml(post.SK) + '\')"><i class="ph-bold ph-pencil-simple"></i></button>';
+      html += '<button class="yousu-action-btn" onclick="yousuDeletePost(\'' + post.postId + '\',\'' + escapeHtml(post.SK) + '\')"><i class="ph-bold ph-trash"></i></button>';
       html += '</span>';
     }
     html += '</div>';

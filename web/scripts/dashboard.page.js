@@ -118,6 +118,7 @@ async function switchTab(tab) {
 
   // タブ切り替え後にアバターを再描画（ヘッダー色変更で上書きされるのを防ぐ）
   updateHeaderAvatar();
+  if (window.rescanReveal) window.rescanReveal();
 }
 
 // bfcache（ブラウザ戻るキャッシュ）から復元された場合にWANstaをリセット

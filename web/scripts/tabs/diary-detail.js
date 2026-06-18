@@ -27,7 +27,7 @@ function diaryShowDetail(postId) {
   }
 
   document.getElementById('diaryDetailContent').innerHTML =
-    '<div class="diary-detail-date">📅 ' + parsed.dateStrLong + '</div>'
+    '<div class="diary-detail-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrLong + '</div>'
     + (parsed.title ? '<div class="diary-detail-title">' + escapeHtml(parsed.title) + '</div>' : '')
     + '<div class="diary-detail-author">' + escapeHtml(displayName) + '</div>'
     + (parsed.catchImgData ? '<img class="diary-detail-catch" src="' + parsed.catchImgData + '" alt="">' : '')
@@ -37,7 +37,7 @@ function diaryShowDetail(postId) {
     + '❤️ ' + (likeCount > 0 ? likeCount : '')
     + '</span>'
     + '<span class="diary-detail-like-btn">'
-    + '💬 ' + (commentCount > 0 ? commentCount : '')
+    + '<i class="ph-bold ph-chat-circle-text"></i> ' + (commentCount > 0 ? commentCount : '')
     + '</span>'
     + '</div>'
     + '<div class="diary-comment-section">'
@@ -46,8 +46,8 @@ function diaryShowDetail(postId) {
     + '</div>'
     + (isOwner
       ? '<div class="diary-detail-actions">'
-        + '<span class="diary-entry-action" onclick="closeDiaryDetail();editDiary(\'' + post.postId + '\')">✏️ 編集</span>'
-        + '<span class="diary-entry-action" onclick="closeDiaryDetail();deleteDiary(\'' + post.postId + '\')">🗑 削除</span>'
+        + '<span class="diary-entry-action" onclick="closeDiaryDetail();editDiary(\'' + post.postId + '\')"><i class="ph-bold ph-pencil-simple"></i> 編集</span>'
+        + '<span class="diary-entry-action" onclick="closeDiaryDetail();deleteDiary(\'' + post.postId + '\')"><i class="ph-bold ph-trash"></i> 削除</span>'
         + '</div>'
       : '');
 

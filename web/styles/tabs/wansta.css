@@ -1,17 +1,17 @@
 /* ワンスタタブ */
 .header.wansta{background:var(--grad-header-wansta)}
-.tab.active.wansta{color:#e91e63;border-bottom-color:#e91e63}
+.tab.active.wansta{color:#3F6E5B;border-bottom-color:#3F6E5B}
 .wansta-container{min-height:calc(100vh - 180px);padding:0;padding-bottom:100px;background:var(--color-surface-alt)}
 .wansta-account-header{display:flex;align-items:center;padding:16px;background:var(--color-surface);border-bottom:1px solid var(--color-border-soft)}
-.wansta-avatar{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #e91e63;padding:2px;margin-right:16px}
+.wansta-avatar{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #3F6E5B;padding:2px;margin-right:16px}
 .wansta-account-info{flex:1}
 .wansta-account-name{font-size:20px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px}
 .wansta-account-stats{display:flex;gap:20px;font-size:14px;color:var(--color-text-primary)}
 .wansta-account-stats span{font-weight:600}
 .wansta-account-switch{display:flex;gap:8px;padding:12px 16px;background:var(--color-surface);border-bottom:1px solid var(--color-border-soft)}
 .wansta-switch-btn{flex:1;padding:10px;border:2px solid var(--color-border-soft);border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;background:var(--color-surface);color:var(--color-text-primary);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.wansta-switch-btn:hover{border-color:#e91e63}
-.wansta-switch-btn.active{background:#e91e63;color:#fff;border-color:#e91e63}
+.wansta-switch-btn:hover{border-color:#3F6E5B}
+.wansta-switch-btn.active{background:#3F6E5B;color:#fff;border-color:#3F6E5B}
 .wansta-switch-btn img{width:24px;height:24px;border-radius:50%;object-fit:cover}
 .wansta-tabs{display:flex;background:var(--color-surface);border-bottom:1px solid var(--color-border-soft)}
 .wansta-tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-size:14px;color:var(--color-text-faint);border-bottom:2px solid transparent}
@@ -20,7 +20,7 @@
 .wansta-photo-item{aspect-ratio:1;position:relative;cursor:pointer;overflow:hidden;background:var(--color-border-soft)}
 .wansta-photo-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.2s}
 .wansta-photo-item:hover img{transform:scale(1.05)}
-.wansta-fab{position:fixed;bottom:76px;right:16px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#e91e63 0%,#f06292 100%);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(233,30,99,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.wansta-fab{position:fixed;bottom:76px;right:16px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#3F6E5B 0%,#274A3D 100%);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(63,110,91,0.4);z-index:100;display:flex;align-items:center;justify-content:center}
 .wansta-fab:active{transform:scale(0.95)}
 .wansta-hitokoto-list{padding:12px}
 .wansta-hitokoto-item{background:var(--color-surface);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
@@ -32,11 +32,11 @@
 .hitokoto-comments-area{padding:8px 0 0 0}
 .hitokoto-comment-input-row{display:flex;gap:6px;margin-top:6px}
 .hitokoto-comment-input{flex:1;padding:6px 10px;border:1px solid var(--color-border-soft);border-radius:16px;font-size:12px;outline:none}
-.hitokoto-comment-input:focus{border-color:#e91e63}
-.hitokoto-comment-submit{background:#e91e63;color:#fff;border:none;border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer}
+.hitokoto-comment-input:focus{border-color:#3F6E5B}
+.hitokoto-comment-submit{background:#3F6E5B;color:#fff;border:none;border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer}
 .wansta-hitokoto-add{display:flex;align-items:center;gap:10px;background:var(--color-surface);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1);cursor:pointer}
-.wansta-hitokoto-add:hover{background:#fce4ec}
-.wansta-hitokoto-add .icon{font-size:24px;color:#e91e63}
+.wansta-hitokoto-add:hover{background:#EAF1ED}
+.wansta-hitokoto-add .icon{font-size:24px;color:#3F6E5B}
 .wansta-hitokoto-add span{font-size:14px;color:var(--color-text-faint)}
 .wansta-empty{text-align:center;padding:40px 20px;color:var(--color-text-faint)}
 .wansta-empty .icon{font-size:48px;margin-bottom:12px;opacity:0.5}
@@ -44,7 +44,7 @@
 .wansta-photo-viewer.active{display:flex}
 .wansta-viewer-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--color-border-soft);background:var(--color-surface);position:sticky;top:0;z-index:1}
 .wansta-viewer-account{display:flex;align-items:center;gap:10px}
-.wansta-viewer-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #e91e63}
+.wansta-viewer-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #3F6E5B}
 .wansta-viewer-name{font-weight:600;font-size:14px;color:var(--color-text-primary)}
 .wansta-viewer-close{background:none;border:none;color:var(--color-text-primary);font-size:24px;cursor:pointer;padding:4px 8px}
 .wansta-viewer-body{width:100%;background:#000}
@@ -69,14 +69,14 @@
 .wansta-comment-input-area{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--color-border-soft);background:var(--color-surface);position:sticky;bottom:0}
 .wansta-comment-input{flex:1;border:none;font-size:14px;outline:none;background:transparent}
 .wansta-comment-input::placeholder{color:var(--color-text-faint)}
-.wansta-comment-submit{background:none;border:none;color:#0095f6;font-weight:600;font-size:14px;cursor:pointer}
-.wansta-comment-submit:disabled{color:#b3dbff;cursor:default}
+.wansta-comment-submit{background:none;border:none;color:#3F6E5B;font-weight:600;font-size:14px;cursor:pointer}
+.wansta-comment-submit:disabled{color:#A9C2B8;cursor:default}
 .wansta-no-comments{color:var(--color-text-faint);font-size:13px;text-align:center;padding:20px 0}
 .wansta-upload-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2500;justify-content:center;align-items:center}
 .wansta-upload-modal.active{display:flex}
 .wansta-upload-content{background:var(--color-surface);border-radius:16px;padding:24px;width:90%;max-width:360px}
 .wansta-upload-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.wansta-upload-header h3{margin:0;font-size:18px;color:var(--color-text-primary)}
+.wansta-upload-header h3{font-family:var(--font-display);margin:0;font-size:19px;color:var(--color-text-primary)}
 .wansta-upload-close{background:none;border:none;font-size:24px;cursor:pointer;color:var(--color-text-faint)}
 .wansta-upload-preview{width:100%;aspect-ratio:1;background:var(--color-border-soft);border-radius:12px;overflow:hidden;margin-bottom:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px dashed var(--color-border-soft)}
 .wansta-upload-preview.has-image{border:none}
@@ -85,13 +85,13 @@
 .wansta-upload-preview .placeholder{color:var(--color-text-faint);text-align:center}
 .wansta-upload-preview .placeholder .icon{font-size:48px;margin-bottom:8px}
 .wansta-upload-preview.has-image .placeholder{display:none}
-.wansta-upload-btn{width:100%;padding:14px;background:#e91e63;color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer}
+.wansta-upload-btn{width:100%;padding:14px;background:#3F6E5B;color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer}
 .wansta-upload-btn:disabled{background:var(--color-border)}
 .wansta-hitokoto-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2500;justify-content:center;align-items:center}
 .wansta-hitokoto-modal.active{display:flex}
 .wansta-hitokoto-content{background:var(--color-surface);border-radius:16px;padding:24px;width:90%;max-width:360px}
-.wansta-hitokoto-content h3{margin:0 0 16px 0;font-size:18px;color:var(--color-text-primary)}
+.wansta-hitokoto-content h3{font-family:var(--font-display);margin:0 0 16px 0;font-size:19px;color:var(--color-text-primary)}
 .wansta-hitokoto-input{width:100%;padding:14px;border:1px solid var(--color-border-soft);border-radius:12px;font-size:15px;resize:none;font-family:inherit}
-.wansta-hitokoto-input:focus{outline:none;border-color:#e91e63}
-.wansta-hitokoto-submit{width:100%;padding:14px;margin-top:12px;background:#e91e63;color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer}
+.wansta-hitokoto-input:focus{outline:none;border-color:#3F6E5B}
+.wansta-hitokoto-submit{width:100%;padding:14px;margin-top:12px;background:#3F6E5B;color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer}
 .wansta-hitokoto-submit:disabled{background:var(--color-border)}

@@ -39,7 +39,7 @@ function toggleDiaryInput() {
     if (catchSelectBtn) catchSelectBtn.style.display = 'block';
     // ヘッダー・ボタンを新規作成表示に
     var titleEl = document.getElementById('diaryInputTitle');
-    if (titleEl) titleEl.textContent = '📝 日記を書く';
+    if (titleEl) titleEl.innerHTML = '<i class="ph-bold ph-note-pencil"></i> 日記を書く';
     var btn = document.getElementById('diarySubmitBtn');
     if (btn) btn.textContent = '投稿する';
 
@@ -169,7 +169,7 @@ function renderDiaryPosts() {
       + (parsed.catchImgData ? '<img class="diary-entry-catch" src="' + parsed.catchImgData + '" alt="">' : '')
       + '<div class="diary-entry-body">'
       + '<div class="diary-entry-header">'
-      + '<span class="diary-entry-date">📅 ' + parsed.dateStrShort + '</span>'
+      + '<span class="diary-entry-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrShort + '</span>'
       + '<span class="diary-entry-author">' + escapeHtml(displayName) + '</span>'
       + '</div>'
       + (parsed.title ? '<div class="diary-entry-title">' + escapeHtml(parsed.title) + '</div>' : '')
@@ -183,7 +183,7 @@ function renderDiaryPosts() {
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
       + '</span>'
       + '<span class="diary-entry-action" onclick="event.stopPropagation();diaryShowDetail(\'' + post.postId + '\')">'
-      + '💬 ' + (commentCount > 0 ? commentCount : '')
+      + '<i class="ph-bold ph-chat-circle-text"></i> ' + (commentCount > 0 ? commentCount : '')
       + '</span>'
       + '</div>'
       + '</div>'
@@ -464,7 +464,7 @@ function editDiary(postId) {
 
   // ヘッダー・ボタンを編集モード表示に
   var titleEl = document.getElementById('diaryInputTitle');
-  if (titleEl) titleEl.textContent = '✏️ 日記を編集';
+  if (titleEl) titleEl.innerHTML = '<i class="ph-bold ph-pencil-simple"></i> 日記を編集';
   var btn = document.getElementById('diarySubmitBtn');
   if (btn) btn.textContent = '更新する';
 
