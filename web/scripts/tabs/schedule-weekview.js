@@ -40,7 +40,7 @@ function createWeekView(config) {
       html += sunday.getFullYear() + '/' + String(sunday.getMonth() + 1).padStart(2, '0') + '/' + String(sunday.getDate()).padStart(2, '0') + '(' + dayNames[sunday.getDay()] + ')';
       html += '</span>';
       html += '<button class="period-change-btn" onclick="open' + capitalize(config.name) + 'Picker()">期間変更</button>';
-      html += '<button id="' + config.editBtnId + '" class="period-change-btn" style="background:#e91e8c;margin-left:6px" onclick="toggle' + capitalize(config.name) + 'EditMode()">編集</button>';
+      html += '<button id="' + config.editBtnId + '" class="period-change-btn" style="background:#3F6E5B;margin-left:6px" onclick="toggle' + capitalize(config.name) + 'EditMode()">編集</button>';
       html += '</div>';
       html += '<div id="' + config.displayId + '"></div>';
 
@@ -63,7 +63,7 @@ function createWeekView(config) {
     var btn = document.getElementById(config.editBtnId);
     if (btn) {
       btn.textContent = editMode ? '編集中' : '編集';
-      btn.style.background = editMode ? '#dc3545' : '#e91e8c';
+      btn.style.background = editMode ? '#dc3545' : '#3F6E5B';
     }
     load();
   }
@@ -139,7 +139,7 @@ function createWeekView(config) {
       var btn = document.getElementById(config.editBtnId);
       if (btn) {
         btn.textContent = '編集';
-        btn.style.background = '#e91e8c';
+        btn.style.background = '#3F6E5B';
       }
       // カレンダータブの日別表示が古いキャッシュを参照し続けるバグを修正
       // （保存した週のキャッシュを破棄し、表示中ならグリッド・詳細を再描画）
@@ -164,7 +164,7 @@ function createWeekView(config) {
     var btn = document.getElementById(config.editBtnId);
     if (btn) {
       btn.textContent = '編集';
-      btn.style.background = '#e91e8c';
+      btn.style.background = '#3F6E5B';
     }
     load();
   }
@@ -259,14 +259,14 @@ function createWeekView(config) {
       }
 
       if (editMode) {
-        html += '<div style="background:var(--color-surface-alt);border-left:4px solid #e91e8c;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:var(--color-text-strong)">';
+        html += '<div style="background:var(--color-surface-alt);border-left:4px solid #3F6E5B;padding:12px;margin-bottom:16px;border-radius:4px;font-size:13px;color:var(--color-text-strong)">';
         html += '<strong>編集モード</strong><br>';
         html += '・◯/✕をタップで予定を切り替え<br>';
         html += '・備考欄に補足情報を入力できます<br>';
         html += '・完了したら「保存」を押してください';
         html += '</div>';
         html += '<div style="margin-bottom:16px;text-align:center">';
-        html += '<button onclick="' + config.saveFnName + '()" style="background:#e91e8c;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">保存</button>';
+        html += '<button onclick="' + config.saveFnName + '()" style="background:#3F6E5B;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">保存</button>';
         html += '<button onclick="' + config.cancelFnName + '()" style="background:#6c757d;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1);margin-left:10px">キャンセル</button>';
         html += '</div>';
       }
@@ -323,7 +323,7 @@ function createWeekView(config) {
 
       if (editMode) {
         html += '<div style="margin-top:16px;text-align:center">';
-        html += '<button onclick="' + config.saveFnName + '()" style="background:#e91e8c;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">保存</button>';
+        html += '<button onclick="' + config.saveFnName + '()" style="background:#3F6E5B;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">保存</button>';
         html += '<button onclick="' + config.cancelFnName + '()" style="background:#6c757d;color:#fff;border:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1);margin-left:10px">キャンセル</button>';
         html += '</div>';
       }

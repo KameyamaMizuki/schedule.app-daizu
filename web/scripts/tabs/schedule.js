@@ -209,7 +209,7 @@ function renderAdjust() {
     html += `<div class="member-section" data-user-id="${schedule.userId}" style="display:${displayStyle}">`;
     const memberConfig = familyMembers.find(m => m.userId === schedule.userId);
     const hasDefaultBtn = memberConfig && memberConfig.hasDefaultSchedule;
-    const defaultBtn = hasDefaultBtn ? `<button class="save-btn" style="background:#4CAF50;margin-right:6px" onclick="applySaikoDefaults('${schedule.userId}')">デフォルト</button>` : '';
+    const defaultBtn = hasDefaultBtn ? `<button class="save-btn" style="background:var(--color-text-faint);margin-right:6px" onclick="applySaikoDefaults('${schedule.userId}')">デフォルト</button>` : '';
     html += `<div class="member-header">${getDisplayNameByUserId(schedule.userId)}${defaultBtn}<button class="save-btn" onclick="saveSchedule('${schedule.userId}')">保存</button></div>`;
 
     const currentWeekForDates = selectedInputWeekId || weekId;

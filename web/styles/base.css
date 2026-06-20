@@ -306,7 +306,7 @@ body{font-family:var(--font-body);background:var(--color-bg);color:var(--color-t
 
 /* 週選択・フィルターセクション */
 .week-selector-section{display:flex;align-items:center;gap:10px;margin-bottom:15px;flex-wrap:wrap}
-.period-change-btn{padding:6px 12px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px}
+.period-change-btn{padding:6px 12px;background:#3F6E5B;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px}
 .filter-section{margin-bottom:15px}
 .filter-section select{padding:8px;font-size:14px;border:1px solid var(--color-border-soft);border-radius:4px;background:var(--color-surface)}
 

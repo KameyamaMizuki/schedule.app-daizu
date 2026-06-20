@@ -98,7 +98,7 @@ const AppConfig = Object.freeze({
 
   /** カレンダー色（schedule-calendar.js） */
   CALENDAR_COLORS: {
-    PRIMARY:        '#e91e8c',  // ナビゲーションボタン・選択日・ヘッダーボーダー
+    PRIMARY:        '#3F6E5B',  // ナビゲーションボタン・選択日・ヘッダーボーダー
     SUNDAY:         '#dc3545',  // 日曜文字色
     SATURDAY:       '#0d6efd',  // 土曜文字色
     WEEKDAY:        '#6c757d',  // 平日文字色

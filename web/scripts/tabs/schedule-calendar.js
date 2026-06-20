@@ -230,7 +230,7 @@ async function showScheduleCalendarDetail(dateStr) {
       if (user.notes && user.notes[dateStr]) {
         const calMember = familyMembers.find(m => m.userId === user.userId);
         const calName = calMember ? getDisplayName(calMember) : user.displayName;
-        notesHtml.push(`<div style="margin-top:8px;padding:8px;background:var(--color-available-bg);border-left:3px solid #4caf50;border-radius:4px;font-size:12px"><strong>${calName}:</strong> ${user.notes[dateStr]}</div>`);
+        notesHtml.push(`<div style="margin-top:8px;padding:8px;background:var(--color-available-bg);border-left:3px solid #3F6E5B;border-radius:4px;font-size:12px"><strong>${calName}:</strong> ${user.notes[dateStr]}</div>`);
       }
     });
     if (notesHtml.length > 0) {

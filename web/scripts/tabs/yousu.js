@@ -98,7 +98,7 @@ function renderYousuTab() {
     // 「もっと見る」ボタン（次ページがある場合のみ）
     if (yousuLastKey) {
       html += '<div style="text-align:center;padding:16px">'
-        + '<button onclick="loadMoreYousuPosts()" style="background:#ff9800;color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer">もっと見る</button>'
+        + '<button onclick="loadMoreYousuPosts()" style="background:#3F6E5B;color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer">もっと見る</button>'
         + '</div>';
     }
 
