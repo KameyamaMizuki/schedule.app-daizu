@@ -71,19 +71,19 @@ function renderUranauTypeSelection() {
     daizuImg.style.height = '200px';
   }
 
-  let html = `<p style="text-align:center;margin-bottom:16px;color:#fff;font-weight:600">${userName}さん、何を占う？</p>`;
+  let html = `<p style="text-align:center;margin-bottom:16px;color:#F0E6C8;font-family:var(--font-display);font-weight:600">${userName}さん、何を占う？</p>`;
   html += '<div class="uranau-types">';
 
   const fortuneTypes = [
-    { id: 'general', emoji: '🌟', name: '総合運' },
-    { id: 'love', emoji: '💕', name: '恋愛運' },
-    { id: 'work', emoji: '💼', name: '仕事運' },
-    { id: 'health', emoji: '💪', name: '健康運' }
+    { id: 'general', icon: 'ph-star', name: '総合運' },
+    { id: 'love', icon: 'ph-heart', name: '恋愛運' },
+    { id: 'work', icon: 'ph-briefcase', name: '仕事運' },
+    { id: 'health', icon: 'ph-heartbeat', name: '健康運' }
   ];
 
   fortuneTypes.forEach(type => {
     html += `<button class="uranau-type-btn" onclick="startFortune('${type.id}')">
-      <span class="emoji">${type.emoji}</span>
+      <span class="icon"><i class="ph-bold ${type.icon}"></i></span>
       <span class="name">${type.name}</span>
     </button>`;
   });
@@ -128,8 +128,8 @@ function showBirthdayInput(storageKey, displayName) {
   const container = document.getElementById('uranauPersonSelect');
   container.innerHTML = `
     <div style="background:rgba(255,255,255,0.95);padding:20px;border-radius:16px;text-align:center">
-      <p style="margin-bottom:16px;color:#ad1457;font-weight:600">${displayName}さんの<br>生年月日を教えてワン！</p>
-      <input type="date" id="uranauBirthdayInput" style="padding:12px;font-size:16px;border:2px solid #f8bbd9;border-radius:8px;width:200px;background:#fff">
+      <p style="margin-bottom:16px;color:#8a6a16;font-family:var(--font-display);font-weight:600">${displayName}さんの<br>生年月日を教えてワン！</p>
+      <input type="date" id="uranauBirthdayInput" style="padding:12px;font-size:16px;border:2px solid #F0C75E;border-radius:8px;width:200px;background:#fff">
       <br><br>
       <button class="uranau-submit-btn" onclick="saveBirthdayAndFortune('${storageKey}', '${displayName}')">登録して占う！</button>
       <p style="margin-top:12px;font-size:11px;color:#888">※後からアカウント設定で変更できるワン</p>
@@ -171,13 +171,13 @@ function showUranauLoading(storageKey, birthday, displayName, fortuneType = 'gen
   // ローディング表示
   resultDiv.innerHTML = `
     <div class="uranau-result-card" style="background:${AppConfig.FORTUNE.LOADING_BG}">
-      <h3 style="color:#ad1457">🔮 ${typeNames[fortuneType]}を占い中... 🔮</h3>
+      <h3 style="color:#8a6a16;font-family:var(--font-display)"><i class="ph-bold ph-moon-stars"></i> ${typeNames[fortuneType]}を占い中... <i class="ph-bold ph-moon-stars"></i></h3>
       <div style="margin:24px 0">
         <div style="width:100%;height:10px;background:rgba(255,255,255,0.5);border-radius:5px;overflow:hidden">
           <div style="width:0%;height:100%;background:${AppConfig.FORTUNE.LOADING_BAR};border-radius:5px;animation:uranau-loading 3s ease-in-out forwards"></div>
         </div>
       </div>
-      <p style="color:#880e4f;font-size:14px">だいずが一生懸命占っています...</p>
+      <p style="color:#5C4423;font-size:14px">だいずが一生懸命占っています...</p>
     </div>
   `;
   resultDiv.style.display = 'block';
@@ -208,14 +208,14 @@ function showUranauResult(storageKey, birthday, displayName, fortuneType = 'gene
   resultDiv.innerHTML = `
     <div class="uranau-result-card">
       <p style="font-size:12px;color:#888;margin-bottom:4px">${typeNames[fortuneType]}</p>
-      <h3 style="color:#ad1457;font-size:14px">✨ ${showName}さんの運勢 ✨</h3>
+      <h3 style="color:#8a6a16;font-size:15px;font-family:var(--font-display)"><i class="ph-bold ph-sparkle"></i> ${showName}さんの運勢 <i class="ph-bold ph-sparkle"></i></h3>
       <div style="margin:10px 0;padding:12px;background:${fortuneBgColors[result.fortune]};border-radius:10px">
         <span style="font-size:32px">${result.fortuneEmoji}</span>
         <div style="font-size:26px;font-weight:700;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,0.2)">${result.fortune}</div>
       </div>
       <div class="uranau-details" style="margin-bottom:10px">
-        <p style="margin:4px 0;font-size:13px"><span class="label">🎨 ラッキーカラー:</span> <span class="value">${result.luckyColor}</span></p>
-        <p style="margin:4px 0;font-size:13px"><span class="label">🍀 ラッキーアイテム:</span> <span class="value">${result.luckyItem}</span></p>
+        <p style="margin:4px 0;font-size:13px"><span class="label"><i class="ph-bold ph-palette"></i> ラッキーカラー:</span> <span class="value">${result.luckyColor}</span></p>
+        <p style="margin:4px 0;font-size:13px"><span class="label"><i class="ph-bold ph-clover"></i> ラッキーアイテム:</span> <span class="value">${result.luckyItem}</span></p>
       </div>
       <div class="uranau-message" style="padding:12px;font-size:13px">${result.message}</div>
     </div>

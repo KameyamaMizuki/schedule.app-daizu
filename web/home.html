@@ -207,10 +207,10 @@
 
       <!-- だいず占いエリア -->
       <div id="homeUranauArea" class="home-uranau-area">
-        <div class="uranau-bg"><div class="stars"></div></div>
+        <div class="uranau-bg"><div class="stars"></div><div class="fireflies"></div></div>
         <div class="uranau-header">
           <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" class="uranau-daizu-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
-          <h3 style="color:#f8bbd9">✨ だいずの占いワン ✨</h3>
+          <h3><i class="ph-bold ph-sparkle"></i> だいずの占いワン <i class="ph-bold ph-sparkle"></i></h3>
         </div>
         <div id="uranauPersonSelect"></div>
         <div id="uranauResult" style="display:none"></div>
@@ -219,8 +219,9 @@
 
       <!-- わんなでエリア -->
       <div id="homeWannadeArea" class="home-wannade-area">
+        <div class="wannade-sun-glow"></div>
         <div class="wannade-header">
-          <h3>🐾 わんなで 🐾</h3>
+          <h3><i class="ph-bold ph-paw-print"></i> わんなで <i class="ph-bold ph-paw-print"></i></h3>
           <div id="wannadeTimer" class="wannade-timer" style="display:none">10</div>
         </div>
         <div class="wannade-dogs">
@@ -237,12 +238,13 @@
         <div class="wannade-count" id="wannadeCount">なでなで: <span id="wannadeCountNum">0</span>回</div>
         <button class="wannade-start-btn" id="wannadeStartBtn" onclick="wannadeStart()">スタート！</button>
         <div class="wannade-ranking" id="wannadeRanking">
-          <h4>🏆 ランキング</h4>
+          <h4><i class="ph-bold ph-trophy"></i> ランキング</h4>
           <div id="wannadeRankingList" class="wannade-ranking-list">
             <div class="loading">読み込み中...</div>
           </div>
         </div>
         <button class="back-btn" onclick="wannadeBackToHome()" style="margin-top:16px">ホームに戻る</button>
+        <div class="wannade-grass"></div>
       </div>
       <!-- ホームFABボタン -->
       <button class="home-fab" id="homeFab" onclick="homeReturnToInitial()"><i class="ph-bold ph-house"></i></button>

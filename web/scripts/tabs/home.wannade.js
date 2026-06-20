@@ -211,7 +211,7 @@ function renderWannadeRanking(rankings) {
     const avatarEmoji = getAvatarEmoji(r.displayName);
     const avatarHtml = avatarPhoto
       ? `<img src="${avatarPhoto}" class="wannade-rank-icon" onerror="this.style.display='none'">`
-      : `<span class="wannade-rank-icon" style="display:flex;align-items:center;justify-content:center;background:#e8f5e9;font-size:18px">${avatarEmoji}</span>`;
+      : `<span class="wannade-rank-icon" style="display:flex;align-items:center;justify-content:center;background:#FBF1E0;font-size:18px">${avatarEmoji}</span>`;
 
     return `
       <div class="wannade-rank-item ${medals[i] || ''}">

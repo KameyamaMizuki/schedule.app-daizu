@@ -85,9 +85,9 @@ const AppConfig = Object.freeze({
       '大凶': 'linear-gradient(135deg,#673ab7,#9575cd)',
     },
     /** ローディングカード背景 */
-    LOADING_BG:  'linear-gradient(135deg,#fce4ec,#f8bbd9)',
+    LOADING_BG:  'linear-gradient(135deg,#FBF1D8,#F0C75E)',
     /** ローディングプログレスバー */
-    LOADING_BAR: 'linear-gradient(90deg,#e91e63,#ad1457)',
+    LOADING_BAR: 'linear-gradient(90deg,#F0C75E,#C99A33)',
   },
 
   /** 犬画像パス（wansta.js / wansta-social.js / home.js 共通） */
