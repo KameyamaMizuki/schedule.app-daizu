@@ -78,7 +78,7 @@ async function toggleDiaryLike(postId, sk) {
   } else {
     post.reactions.like = (post.reactions.like || []).concat([userId]);
   }
-  renderDiaryPosts();
+  updateDiaryLikeUI(postId);
   if (document.getElementById('diaryDetailModal').classList.contains('active')) {
     diaryShowDetail(postId);
   }
@@ -100,7 +100,10 @@ async function toggleDiaryLike(postId, sk) {
     } else {
       post.reactions.like = post.reactions.like.filter(function(id) { return id !== userId; });
     }
-    renderDiaryPosts();
+    updateDiaryLikeUI(postId);
+    if (document.getElementById('diaryDetailModal').classList.contains('active')) {
+      diaryShowDetail(postId);
+    }
   }
 }
 
@@ -109,11 +112,18 @@ function handleDiaryCommentKeypress(event, postId, sk) {
   submitDiaryComment(postId, sk);
 }
 
+var diaryCommentSubmitting = false;
+
 async function submitDiaryComment(postId, sk) {
+  if (diaryCommentSubmitting) return; // 二重送信ガード（ボタン連打・Enter連打の両方）
   var input = document.getElementById('diaryCommentInput');
   if (!input) return;
   var text = input.value.trim();
   if (!text || !currentUser) return;
+
+  diaryCommentSubmitting = true;
+  var btn = document.querySelector('.diary-comment-submit');
+  if (btn) btn.disabled = true;
 
   try {
     await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '/comment', {
@@ -132,5 +142,8 @@ async function submitDiaryComment(postId, sk) {
     diaryShowDetail(postId);
   } catch (error) {
     console.error('コメントエラー:', error);
+    if (btn) btn.disabled = false; // 失敗時は再送信できるよう復帰（成功時はモーダル再描画でボタンごと置換される）
+  } finally {
+    diaryCommentSubmitting = false;
   }
 }

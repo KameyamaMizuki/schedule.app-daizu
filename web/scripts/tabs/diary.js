@@ -177,9 +177,9 @@ function renderDiaryPosts() {
       + '<div class="diary-entry-text">' + sanitizedText + '</div>'
       + '<div class="diary-text-fade" id="diary-text-fade-' + post.postId + '"><span class="diary-expand-label">もっと見る ▼</span></div>'
       + '</div>'
-      + '<div class="diary-close-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</div>'
+      + '<div class="diary-collapse-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</div>'
       + '<div class="diary-entry-actions">'
-      + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
+      + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" id="diary-like-' + post.postId + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
       + '❤️ ' + (likeCount > 0 ? likeCount : '')
       + '</span>'
       + '<span class="diary-entry-action" onclick="event.stopPropagation();diaryShowDetail(\'' + post.postId + '\')">'
@@ -219,6 +219,19 @@ function renderDiaryPosts() {
       }
     });
   });
+}
+
+// 一覧のいいねボタンだけを部分更新（全体再描画で「もっと見る」の展開状態を失わないため）
+function updateDiaryLikeUI(postId) {
+  var post = diaryPosts.find(function(p) { return p.postId === postId; });
+  if (!post) return;
+  var likeCount = (post.reactions && post.reactions.like) ? post.reactions.like.length : 0;
+  var isLiked = currentUser && post.reactions && post.reactions.like && post.reactions.like.includes(currentUser.userId);
+  var listBtn = document.getElementById('diary-like-' + postId);
+  if (listBtn) {
+    listBtn.classList.toggle('liked', !!isLiked);
+    listBtn.textContent = '❤️ ' + (likeCount > 0 ? likeCount : '');
+  }
 }
 
 function toggleDiaryExpand(postId) {
