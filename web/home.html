@@ -251,22 +251,37 @@
     </div>
   </div>
 
-  <!-- チロル誕生日オーバーレイ（毎年7/3、birthday.jsが表示制御） -->
+  <!-- チロル誕生日オーバーレイ（毎年7/3から1週間、birthday.jsが表示制御） -->
   <div id="birthdayOverlay" class="birthday-overlay">
     <div class="birthday-confetti"></div>
     <div class="birthday-card">
       <div class="birthday-garland">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
-      <div class="birthday-photo-frame">
-        <span class="birthday-photo-fallback">🐶</span>
-        <img id="birthdayPhoto" class="birthday-photo" src="images/dog/chirol/happy/IMG_3713.webp" alt="チロル" onerror="this.style.display='none'">
+      <!-- シーン1: お祝いカード -->
+      <div id="birthdayScene1">
+        <div class="birthday-photo-frame">
+          <span class="birthday-photo-fallback">🐶</span>
+          <img id="birthdayPhoto" class="birthday-photo" src="images/dog/chirol/normal/IMG_3707.webp" alt="チロル" onerror="this.style.display='none'">
+        </div>
+        <p class="birthday-eyebrow">7月3日</p>
+        <h2 class="birthday-title">チロル<br>誕生日おめでとう！</h2>
+        <p class="birthday-message">「今日はオレの誕生日だぜ！<br>いっぱい祝ってくれよな」</p>
+        <button class="birthday-close-btn" onclick="chirolBirthdayCongrats(this)">おめでとう！🎉</button>
+        <button class="birthday-hide-btn" onclick="chirolBirthdayHideToday()">今日はもう表示しない</button>
       </div>
-      <p class="birthday-eyebrow">7月3日</p>
-      <h2 class="birthday-title">チロル<br>誕生日おめでとう！</h2>
-      <p class="birthday-message">「今日はオレの誕生日だぜ！<br>いっぱい祝ってくれよな」</p>
-      <button class="birthday-close-btn" onclick="chirolBirthdayClose()">閉じる</button>
-      <button class="birthday-hide-btn" onclick="chirolBirthdayHideToday()">今日はもう表示しない</button>
+      <!-- シーン2: smileチロル -->
+      <div id="birthdayScene2" style="display:none">
+        <div class="birthday-photo-frame">
+          <span class="birthday-photo-fallback">🐶</span>
+          <img id="birthdayPhoto2" class="birthday-photo" src="images/dog/chirol/happy/IMG_3713.webp" alt="チロル" onerror="this.style.display='none'">
+        </div>
+        <p class="birthday-eyebrow">🐾</p>
+        <h2 class="birthday-title">これからも<br>大好きだよ</h2>
+        <button class="birthday-close-btn" onclick="chirolBirthdayClose()">閉じる</button>
+      </div>
+      <!-- クラッカー演出用 -->
+      <div id="birthdayBurst" class="birthday-burst"></div>
     </div>
   </div>
 
@@ -372,7 +387,7 @@
       if (!('serviceWorker' in navigator)) return;
 
       // 古いキャッシュを全削除してから最新SWを登録
-      var APP_SW_VERSION = 'v18';
+      var APP_SW_VERSION = 'v19';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();
