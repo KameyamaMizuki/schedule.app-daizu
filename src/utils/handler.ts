@@ -7,6 +7,8 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { verifySessionToken, extractBearer } from './auth';
+import { getLineCredentials } from './secrets';
 
 const ALLOWED_ORIGIN =
   process.env.ALLOWED_ORIGIN ||
@@ -20,16 +22,37 @@ export const CORS_HEADERS = {
 
 type HandlerFn = (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>;
 
+/** withHandler が認証成功時に authUserId を付与したイベント */
+export type AuthedEvent = APIGatewayProxyEvent & { authUserId?: string };
+
+type HandlerOpts = { noAuthPaths?: string[] };
+
 /**
- * CORS + エラーハンドリングを付与するミドルウェアラッパー
+ * CORS + エラーハンドリング + 認証(AUTH_MODE)を付与するミドルウェアラッパー
+ *
+ * AUTH_MODE: 'off'(既定・認証なし) / 'log'(検証のみ・失敗時もログ出力して通す) / 'enforce'(失敗時401)
  */
-export function withHandler(fn: HandlerFn) {
+export function withHandler(fn: HandlerFn, opts: HandlerOpts = {}) {
   return async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     if (event.httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers: CORS_HEADERS, body: '' };
     }
 
     try {
+      const mode = process.env.AUTH_MODE || 'off';
+      const isNoAuth = (opts.noAuthPaths || []).some(p => event.path.startsWith(p));
+      if (mode !== 'off' && !isNoAuth) {
+        const token = extractBearer(event);
+        const credentials = await getLineCredentials();
+        const userId = token ? verifySessionToken(token, credentials.channelSecret) : null;
+        if (userId) {
+          (event as AuthedEvent).authUserId = userId;
+        } else if (mode === 'enforce') {
+          return err('認証が必要です', 401);
+        } else {
+          console.warn(`AUTH_LOG: unauthenticated ${event.httpMethod} ${event.path}`);
+        }
+      }
       const result = await fn(event);
       return {
         ...result,

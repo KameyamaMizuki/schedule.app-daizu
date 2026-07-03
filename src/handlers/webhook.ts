@@ -6,7 +6,7 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
 import { createHmac } from 'crypto';
 import { validateSignature } from '../utils/signature';
-import { getLineCredentials } from '../utils/secrets';
+import { getLineCredentials, LineCredentials } from '../utils/secrets';
 import { getSystemConfig, saveSystemConfig, getAllScheduleInputs, getScheduleInput } from '../utils/dynamodb';
 import { pushMessage, replyFlexMessage, buildFlexBubble, buildMenuFlexBubble, getCommonQuickReply } from '../utils/line';
 import { getCurrentWeekId, getDayOfWeekJa } from '../utils/weekId';
@@ -72,7 +72,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
 async function handleEvent(
   webhookEvent: LineWebhookEvent,
-  credentials: { adminUserId: string; channelAccessToken: string; liffUrl: string }
+  credentials: LineCredentials
 ): Promise<void> {
   // groupId保存（初回のみ）
   if (webhookEvent.source.type === 'group' && webhookEvent.source.groupId) {

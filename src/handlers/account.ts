@@ -4,6 +4,7 @@
  * POST /account/auth           — PIN照合（PC用）
  * PUT  /account/pin            — PIN設定・変更
  * POST /account/auth/line-token — LINEトークン検証（自動ログイン用）
+ * POST /account/auth/liff      — LIFF IDトークン検証（自動ログイン用・セッショントークン発行）
  */
 
 import bcrypt from 'bcryptjs';
@@ -13,6 +14,7 @@ import { AccountSettings } from '../types';
 import { getAllAccountSettings, getAccountSettings, saveAccountSettings } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
 import { withHandler, ok, err } from '../utils/handler';
+import { FAMILY_USER_IDS, generateSessionToken, verifyLiffIdToken } from '../utils/auth';
 
 /** webhook.ts の generateLoginToken と対になる検証関数 */
 function verifyLoginToken(token: string, secret: string): string | null {
@@ -25,12 +27,6 @@ function verifyLoginToken(token: string, secret: string): string | null {
   if (hmac !== expected) return null;
   return userId;
 }
-
-const FAMILY_USER_IDS = [
-  'U687f86855c46490c030499f5393c8a7e',
-  'U4b13048aa2906b929c3139c4f3dfdd7c',
-  'Ua8420309a164fffdbdd7f300f4c1cc94'
-];
 
 const UpdateProfileSchema = z.object({
   userId: z.string().min(1),
@@ -92,8 +88,23 @@ export const handler = withHandler(async (event) => {
     if (!userId) return ok({ success: false });
     const account = await getAccountSettings(userId);
     if (!account) return ok({ success: false });
+    const sessionToken = generateSessionToken(userId, credentials.channelSecret);
     const { pinHash: _, ...safe } = account;
-    return ok({ success: true, account: safe });
+    return ok({ success: true, sessionToken, account: safe });
+  }
+
+  // POST /account/auth/liff — LIFF IDトークン→セッショントークン発行
+  if (method === 'POST' && path.endsWith('/auth/liff')) {
+    const { idToken } = JSON.parse(event.body || '{}');
+    if (!idToken) return ok({ success: false });
+    const credentials = await getLineCredentials();
+    const userId = await verifyLiffIdToken(idToken, credentials.channelId);
+    if (!userId) return ok({ success: false });
+    const account = await getAccountSettings(userId);
+    const sessionToken = generateSessionToken(userId, credentials.channelSecret);
+    if (!account) return ok({ success: true, sessionToken, account: null });
+    const { pinHash: _, ...safe } = account;
+    return ok({ success: true, sessionToken, account: safe });
   }
 
   // POST /account/auth — PIN照合
@@ -106,8 +117,10 @@ export const handler = withHandler(async (event) => {
       if (!account.pinHash) continue;
       const match = await bcrypt.compare(body.data.pin, account.pinHash);
       if (match) {
+        const credentials = await getLineCredentials();
+        const sessionToken = generateSessionToken(account.userId, credentials.channelSecret);
         const { pinHash: _, ...safe } = account;
-        return ok({ success: true, account: safe });
+        return ok({ success: true, sessionToken, account: safe });
       }
     }
     return ok({ success: false });
@@ -128,4 +141,4 @@ export const handler = withHandler(async (event) => {
   }
 
   return err('Not found', 404);
-});
+}, { noAuthPaths: ['/account/auth'] });

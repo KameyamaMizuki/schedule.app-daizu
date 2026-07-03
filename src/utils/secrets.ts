@@ -7,7 +7,7 @@ import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-sec
 
 const secretsManager = new SecretsManagerClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 
-interface LineCredentials {
+export interface LineCredentials {
   channelId: string;
   channelSecret: string;
   channelAccessToken: string;
