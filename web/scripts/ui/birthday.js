@@ -23,12 +23,17 @@ function isChirolBirthdayWeek(now) {
   return diffDays >= 0 && diffDays < BIRTHDAY_SHOW_DAYS;
 }
 
-function birthdayReducedMotion() {
-  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+// アプリ同梱のローカル写真のみをスナップショット
+// （homeDogImages には後からDB登録の外部URLが追加され、読み込み失敗すると
+//   絵文字フォールバックが出てしまうため、誕生日演出ではローカル写真だけ使う）
+var birthdayLocalImages = {
+  normal: (typeof homeDogImages !== 'undefined' && homeDogImages.normal) ? homeDogImages.normal.slice() : [],
+  happy: (typeof homeDogImages !== 'undefined' && homeDogImages.happy) ? homeDogImages.happy.slice() : []
+};
+var birthdayScene2Src = null;
 
 function birthdayRandomImage(tag) {
-  var images = (typeof homeDogImages !== 'undefined' && homeDogImages[tag]) || [];
+  var images = birthdayLocalImages[tag] || [];
   if (images.length === 0) return null;
   return images[Math.floor(Math.random() * images.length)];
 }
@@ -48,6 +53,13 @@ function maybeShowChirolBirthday() {
   var photo = document.getElementById('birthdayPhoto');
   var src = birthdayRandomImage('normal');
   if (photo && src) photo.src = src;
+
+  // シーン2のsmile写真を先読みして切替を確実にする
+  birthdayScene2Src = birthdayRandomImage('happy');
+  if (birthdayScene2Src) {
+    var preload = new Image();
+    preload.src = birthdayScene2Src;
+  }
 
   birthdayBuildConfetti(overlay.querySelector('.birthday-confetti'));
   overlay.classList.add('active');
@@ -76,11 +88,11 @@ function birthdayBuildConfetti(container) {
 }
 
 // 「おめでとう！」→ クラッカー → シーン2へ
+// タップで発動する演出なので reduced-motion 設定でもスキップしない
 function chirolBirthdayCongrats(btn) {
   btn.disabled = true;
-  var reduced = birthdayReducedMotion();
-  if (!reduced) birthdayFireCracker(btn);
-  setTimeout(birthdayShowScene2, reduced ? 150 : 950);
+  birthdayFireCracker(btn);
+  setTimeout(birthdayShowScene2, 950);
 }
 
 // ボタンの位置からクラッカーの紙吹雪を放射
@@ -122,8 +134,11 @@ function birthdayShowScene2() {
   var scene2 = document.getElementById('birthdayScene2');
   if (!scene1 || !scene2) return;
   var photo = document.getElementById('birthdayPhoto2');
-  var src = birthdayRandomImage('happy');
-  if (photo && src) photo.src = src;
+  var src = birthdayScene2Src || birthdayRandomImage('happy');
+  if (photo && src) {
+    photo.style.display = ''; // onerrorで消えていても復元
+    photo.src = src;
+  }
   scene1.style.display = 'none';
   scene2.style.display = 'block';
   scene2.classList.add('scene-in');

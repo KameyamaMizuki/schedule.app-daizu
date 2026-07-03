@@ -249,4 +249,4 @@
 .birthday-burst .bp-emoji{font-size:18px}
 @keyframes birthday-burst{0%{transform:translate(0,0) rotate(0deg);opacity:1}65%{opacity:1}100%{transform:translate(var(--tx),var(--ty)) rotate(var(--rot));opacity:0}}
 #birthdayScene2.scene-in{animation:birthday-pop 0.4s cubic-bezier(0.34,1.56,0.64,1)}
-@media (prefers-reduced-motion: reduce){.birthday-card{animation:none}.birthday-confetti{display:none}.birthday-burst{display:none}#birthdayScene2.scene-in{animation:none}}
+@media (prefers-reduced-motion: reduce){.birthday-card{animation:none}.birthday-confetti{display:none}#birthdayScene2.scene-in{animation:none}}
