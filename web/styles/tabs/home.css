@@ -235,6 +235,9 @@
 .birthday-garland span:nth-child(3n+2){border-top-color:var(--color-highlight)}
 .birthday-garland span:nth-child(3n+3){border-top-color:#C99A33}
 .birthday-photo-frame{position:relative;width:104px;height:104px;margin:8px auto 14px;border-radius:50%;overflow:hidden;border:4px solid var(--color-surface-alt);box-shadow:0 2px 10px rgba(0,0,0,0.12)}
+#birthdayScene1 .birthday-photo-frame{width:156px;height:156px}
+#birthdayScene2 .birthday-photo-frame{width:208px;height:208px}
+#birthdayScene2 .birthday-photo-fallback{font-size:96px}
 .birthday-photo{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
 .birthday-photo-fallback{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--color-surface-alt)}
 .birthday-eyebrow{font-size:11px;font-weight:700;letter-spacing:0.25em;color:var(--color-highlight);margin-bottom:6px}
