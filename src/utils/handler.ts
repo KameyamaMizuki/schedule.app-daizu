@@ -40,7 +40,8 @@ export function withHandler(fn: HandlerFn, opts: HandlerOpts = {}) {
 
     try {
       const mode = process.env.AUTH_MODE || 'off';
-      const isNoAuth = (opts.noAuthPaths || []).some(p => event.path.startsWith(p));
+      // 完全一致 or「プレフィックス+/」のみ除外(部分文字列バイパス防止)
+      const isNoAuth = (opts.noAuthPaths || []).some(p => event.path === p || event.path.startsWith(p + '/'));
       if (mode !== 'off' && !isNoAuth) {
         const token = extractBearer(event);
         const credentials = await getLineCredentials();
