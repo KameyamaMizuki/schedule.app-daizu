@@ -138,7 +138,7 @@ async function submitDiaryComment(postId, sk) {
       })
     });
     input.value = '';
-    await loadDiaryPosts();
+    await loadDiaryPosts(false, true);
     diaryShowDetail(postId);
   } catch (error) {
     console.error('コメントエラー:', error);

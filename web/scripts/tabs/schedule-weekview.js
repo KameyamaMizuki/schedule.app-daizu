@@ -151,8 +151,8 @@ function createWeekView(config) {
       }
       // まずメモリのデータで即座に表示を更新（DB整合性遅延対策）
       load(true);
-      // バックグラウンドでDBから最新を取得
-      setTimeout(function() { load(); }, 500);
+      // バックグラウンドでDBから最新を取得（保存直後なのでキャッシュを使わない）
+      setTimeout(function() { load(false, true); }, 500);
     } catch (error) {
       console.error('save ' + config.name + ' error:', error);
       alert('保存に失敗しました: ' + error.message);
@@ -169,56 +169,71 @@ function createWeekView(config) {
     load();
   }
 
-  async function load(skipFetch) {
+  // 取得した週データを schedules / familyNotes に反映する（data=null はフォールバック）
+  function applyWeekData(data, currentWeekId) {
+    schedules = [];
+    if (data) {
+      for (var mi = 0; mi < familyMembers.length; mi++) {
+        var member = familyMembers[mi];
+        var userData = data.users.find(function(u) { return u.userId === member.userId; });
+        if (userData) {
+          schedules.push({
+            userId: userData.userId,
+            displayName: userData.displayName,
+            slots: userData.slots || {},
+            notes: userData.notes || {},
+            startDate: data.startDate,
+            endDate: data.endDate
+          });
+        } else {
+          schedules.push({
+            userId: member.userId,
+            displayName: member.displayName,
+            slots: member.hasDefaultSchedule ? buildAllTrueSlots(currentWeekId) : {},
+            notes: {},
+            startDate: data.startDate,
+            endDate: data.endDate
+          });
+        }
+      }
+      // 家族の備考を取得
+      var familyData = data.users.find(function(u) { return u.userId === 'family'; });
+      familyNotes = familyData ? (familyData.notes || {}) : {};
+    } else {
+      for (var mi2 = 0; mi2 < familyMembers.length; mi2++) {
+        var member2 = familyMembers[mi2];
+        schedules.push({
+          userId: member2.userId,
+          displayName: member2.displayName,
+          slots: member2.hasDefaultSchedule ? buildAllTrueSlots(currentWeekId) : {},
+          notes: {},
+          startDate: '',
+          endDate: ''
+        });
+      }
+      familyNotes = {};
+    }
+  }
+
+  async function load(skipFetch, forceNetwork) {
     var currentWeekId = selectedWeekId || config.getDefaultWeekId();
     var display = document.getElementById(config.displayId);
 
     try {
       if (!skipFetch) {
-        schedules = [];
-        var response = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + currentWeekId);
-        if (response.ok) {
-          var data = await response.json();
-          for (var mi = 0; mi < familyMembers.length; mi++) {
-            var member = familyMembers[mi];
-            var userData = data.users.find(function(u) { return u.userId === member.userId; });
-            if (userData) {
-              schedules.push({
-                userId: userData.userId,
-                displayName: userData.displayName,
-                slots: userData.slots || {},
-                notes: userData.notes || {},
-                startDate: data.startDate,
-                endDate: data.endDate
-              });
-            } else {
-              schedules.push({
-                userId: member.userId,
-                displayName: member.displayName,
-                slots: member.hasDefaultSchedule ? buildAllTrueSlots(currentWeekId) : {},
-                notes: {},
-                startDate: data.startDate,
-                endDate: data.endDate
-              });
-            }
-          }
-          // 家族の備考を取得
-          var familyData = data.users.find(function(u) { return u.userId === 'family'; });
-          familyNotes = familyData ? (familyData.notes || {}) : {};
-        } else {
-          for (var mi2 = 0; mi2 < familyMembers.length; mi2++) {
-            var member2 = familyMembers[mi2];
-            schedules.push({
-              userId: member2.userId,
-              displayName: member2.displayName,
-              slots: member2.hasDefaultSchedule ? buildAllTrueSlots(currentWeekId) : {},
-              notes: {},
-              startDate: '',
-              endDate: ''
-            });
-          }
-          familyNotes = {};
+        // SWR: キャッシュ即表示→裏で最新化。差分があれば反映して再描画(load(true))。
+        // 編集中はユーザーの入力を上書きしないためスキップする。
+        var data = null;
+        try {
+          data = await swrJson(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + currentWeekId, function(fresh) {
+            if (editMode) return;
+            applyWeekData(fresh, currentWeekId);
+            load(true);
+          }, { force: forceNetwork });
+        } catch (e) {
+          data = null;
         }
+        applyWeekData(data, currentWeekId);
       } // end skipFetch
 
       var weekSchedules = schedules;

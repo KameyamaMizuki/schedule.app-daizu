@@ -41,6 +41,10 @@ async function init() {
       }
     }, 500);
   }
+
+  // 他タブのデータとホームの資材を先読み（タブ切替を速くする）
+  prewarmAppData();
+  prewarmSiblingPage('dashboard');
 }
 
 async function switchTab(tab) {

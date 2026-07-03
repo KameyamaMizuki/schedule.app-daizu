@@ -115,33 +115,37 @@ function parseDiaryPost(post) {
   return { title: title, dateStrShort: dateStrShort, dateStrLong: dateStrLong, textContent: textContent, catchImgData: catchImgData };
 }
 
-async function loadDiaryPosts(append) {
+async function loadDiaryPosts(append, force) {
   var container = document.getElementById('diaryPosts');
-  try {
-    var url = API_BASE_URL + AppConfig.API.POSTS + '?type=DIARY&limit=50';
-    if (append && diaryLastKey) {
-      url += '&lastKey=' + encodeURIComponent(diaryLastKey);
-    } else {
-      // 初回ロード時はリセット
-      diaryPosts = [];
-      diaryLastKey = null;
-    }
 
-    var response = await fetch(url);
-    if (!response.ok) throw new Error('取得失敗');
-
-    var data = await response.json();
-    var newPosts = data.posts || [];
+  // 一覧を反映して描画（初回・SWR更新の両方から使う）
+  var applyList = function(data) {
+    diaryPosts = data.posts || [];
     diaryLastKey = data.lastEvaluatedKey || null;
-
-    diaryPosts = append ? diaryPosts.concat(newPosts) : newPosts;
-
     if (diaryPosts.length === 0) {
       container.innerHTML = '<div class="diary-empty">まだ日記がありません。<br>だいずの今日の様子を記録してみよう！</div>';
       return;
     }
-
     renderDiaryPosts();
+  };
+
+  try {
+    var url = API_BASE_URL + AppConfig.API.POSTS + '?type=DIARY&limit=50';
+    if (append && diaryLastKey) {
+      // 追加読み込みは従来どおりネットワーク直
+      url += '&lastKey=' + encodeURIComponent(diaryLastKey);
+      var response = await fetch(url);
+      if (!response.ok) throw new Error('取得失敗');
+      var data = await response.json();
+      diaryLastKey = data.lastEvaluatedKey || null;
+      diaryPosts = diaryPosts.concat(data.posts || []);
+      renderDiaryPosts();
+    } else {
+      // 初回はSWR: キャッシュ即表示→裏で最新化して差分があれば再描画
+      diaryPosts = [];
+      diaryLastKey = null;
+      applyList(await swrJson(url, applyList, { force: force }));
+    }
   } catch (error) {
     console.error('日記読み込みエラー:', error);
     container.innerHTML = '<div class="diary-empty">日記の読み込みに失敗しました</div>';
@@ -395,7 +399,7 @@ async function submitDiary() {
     document.getElementById('diaryCatchPreviewImg').src = '';
     document.getElementById('diaryCatchSelectBtn').style.display = 'block';
     toggleDiaryInput();
-    await loadDiaryPosts();
+    await loadDiaryPosts(false, true);
   } catch (error) {
     alert((diaryEditingPostId ? '更新' : '投稿') + 'に失敗しました: ' + error.message);
   } finally {
@@ -498,7 +502,7 @@ async function deleteDiary(postId) {
     await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '?type=DIARY&sk=' + encodeURIComponent(post.SK), {
       method: 'DELETE'
     });
-    await loadDiaryPosts();
+    await loadDiaryPosts(false, true);
   } catch (error) {
     alert('削除に失敗しました');
   }

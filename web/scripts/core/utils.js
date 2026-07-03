@@ -241,3 +241,104 @@ async function submitScheduleData(body) {
   }
   return res;
 }
+
+// ========== SWR(Stale-While-Revalidate)キャッシュ ==========
+// GET APIのレスポンスをlocalStorageに保存し、2回目以降は即キャッシュを返しつつ
+// 裏で最新を取得する。タブ切替のたびにLambdaの応答を待たなくて済むようにする。
+
+var SWR_PREFIX = 'swrCache:';
+
+function _swrRead(url) {
+  try {
+    var entry = JSON.parse(localStorage.getItem(SWR_PREFIX + url) || 'null');
+    return (entry && entry.data !== undefined) ? entry : null;
+  } catch (e) { return null; }
+}
+
+function _swrWrite(url, data) {
+  try {
+    localStorage.setItem(SWR_PREFIX + url, JSON.stringify({ t: Date.now(), data: data }));
+  } catch (e) {
+    // 容量オーバー時はSWRキャッシュを全部消して身軽にする（次回から再構築）
+    try {
+      Object.keys(localStorage).forEach(function(k) {
+        if (k.indexOf(SWR_PREFIX) === 0) localStorage.removeItem(k);
+      });
+    } catch (e2) { /* 無視 */ }
+  }
+}
+
+/**
+ * GET JSON を SWR で取得する。
+ * - キャッシュあり → 即返す。裏で再取得し、内容が変わっていれば onFresh(freshData) を呼ぶ
+ * - キャッシュなし → ネットワークを待って返す（従来どおり）
+ * - opts.force  → キャッシュを無視してネットワークを待つ（保存直後の再読込用）
+ *
+ * 注意: onFresh の中から自分自身（swrJson を呼ぶ読み込み関数）を再帰的に
+ * 呼び戻さないこと。レスポンスが毎回微妙に変わるAPIで無限ループになる。
+ * onFresh では「データ反映＋再描画」だけを行う。
+ */
+async function swrJson(url, onFresh, opts) {
+  opts = opts || {};
+  var cached = opts.force ? null : _swrRead(url);
+  var network = fetch(url).then(function(res) {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }).then(function(data) {
+    _swrWrite(url, data);
+    return data;
+  });
+  if (cached) {
+    network.then(function(data) {
+      if (onFresh && JSON.stringify(data) !== JSON.stringify(cached.data)) onFresh(data);
+    }).catch(function() { /* 裏の更新失敗は無視（キャッシュ表示を維持） */ });
+    return cached.data;
+  }
+  return network;
+}
+
+// ========== プリウォーム（先読み） ==========
+// ページ表示が落ち着いたあと、他タブのデータとページ資材を裏で取得しておく。
+// SWRキャッシュが温まる＋Lambdaのコールドスタートも解消され、タブ切替が速くなる。
+
+function prewarmAppData() {
+  setTimeout(function() {
+    try {
+      var urls = [
+        API_BASE_URL + AppConfig.API.POSTS + '?type=YOUSU&limit=50',
+        API_BASE_URL + AppConfig.API.POSTS + '?type=DIARY&limit=50',
+        API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + getWeekId(new Date()),
+        API_BASE_URL + AppConfig.API.CHIROL_IMAGES,
+        API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=chirol',
+        API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=daizu',
+        API_BASE_URL + AppConfig.API.WANNADE,
+        API_BASE_URL + AppConfig.API.ACCOUNT
+      ];
+      urls.forEach(function(u) {
+        swrJson(u).catch(function() { /* 先読み失敗は無視 */ });
+      });
+    } catch (e) { /* 無視 */ }
+  }, 2000);
+}
+
+/**
+ * もう一方のページ（home⇄dashboard）のHTML/JS/CSSを裏で取得して
+ * Service Workerのキャッシュに載せ、ページ遷移を速くする。
+ * バンドルのキャッシュバスト値(?v=)は自ページのscriptタグから流用する。
+ */
+function prewarmSiblingPage(currentPage) {
+  setTimeout(function() {
+    try {
+      var other = currentPage === 'home' ? 'dashboard' : 'home';
+      var script = document.querySelector('script[src*=".bundle.js"]');
+      var v = (script && script.src.indexOf('?') !== -1) ? '?' + script.src.split('?')[1] : '';
+      [
+        other + '.html',
+        'scripts/' + other + '.bundle.js' + v,
+        'styles/' + other + '.bundle.css' + v
+      ].forEach(function(u) {
+        fetch(u).catch(function() { /* 先読み失敗は無視 */ });
+      });
+    } catch (e) { /* 無視 */ }
+  }, 3000);
+}

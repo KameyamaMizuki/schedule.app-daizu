@@ -34,4 +34,8 @@
 
   // チロルの誕生日（7/3）ならお祝いを表示
   maybeShowChirolBirthday();
+
+  // 他タブのデータとダッシュボードの資材を先読み（タブ切替を速くする）
+  prewarmAppData();
+  prewarmSiblingPage('home');
 })();

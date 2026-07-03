@@ -13,7 +13,7 @@ async function initYousuTab() {
   renderYousuTab();
 }
 
-async function loadYousuPosts(append) {
+async function loadYousuPosts(append, force) {
   // 初回ロード時はリセット
   if (!append) {
     yousuPosts = [];
@@ -26,11 +26,22 @@ async function loadYousuPosts(append) {
   }
 
   try {
-    var res = await fetch(postsUrl);
-    var postsData = res.ok ? await res.json() : { posts: [] };
-    var newPosts = postsData.posts || [];
-    yousuLastKey = postsData.lastEvaluatedKey || null;
-    yousuPosts = append ? yousuPosts.concat(newPosts) : newPosts;
+    if (append) {
+      // 追加読み込みは従来どおりネットワーク直
+      var res = await fetch(postsUrl);
+      var postsData = res.ok ? await res.json() : { posts: [] };
+      yousuLastKey = postsData.lastEvaluatedKey || null;
+      yousuPosts = yousuPosts.concat(postsData.posts || []);
+    } else {
+      // 初回はSWR: キャッシュ即表示→裏で最新化して差分があれば再描画
+      var data = await swrJson(postsUrl, function(fresh) {
+        yousuPosts = fresh.posts || [];
+        yousuLastKey = fresh.lastEvaluatedKey || null;
+        renderYousuTab();
+      }, { force: force });
+      yousuPosts = data.posts || [];
+      yousuLastKey = data.lastEvaluatedKey || null;
+    }
   } catch (e) {
     console.error('Failed to load yousu posts:', e);
     if (!append) yousuPosts = [];
@@ -208,8 +219,8 @@ async function saveYousuPost() {
       var countEl = document.getElementById('yousuCharCount');
       if (countEl) countEl.textContent = '0';
       showToast('だいずの様子を記録しました');
-      // リロード（先頭から再取得）
-      await loadYousuPosts(false);
+      // リロード（先頭から再取得、保存直後なのでキャッシュを使わない）
+      await loadYousuPosts(false, true);
       renderYousuTab();
     } else {
       var errData = await res.json().catch(function() { return {}; });
@@ -257,7 +268,7 @@ async function yousuSaveEdit(postId, sk) {
     if (res.ok) {
       yousuEditingPostSk = null;
       showToast('更新しました');
-      await loadYousuPosts();
+      await loadYousuPosts(false, true);
       renderYousuTab();
     } else {
       showToast('更新に失敗しました');
@@ -278,7 +289,7 @@ async function yousuDeletePost(postId, sk) {
 
     if (res.ok) {
       showToast('削除しました');
-      await loadYousuPosts();
+      await loadYousuPosts(false, true);
       renderYousuTab();
     } else {
       showToast('削除に失敗しました');

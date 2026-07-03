@@ -181,11 +181,11 @@ async function wannadeFinish() {
 
 async function loadWannadeRanking() {
   try {
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.WANNADE}`);
-    if (response.ok) {
-      const data = await response.json();
-      renderWannadeRanking(data.rankings);
-    }
+    // SWR: キャッシュ即表示→裏で最新化されたら再描画
+    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.WANNADE}`, function(fresh) {
+      renderWannadeRanking(fresh.rankings);
+    });
+    renderWannadeRanking(data.rankings);
   } catch (error) {
     console.error('Wannade ranking load error:', error);
   }

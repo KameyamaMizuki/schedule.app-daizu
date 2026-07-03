@@ -17,9 +17,9 @@
 // DynamoDBから追加された画像を読み込み
 async function loadChirolImagesFromDB() {
   try {
-    const res = await fetch(`${API_BASE_URL}${AppConfig.API.CHIROL_IMAGES}`);
-    if (res.ok) {
-      const data = await res.json();
+    // SWR: 2回目以降はキャッシュ即返し（このページ表示中の追記は1回だけなのでonFresh不要）
+    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.CHIROL_IMAGES}`);
+    {
       if (data.images && data.images.length > 0) {
         for (const img of data.images) {
           // 有効なURL以外はスキップ（絵文字等を除外）
@@ -42,9 +42,8 @@ let homeHitokotoList = [...AppConfig.CHIROL_HITOKOTO_TEXTS];
 // DynamoDBから追加された一言を読み込み
 async function loadHitokotoFromDB() {
   try {
-    const res = await fetch(`${API_BASE_URL}${AppConfig.API.CHIROL_HITOKOTO}`);
-    if (res.ok) {
-      const data = await res.json();
+    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.CHIROL_HITOKOTO}`);
+    {
       if (data.hitokotoList && data.hitokotoList.length > 0) {
         // テキストが有効なもののみ追加（絵文字のみ、空文字などを除外）
         const dbTexts = data.hitokotoList
@@ -116,21 +115,23 @@ async function updateHomeTodayInfo() {
   const todayStr = `${now.getMonth() + 1}/${now.getDate()}(${dayNames[now.getDay()]})`;
   const todayDateEl = document.getElementById('homeTodayDate');
   if (todayDateEl) todayDateEl.textContent = todayStr;
-  const personEl = document.getElementById('homeTodayPerson');
+  const dateStr = formatDateForApi(now);
+
+  // SWR: キャッシュで即表示→裏で最新化されたら差し替え
+  // 要素はIDで毎回引き直す（吹き出しが再描画されるため）
+  const applyPerson = function(data) {
+    const el = document.getElementById('homeTodayPerson');
+    if (!el) return;
+    const person = data ? homeGetTodayPerson(data, dateStr) : null;
+    el.textContent = person || '未定';
+  };
   try {
     const weekId = getWeekId(now);
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`);
-    if (response.ok) {
-      const data = await response.json();
-      const dateStr = formatDateForApi(now);
-      const person = homeGetTodayPerson(data, dateStr);
-      if (personEl) personEl.textContent = person || '未定';
-    } else {
-      if (personEl) personEl.textContent = '未定';
-    }
+    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`, applyPerson);
+    applyPerson(data);
   } catch (e) {
     console.error('Failed to load today info:', e);
-    if (personEl) personEl.textContent = '未定';
+    applyPerson(null);
   }
 }
 

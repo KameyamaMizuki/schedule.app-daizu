@@ -38,50 +38,46 @@ async function loadWanstaData() {
     }
   }
 
-  try {
-    var imgRes = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES);
-    if (imgRes.ok) {
-      var imgData = await imgRes.json();
-      var images = imgData.images || [];
-      for (var k = 0; k < images.length; k++) {
-        var img = images[k];
-        if (img.tag === 'wansta-daizu') {
-          wanstaPhotos.daizu.push(img);
-        } else if (img.tag !== 'diary') {
-          wanstaPhotos.chirol.push(img);
-        }
+  // 反映関数（初回・SWR更新の両方から使う。毎回作り直すので二重適用しない）
+  var applyImages = function(imgData) {
+    wanstaPhotos.chirol = [];
+    wanstaPhotos.daizu = [];
+    var images = (imgData && imgData.images) || [];
+    for (var k = 0; k < images.length; k++) {
+      var img = images[k];
+      if (img.tag === 'wansta-daizu') {
+        wanstaPhotos.daizu.push(img);
+      } else if (img.tag !== 'diary') {
+        wanstaPhotos.chirol.push(img);
       }
     }
-  } catch (e) {
-    console.error('Failed to load wansta images:', e);
-  }
-  wanstaPhotos.chirol = wanstaPhotos.chirol.concat(staticChirol);
-  wanstaPhotos.daizu = wanstaPhotos.daizu.concat(staticDaizu);
+    wanstaPhotos.chirol = wanstaPhotos.chirol.concat(staticChirol);
+    wanstaPhotos.daizu = wanstaPhotos.daizu.concat(staticDaizu);
+  };
+  var applyChirolHitokoto = function(data) {
+    var dbItems = ((data && data.hitokotoList) || []).filter(function(h) { return h.text && h.text.length > 1; });
+    wanstaHitokoto.chirol = dbItems.concat(defaultHitokotoChirol);
+  };
+  var applyDaizuHitokoto = function(data) {
+    var dbItems = ((data && data.hitokotoList) || []).filter(function(h) { return h.text && h.text.length > 1; });
+    wanstaHitokoto.daizu = dbItems.concat(defaultHitokotoDaizu);
+  };
 
-  // 一言読み込み
-  try {
-    var hitokotoChirolRes = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=chirol', { cache: 'no-store' });
-    if (hitokotoChirolRes.ok) {
-      var hitokotoData = await hitokotoChirolRes.json();
-      var dbItems = (hitokotoData.hitokotoList || []).filter(function(h) { return h.text && h.text.length > 1; });
-      wanstaHitokoto.chirol = dbItems.concat(defaultHitokotoChirol);
-    }
-  } catch (e) {
-    console.error('Failed to load chirol hitokoto:', e);
-  }
-  try {
-    var hitokotoDaizuRes = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=daizu', { cache: 'no-store' });
-    if (hitokotoDaizuRes.ok) {
-      var hitokotoData2 = await hitokotoDaizuRes.json();
-      var dbItems2 = (hitokotoData2.hitokotoList || []).filter(function(h) { return h.text && h.text.length > 1; });
-      wanstaHitokoto.daizu = dbItems2.concat(defaultHitokotoDaizu);
-    }
-  } catch (e) {
-    console.error('Failed to load daizu hitokoto:', e);
-  }
-
-  if (wanstaPhotos.chirol.length === 0) wanstaPhotos.chirol = staticChirol;
-  if (wanstaPhotos.daizu.length === 0) wanstaPhotos.daizu = staticDaizu;
+  // 3本を並列で取得（従来は直列で3往復待っていた）。SWRでキャッシュがあれば即返る。
+  var imgUrl = API_BASE_URL + AppConfig.API.CHIROL_IMAGES;
+  var chirolUrl = API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=chirol';
+  var daizuUrl = API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=daizu';
+  await Promise.all([
+    swrJson(imgUrl, function(fresh) { applyImages(fresh); renderWansta(); })
+      .then(applyImages)
+      .catch(function(e) { console.error('Failed to load wansta images:', e); applyImages(null); }),
+    swrJson(chirolUrl, function(fresh) { applyChirolHitokoto(fresh); renderWansta(); })
+      .then(applyChirolHitokoto)
+      .catch(function(e) { console.error('Failed to load chirol hitokoto:', e); }),
+    swrJson(daizuUrl, function(fresh) { applyDaizuHitokoto(fresh); renderWansta(); })
+      .then(applyDaizuHitokoto)
+      .catch(function(e) { console.error('Failed to load daizu hitokoto:', e); })
+  ]);
 }
 
 function wanstaSwitchAccount(account) {
