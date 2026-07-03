@@ -76,7 +76,7 @@ URL: `https://sqs.ap-northeast-1.amazonaws.com/982312822872/family-schedule-dlq-
 ### Secrets Manager
 | シークレット名 | 内容 |
 |---|---|
-| `line/credentials-kame` | `channelSecret` / `channelAccessToken` / `adminUserId` / `liffUrl` |
+| `line/credentials-kame` | `CHANNEL_ID` / `CHANNEL_SECRET` / `CHANNEL_ACCESS_TOKEN_LONG` / `LIFF_URL` / `ADMIN_USER_ID` |
 
 ---
 
