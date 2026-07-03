@@ -2,7 +2,7 @@
  * API認証ユーティリティ
  * セッショントークン形式: st.<発行秒b36>.<userId>.<HMAC-SHA256先頭32hex>
  */
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export const FAMILY_USER_IDS = [
   'U687f86855c46490c030499f5393c8a7e',
@@ -27,7 +27,10 @@ export function verifySessionToken(token: string, secret: string, now: number = 
   const [, tsB36, userId, hmac] = parts;
   const created = parseInt(tsB36, 36) * 1000;
   if (isNaN(created) || now - created > SESSION_TTL_MS) return null;
-  if (hmac !== sign(tsB36, userId, secret)) return null;
+  const expected = Buffer.from(sign(tsB36, userId, secret), 'hex');
+  let supplied: Buffer;
+  try { supplied = Buffer.from(hmac, 'hex'); } catch { return null; }
+  if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return null;
   if (!FAMILY_USER_IDS.includes(userId)) return null;
   return userId;
 }

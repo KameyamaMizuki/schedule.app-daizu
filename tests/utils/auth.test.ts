@@ -27,6 +27,12 @@ describe('session token', () => {
     expect(verifySessionToken('garbage', SECRET)).toBeNull();
     expect(verifySessionToken('', SECRET)).toBeNull();
   });
+  test('有効な長さの16進数だが値が異なるHMACはnull(タイミング攻撃対策)', () => {
+    const t = generateSessionToken(UID, SECRET);
+    const parts = t.split('.');
+    const hmacWithWrongLastChar = parts.slice(0, 3).join('.') + '.' + parts[3].slice(0, -1) + (parts[3][31] === 'f' ? '0' : 'f');
+    expect(verifySessionToken(hmacWithWrongLastChar, SECRET)).toBeNull();
+  });
 });
 
 describe('extractBearer', () => {
