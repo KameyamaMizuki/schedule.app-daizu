@@ -31,4 +31,7 @@
   // ユーザー初期化 + ホームタブ初期化
   await initAuth();
   initHomeTab();
+
+  // チロルの誕生日（7/3）ならお祝いを表示
+  maybeShowChirolBirthday();
 })();

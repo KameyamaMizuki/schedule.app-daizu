@@ -28,6 +28,7 @@ const HOME_JS = [
   'scripts/ui/account-edit.js',
   'scripts/ui/user-select.js',
   'scripts/ui/crop-square.js',
+  'scripts/ui/birthday.js',
   'scripts/tabs/home.js',
   'scripts/tabs/home.schedule.js',
   'scripts/tabs/home.uranau.js',
