@@ -1,5 +1,5 @@
 import { GetCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { docClient } from './dynamodb';
+import { docClient, mergeLikes } from './dynamodb';
 
 export interface ChirolComment {
   id: string;
@@ -10,38 +10,36 @@ export interface ChirolComment {
 }
 
 /**
- * like をトグルし、更新後の likes 配列を返す。楽観的ロック付き（最大 3 回リトライ）。
+ * like をトグル。旧リスト形式(likes)は likeSet(SS) に移行してから ADD/DELETE で原子的に更新し、
+ * 更新後の likes 配列(マージ済み)を返す。
  */
 export async function toggleLike(
   tableName: string,
   key: Record<string, unknown>,
   userId: string
 ): Promise<string[]> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const result = await docClient.send(new GetCommand({ TableName: tableName, Key: key }));
-    if (!result.Item) throw new Error('Item not found');
+  const result = await docClient.send(new GetCommand({ TableName: tableName, Key: key }));
+  if (!result.Item) throw new Error('Item not found');
 
-    const currentLikes: string[] = result.Item.likes ?? [];
-    const isLiked = currentLikes.includes(userId);
-    const newLikes = isLiked
-      ? currentLikes.filter(id => id !== userId)
-      : [...currentLikes, userId];
+  const legacy: string[] = result.Item.likes ?? [];
+  const current = mergeLikes(legacy, result.Item.likeSet as Set<string> | string[] | undefined);
+  const isLiked = current.includes(userId);
 
-    try {
-      await docClient.send(new UpdateCommand({
-        TableName: tableName,
-        Key: key,
-        UpdateExpression: 'SET likes = :newLikes',
-        ConditionExpression: 'likes = :currentLikes OR attribute_not_exists(likes)',
-        ExpressionAttributeValues: { ':newLikes': newLikes, ':currentLikes': currentLikes }
-      }));
-      return newLikes;
-    } catch (e: any) {
-      if (e.name !== 'ConditionalCheckFailedException') throw e;
-      if (attempt >= 2) throw new Error('Failed to toggle like after 3 retries');
-    }
+  // 旧リストに値が残っていたら likeSet へ一度だけ移行
+  if (legacy.length > 0) {
+    await docClient.send(new UpdateCommand({
+      TableName: tableName, Key: key,
+      UpdateExpression: 'SET likes = :empty ADD likeSet :all',
+      ExpressionAttributeValues: { ':empty': [], ':all': new Set(legacy) }
+    }));
   }
-  throw new Error('Failed to toggle like after 3 retries');
+  await docClient.send(new UpdateCommand({
+    TableName: tableName, Key: key,
+    UpdateExpression: isLiked ? 'DELETE likeSet :u' : 'ADD likeSet :u',
+    ExpressionAttributeValues: { ':u': new Set([userId]) }
+  }));
+
+  return isLiked ? current.filter(id => id !== userId) : [...current, userId];
 }
 
 /**

@@ -12,69 +12,65 @@ describe('togglePostLike', () => {
     jest.restoreAllMocks();
   });
 
-  it('liked でないとき userId を likes に追加して true を返す', async () => {
+  it('liked でないとき likeSet に ADD して true を返す（legacyなし・移行なし）', async () => {
     sendSpy
-      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1', reactions: { like: ['user1'] } } })
+      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1', likeSet: new Set(['user1']) } })
       .mockResolvedValueOnce({});
 
     const result = await togglePostLike('POST' as PostType, 'sk1', 'user2');
 
     expect(result).toBe(true);
-    expect(sendSpy).toHaveBeenCalledTimes(2);
+    expect(sendSpy).toHaveBeenCalledTimes(2); // getPost + ADD likeSet（移行なし）
     const updateInput = (sendSpy.mock.calls[1][0] as any).input;
-    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toContain('user2');
-    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toContain('user1');
+    expect(updateInput.UpdateExpression).toBe('ADD likeSet :u');
+    expect(Array.from(updateInput.ExpressionAttributeValues[':u'])).toEqual(['user2']);
   });
 
-  it('liked のとき userId を likes から削除して false を返す', async () => {
+  it('liked のとき likeSet から DELETE して false を返す', async () => {
     sendSpy
-      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1', reactions: { like: ['user1', 'user2'] } } })
+      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1', likeSet: new Set(['user1', 'user2']) } })
       .mockResolvedValueOnce({});
 
     const result = await togglePostLike('POST' as PostType, 'sk1', 'user1');
 
     expect(result).toBe(false);
     const updateInput = (sendSpy.mock.calls[1][0] as any).input;
-    expect(updateInput.ExpressionAttributeValues[':newReactions'].like).toEqual(['user2']);
+    expect(updateInput.UpdateExpression).toBe('DELETE likeSet :u');
+    expect(Array.from(updateInput.ExpressionAttributeValues[':u'])).toEqual(['user1']);
   });
 
-  it('ConditionalCheckFailedException でリトライして成功する', async () => {
-    const conditionError = Object.assign(new Error('Condition failed'), {
-      name: 'ConditionalCheckFailedException'
-    });
-    const mockPost = { Item: { PK: 'POST', SK: 'sk1', reactions: { like: [] } } };
-
+  it('旧リスト形式(reactions.like)が残っている場合は likeSet へ移行してからADDする', async () => {
     sendSpy
-      .mockResolvedValueOnce(mockPost)       // attempt 1: getPost
-      .mockRejectedValueOnce(conditionError) // attempt 1: UpdateCommand 失敗
-      .mockResolvedValueOnce(mockPost)       // attempt 2: getPost
-      .mockResolvedValueOnce({});            // attempt 2: UpdateCommand 成功
+      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1', reactions: { like: ['user1'] } } })
+      .mockResolvedValueOnce({}) // 移行
+      .mockResolvedValueOnce({}); // ADD
 
-    await expect(togglePostLike('POST' as PostType, 'sk1', 'user1')).resolves.toBe(true);
-    expect(sendSpy).toHaveBeenCalledTimes(4);
+    const result = await togglePostLike('POST' as PostType, 'sk1', 'user2');
+
+    expect(result).toBe(true);
+    expect(sendSpy).toHaveBeenCalledTimes(3); // getPost + 移行 + ADD
+    const migrateInput = (sendSpy.mock.calls[1][0] as any).input;
+    expect(migrateInput.UpdateExpression).toBe('SET reactions = :r ADD likeSet :all');
+    expect(migrateInput.ExpressionAttributeValues[':r']).toEqual({ like: [] });
+    expect(Array.from(migrateInput.ExpressionAttributeValues[':all'])).toEqual(['user1']);
+    const toggleInput = (sendSpy.mock.calls[2][0] as any).input;
+    expect(toggleInput.UpdateExpression).toBe('ADD likeSet :u');
   });
 
-  it('3回リトライ失敗後に throw する', async () => {
-    const conditionError = Object.assign(new Error(), {
-      name: 'ConditionalCheckFailedException'
-    });
-    const mockPost = { Item: { PK: 'POST', SK: 'sk1', reactions: { like: [] } } };
-
+  it('reactions も likeSet も存在しない投稿（レガシー）でも動作する', async () => {
     sendSpy
-      .mockResolvedValueOnce(mockPost).mockRejectedValueOnce(conditionError)
-      .mockResolvedValueOnce(mockPost).mockRejectedValueOnce(conditionError)
-      .mockResolvedValueOnce(mockPost).mockRejectedValueOnce(conditionError);
-
-    await expect(togglePostLike('POST' as PostType, 'sk1', 'user1'))
-      .rejects.toThrow('Failed to toggle like after 3 retries');
-  });
-
-  it('reactions が存在しない投稿（レガシー）でも動作する', async () => {
-    sendSpy
-      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1' } }) // reactions なし
+      .mockResolvedValueOnce({ Item: { PK: 'POST', SK: 'sk1' } }) // reactions/likeSet なし
       .mockResolvedValueOnce({});
 
     const result = await togglePostLike('POST' as PostType, 'sk1', 'user1');
     expect(result).toBe(true);
+    expect(sendSpy).toHaveBeenCalledTimes(2); // 移行不要
+  });
+
+  it('Post が見つからない場合 throw する', async () => {
+    sendSpy.mockResolvedValueOnce({ Item: undefined });
+
+    await expect(togglePostLike('POST' as PostType, 'sk1', 'user1'))
+      .rejects.toThrow('Post not found');
   });
 });

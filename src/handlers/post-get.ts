@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import type { PostType } from '../types';
-import { getPostsByType } from '../utils/dynamodb';
+import { getPostsByType, mergeLikes } from '../utils/dynamodb';
 import { withHandler, ok, err } from '../utils/handler';
 
 const TypeSchema = z.enum(['POST', 'DIARY', 'YOUSU']);
@@ -38,11 +38,15 @@ export const handler = withHandler(async (event) => {
   const { posts: rawPosts, lastEvaluatedKey: nextKey } = await getPostsByType(type, limit, lastEvaluatedKey);
 
   // 古い投稿に reactions/comments がない場合のデフォルト値を補完
-  const posts = rawPosts.map(post => ({
-    ...post,
-    reactions: post.reactions || { like: [] },
-    comments: post.comments || []
-  }));
+  // likeSet(DynamoDB String Set) は内部実装のためレスポンスから除去し、legacyとマージした配列を返す
+  const posts = rawPosts.map(post => {
+    const { likeSet, ...rest } = post as typeof post & { likeSet?: Set<string> | string[] };
+    return {
+      ...rest,
+      reactions: { like: mergeLikes(post.reactions?.like, likeSet) },
+      comments: post.comments || []
+    };
+  });
 
   return ok({
     posts,

@@ -180,45 +180,35 @@ export async function deletePost(type: PostType, sk: string): Promise<void> {
   }));
 }
 
-/**
- * like をトグル（楽観的ロック付き）。返り値は操作後の liked 状態。
- * ConditionalCheckFailedException 時は最大 3 回リトライ。
- */
-export async function togglePostLike(
-  type: PostType,
-  sk: string,
-  userId: string
-): Promise<boolean> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const post = await getPost(type, sk);
-    if (!post) throw new Error('Post not found');
+/** legacy(リスト)と likeSet(Set|配列) をユニーク配列にマージする */
+export function mergeLikes(legacy?: string[], likeSet?: Set<string> | string[]): string[] {
+  const set = likeSet ? Array.from(likeSet) : [];
+  return Array.from(new Set([...(legacy || []), ...set]));
+}
 
-    const currentLikes = post.reactions?.like ?? [];
-    const isLiked = currentLikes.includes(userId);
-    const newLikes = isLiked
-      ? currentLikes.filter(id => id !== userId)
-      : [...currentLikes, userId];
+/** like をトグル。旧リスト形式は likeSet(SS) に移行してから ADD/DELETE で原子的に更新 */
+export async function togglePostLike(type: PostType, sk: string, userId: string): Promise<boolean> {
+  const post = await getPost(type, sk);
+  if (!post) throw new Error('Post not found');
+  const legacy = post.reactions?.like ?? [];
+  const current = mergeLikes(legacy, (post as { likeSet?: Set<string> }).likeSet);
+  const isLiked = current.includes(userId);
+  const key = { PK: type, SK: sk };
 
-    try {
-      await docClient.send(new UpdateCommand({
-        TableName: TABLES.familyPosts,
-        Key: { PK: type, SK: sk },
-        UpdateExpression: 'SET reactions = :newReactions',
-        ConditionExpression:
-          'reactions.#like = :currentLikes OR attribute_not_exists(reactions)',
-        ExpressionAttributeNames: { '#like': 'like' },
-        ExpressionAttributeValues: {
-          ':newReactions': { like: newLikes },
-          ':currentLikes': currentLikes
-        }
-      }));
-      return !isLiked;
-    } catch (e: any) {
-      if (e.name !== 'ConditionalCheckFailedException') throw e;
-      // ConditionalCheckFailedException: continue to next attempt or exhaust retries
-    }
+  // 旧リストに値が残っていたら likeSet へ一度だけ移行(ADD + reactionsクリアは別属性なので同一式でOK)
+  if (legacy.length > 0) {
+    await docClient.send(new UpdateCommand({
+      TableName: TABLES.familyPosts, Key: key,
+      UpdateExpression: 'SET reactions = :r ADD likeSet :all',
+      ExpressionAttributeValues: { ':r': { like: [] }, ':all': new Set(legacy) }
+    }));
   }
-  throw new Error('Failed to toggle like after 3 retries');
+  await docClient.send(new UpdateCommand({
+    TableName: TABLES.familyPosts, Key: key,
+    UpdateExpression: isLiked ? 'DELETE likeSet :u' : 'ADD likeSet :u',
+    ExpressionAttributeValues: { ':u': new Set([userId]) }
+  }));
+  return !isLiked;
 }
 
 export async function addPostComment(

@@ -14,28 +14,37 @@ describe('reactions utility', () => {
 
   // ── toggleLike ──
 
-  it('toggleLike: userId が未登録のとき追加して新リストを返す', async () => {
+  it('toggleLike: 旧リスト(likes)が残っている場合は likeSet へ移行してからADDし、マージ後の配列を返す', async () => {
     sendSpy
       .mockResolvedValueOnce({ Item: { likes: ['user1'] } })
-      .mockResolvedValueOnce({});
+      .mockResolvedValueOnce({}) // 移行
+      .mockResolvedValueOnce({}); // ADD
 
     const result = await toggleLike('Table', { PK: 'pk', SK: 'sk' }, 'user2');
 
     expect(result).toContain('user2');
     expect(result).toContain('user1');
+    expect(sendSpy).toHaveBeenCalledTimes(3);
+    const migrateInput = (sendSpy.mock.calls[1][0] as any).input;
+    expect(migrateInput.UpdateExpression).toBe('SET likes = :empty ADD likeSet :all');
+    const toggleInput = (sendSpy.mock.calls[2][0] as any).input;
+    expect(toggleInput.UpdateExpression).toBe('ADD likeSet :u');
   });
 
-  it('toggleLike: userId が登録済みのとき削除して新リストを返す', async () => {
+  it('toggleLike: likeSet に登録済みのとき DELETE して残りの配列を返す（移行なし）', async () => {
     sendSpy
-      .mockResolvedValueOnce({ Item: { likes: ['user1', 'user2'] } })
+      .mockResolvedValueOnce({ Item: { likeSet: new Set(['user1', 'user2']) } })
       .mockResolvedValueOnce({});
 
     const result = await toggleLike('Table', { PK: 'pk', SK: 'sk' }, 'user1');
 
     expect(result).toEqual(['user2']);
+    expect(sendSpy).toHaveBeenCalledTimes(2); // 移行なし
+    const toggleInput = (sendSpy.mock.calls[1][0] as any).input;
+    expect(toggleInput.UpdateExpression).toBe('DELETE likeSet :u');
   });
 
-  it('toggleLike: likes が存在しない場合も動作する', async () => {
+  it('toggleLike: likes も likeSet も存在しない場合も動作する', async () => {
     sendSpy
       .mockResolvedValueOnce({ Item: {} })
       .mockResolvedValueOnce({});
@@ -43,18 +52,6 @@ describe('reactions utility', () => {
     const result = await toggleLike('Table', { PK: 'pk', SK: 'sk' }, 'user1');
 
     expect(result).toEqual(['user1']);
-  });
-
-  it('toggleLike: ConditionalCheckFailedException でリトライして成功する', async () => {
-    const condErr = Object.assign(new Error(), { name: 'ConditionalCheckFailedException' });
-    sendSpy
-      .mockResolvedValueOnce({ Item: { likes: [] } })
-      .mockRejectedValueOnce(condErr)
-      .mockResolvedValueOnce({ Item: { likes: [] } })
-      .mockResolvedValueOnce({});
-
-    await expect(toggleLike('Table', { PK: 'pk', SK: 'sk' }, 'u1')).resolves.toEqual(['u1']);
-    expect(sendSpy).toHaveBeenCalledTimes(4);
   });
 
   it('toggleLike: Item が見つからない場合 throw する', async () => {
