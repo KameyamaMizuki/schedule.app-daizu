@@ -78,6 +78,7 @@ async function _submitPin() {
     var data = await res.json();
 
     if (data.success && data.account) {
+      if (data.sessionToken && window.Api) Api.setToken(data.sessionToken);
       var member = familyMembers.find(function(m) { return m.userId === data.account.userId; });
       if (member) {
         currentUser = member;
@@ -121,4 +122,16 @@ function pinRetry() {
   if (welcome) welcome.style.display = 'none';
   _pinBuffer = '';
   _updateDots();
+}
+
+// Api.js からの401（セッション切れ）を受けてPINログイン画面を再表示する
+if (window.AppBus) {
+  AppBus.on('auth:required', function() {
+    if (typeof initPinLogin === 'function' && typeof _showPinLogin === 'function') {
+      initPinLogin();
+      _showPinLogin();
+    } else {
+      location.reload();
+    }
+  });
 }

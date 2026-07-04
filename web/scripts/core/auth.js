@@ -46,6 +46,7 @@ async function _authByLineToken(token) {
     });
     var data = await res.json();
     if (data.success && data.account) {
+      if (data.sessionToken && window.Api) Api.setToken(data.sessionToken);
       var member = familyMembers.find(function(m) { return m.userId === data.account.userId; });
       if (member) {
         currentUser = member;

@@ -281,7 +281,7 @@ function _swrWrite(url, data) {
 async function swrJson(url, onFresh, opts) {
   opts = opts || {};
   var cached = opts.force ? null : _swrRead(url);
-  var network = fetch(url).then(function(res) {
+  var network = fetch(url, { headers: (opts.headers || {}) }).then(function(res) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   }).then(function(data) {
