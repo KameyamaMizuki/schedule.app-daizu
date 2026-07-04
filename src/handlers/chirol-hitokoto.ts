@@ -8,7 +8,7 @@
 
 import { QueryCommand, PutCommand, DeleteCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { docClient } from '../utils/dynamodb';
+import { docClient, mergeLikes } from '../utils/dynamodb';
 import { withHandler, ok, err } from '../utils/handler';
 import { DB_KEYS, TEXT_LIMITS } from '../utils/constants';
 import { toggleLike, addComment, deleteComment } from '../utils/reactions';
@@ -43,7 +43,7 @@ export const handler = withHandler(async (event) => {
       id: item.hitokotoId,
       text: item.text,
       createdAt: item.createdAt,
-      likes: item.likes || [],
+      likes: mergeLikes(item.likes, item.likeSet),
       comments: item.comments || []
     })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 

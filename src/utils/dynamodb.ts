@@ -191,7 +191,7 @@ export async function togglePostLike(type: PostType, sk: string, userId: string)
   const post = await getPost(type, sk);
   if (!post) throw new Error('Post not found');
   const legacy = post.reactions?.like ?? [];
-  const current = mergeLikes(legacy, (post as { likeSet?: Set<string> }).likeSet);
+  const current = mergeLikes(legacy, (post as { likeSet?: Set<string> | string[] }).likeSet);
   const isLiked = current.includes(userId);
   const key = { PK: type, SK: sk };
 
