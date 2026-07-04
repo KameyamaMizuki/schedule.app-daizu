@@ -10,7 +10,7 @@ import {
   QueryCommand,
   UpdateCommand,
   DeleteCommand,
-  BatchGetCommand
+  ScanCommand
 } from '@aws-sdk/lib-dynamodb';
 import {
   ScheduleInput,
@@ -20,7 +20,6 @@ import {
   AccountSettings
 } from '../types';
 import { DB_KEYS, TTL_SCHEDULE_WEEKS, getTTLFromNow, TABLE_ACCOUNT_SETTINGS } from './constants';
-import { FAMILY_USER_IDS } from './auth';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 export const docClient = DynamoDBDocumentClient.from(client);
@@ -230,10 +229,12 @@ export async function addPostComment(
 
 /** 全家族メンバーのAccountSettingsを取得 */
 export async function getAllAccountSettings(): Promise<AccountSettings[]> {
-  const result = await docClient.send(new BatchGetCommand({
-    RequestItems: { [TABLE_ACCOUNT_SETTINGS]: { Keys: FAMILY_USER_IDS.map(userId => ({ userId })) } }
+  // 一時的にScanへ戻している: ロールに dynamodb:BatchGetItem が付与されたら
+  // BatchGetCommand(FAMILY_USER_IDS のKeys指定)に戻すこと
+  const result = await docClient.send(new ScanCommand({
+    TableName: TABLE_ACCOUNT_SETTINGS
   }));
-  return (result.Responses?.[TABLE_ACCOUNT_SETTINGS] || []) as AccountSettings[];
+  return (result.Items || []) as AccountSettings[];
 }
 
 /** 特定ユーザーのAccountSettingsを取得 */
