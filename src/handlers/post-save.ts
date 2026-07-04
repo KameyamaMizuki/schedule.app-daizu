@@ -7,6 +7,8 @@
  */
 
 import { z } from 'zod';
+import { APIGatewayProxyEvent } from 'aws-lambda';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { FamilyPost, PostType } from '../types';
 import {
   createPost,
@@ -21,6 +23,59 @@ import { getLineCredentials } from '../utils/secrets';
 import { pushFlexMessage, buildFlexBubble, getCommonQuickReply } from '../utils/line';
 import { withHandler, ok, err } from '../utils/handler';
 import { TEXT_LIMITS, TTL_POST_DAYS, getTTLFromNow, getDashboardUrl, getHomeUrl, FLEX_COLORS } from '../utils/constants';
+
+const lambdaClient = new LambdaClient({});
+
+type NotifyEvent = { internal: 'notify'; notifyType: 'DIARY' | 'YOUSU'; displayName: string; title?: string; text?: string };
+
+/** DIARY/YOUSU 投稿時のLINE通知（ベストエフォート）。post-save 自身の非同期自己呼び出しから実行される */
+async function sendNotify(ev: NotifyEvent): Promise<void> {
+  const { notifyType, displayName, title, text } = ev;
+
+  if (notifyType === 'DIARY') {
+    try {
+      const credentials = await getLineCredentials();
+      const config = await getSystemConfig();
+      if (config?.groupId) {
+        // 新形式: title フィールドを使用。旧形式: text から抽出
+        const notifyTitle = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
+        const preview = notifyTitle;
+
+        const flex = buildFlexBubble(
+          '📔 ダイ日記が投稿されました',
+          FLEX_COLORS.DIARY,
+          [`${displayName}さんが日記を書きました`, preview],
+          [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=diary` }]
+        );
+        const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
+        await pushFlexMessage(config.groupId, 'ダイ日記が投稿されました', flex, credentials.channelAccessToken, quickReply);
+      }
+    } catch (notifyError) {
+      console.error('Diary notification failed (save succeeded):', notifyError);
+    }
+  }
+
+  if (notifyType === 'YOUSU') {
+    try {
+      const credentials = await getLineCredentials();
+      const config = await getSystemConfig();
+      if (config?.groupId) {
+        const src = text || '';
+        const preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
+        const flex = buildFlexBubble(
+          '🐕 だいずの様子が更新されました',
+          FLEX_COLORS.DAIZU,
+          [`${displayName}さんが様子を記録しました`, preview],
+          [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=yousu` }]
+        );
+        const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
+        await pushFlexMessage(config.groupId, '様子が更新されました', flex, credentials.channelAccessToken, quickReply);
+      }
+    } catch (notifyError) {
+      console.error('Yousu notification failed (save succeeded):', notifyError);
+    }
+  }
+}
 
 function generatePostId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
@@ -93,7 +148,7 @@ const CommentSchema = z.object({
   sk: z.string().min(1)
 });
 
-export const handler = withHandler(async (event) => {
+const apiHandler = withHandler(async (event) => {
   const path = event.path;
   const method = event.httpMethod;
 
@@ -132,49 +187,16 @@ export const handler = withHandler(async (event) => {
 
     await createPost(post);
 
-    // 日記投稿時のLINE通知（ベストエフォート）
-    if (type === 'DIARY') {
+    // 日記・様子投稿時のLINE通知は非同期の自己呼び出しに切り出し、保存レスポンスを遅延させない（ベストエフォート）
+    if (type === 'DIARY' || type === 'YOUSU') {
       try {
-        const credentials = await getLineCredentials();
-        const config = await getSystemConfig();
-        if (config?.groupId) {
-          // 新形式: title フィールドを使用。旧形式: text から抽出
-          const notifyTitle = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
-          const preview = notifyTitle;
-
-          const flex = buildFlexBubble(
-            '📔 ダイ日記が投稿されました',
-            FLEX_COLORS.DIARY,
-            [`${displayName}さんが日記を書きました`, preview],
-            [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=diary` }]
-          );
-          const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
-          await pushFlexMessage(config.groupId, 'ダイ日記が投稿されました', flex, credentials.channelAccessToken, quickReply);
-        }
-      } catch (notifyError) {
-        console.error('Diary notification failed (save succeeded):', notifyError);
-      }
-    }
-
-    // 様子投稿時のLINE通知（ベストエフォート）
-    if (type === 'YOUSU') {
-      try {
-        const credentials = await getLineCredentials();
-        const config = await getSystemConfig();
-        if (config?.groupId) {
-          const src = text || '';
-          const preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
-          const flex = buildFlexBubble(
-            '🐕 だいずの様子が更新されました',
-            FLEX_COLORS.DAIZU,
-            [`${displayName}さんが様子を記録しました`, preview],
-            [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=yousu` }]
-          );
-          const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
-          await pushFlexMessage(config.groupId, '様子が更新されました', flex, credentials.channelAccessToken, quickReply);
-        }
-      } catch (notifyError) {
-        console.error('Yousu notification failed (save succeeded):', notifyError);
+        await lambdaClient.send(new InvokeCommand({
+          FunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+          InvocationType: 'Event',
+          Payload: Buffer.from(JSON.stringify({ internal: 'notify', notifyType: type, displayName, title, text }))
+        }));
+      } catch (e) {
+        console.error('notify invoke failed:', e);
       }
     }
 
@@ -240,3 +262,11 @@ export const handler = withHandler(async (event) => {
 
   return err('Not found', 404);
 });
+
+export const handler = async (event: unknown) => {
+  if ((event as NotifyEvent)?.internal === 'notify') {
+    await sendNotify(event as NotifyEvent);
+    return { statusCode: 200 };
+  }
+  return apiHandler(event as APIGatewayProxyEvent);
+};
