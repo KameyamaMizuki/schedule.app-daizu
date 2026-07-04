@@ -10,7 +10,7 @@ import {
   QueryCommand,
   UpdateCommand,
   DeleteCommand,
-  ScanCommand
+  BatchGetCommand
 } from '@aws-sdk/lib-dynamodb';
 import {
   ScheduleInput,
@@ -230,13 +230,10 @@ export async function addPostComment(
 
 /** 全家族メンバーのAccountSettingsを取得 */
 export async function getAllAccountSettings(): Promise<AccountSettings[]> {
-  // 一時的にScanへ戻している: ロールに dynamodb:BatchGetItem が付与されたら
-  // BatchGetCommand(FAMILY_USER_IDS のKeys指定)に戻すこと
-  const result = await docClient.send(new ScanCommand({
-    TableName: TABLE_ACCOUNT_SETTINGS
+  const result = await docClient.send(new BatchGetCommand({
+    RequestItems: { [TABLE_ACCOUNT_SETTINGS]: { Keys: FAMILY_USER_IDS.map(userId => ({ userId })) } }
   }));
-  return ((result.Items || []) as AccountSettings[])
-    .filter(a => FAMILY_USER_IDS.includes(a.userId));
+  return (result.Responses?.[TABLE_ACCOUNT_SETTINGS] || []) as AccountSettings[];
 }
 
 /** 特定ユーザーのAccountSettingsを取得 */
