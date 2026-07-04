@@ -20,6 +20,7 @@ import {
   AccountSettings
 } from '../types';
 import { DB_KEYS, TTL_SCHEDULE_WEEKS, getTTLFromNow, TABLE_ACCOUNT_SETTINGS } from './constants';
+import { FAMILY_USER_IDS } from './auth';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 export const docClient = DynamoDBDocumentClient.from(client);
@@ -234,7 +235,8 @@ export async function getAllAccountSettings(): Promise<AccountSettings[]> {
   const result = await docClient.send(new ScanCommand({
     TableName: TABLE_ACCOUNT_SETTINGS
   }));
-  return (result.Items || []) as AccountSettings[];
+  return ((result.Items || []) as AccountSettings[])
+    .filter(a => FAMILY_USER_IDS.includes(a.userId));
 }
 
 /** 特定ユーザーのAccountSettingsを取得 */
