@@ -35,7 +35,7 @@ window.Api = (function() {
     var res = await fetch(API_BASE_URL + path, opts);
     if (res.status === 401 && !retried) {
       if (await refreshToken()) {
-        return request(path, Object.assign({}, opts, { headers: opts.headers }), true);
+        return request(path, opts, true);
       }
       AppBus.emit('auth:required');
       throw new Error('認証が必要です');
@@ -48,8 +48,20 @@ window.Api = (function() {
     return res.json();
   }
 
+  /** 認証付きfetch: 401なら一度だけトークン再発行→再試行、それでも401なら auth:required */
+  async function authFetch(url) {
+    var res = await fetch(url, { headers: authHeaders() });
+    if (res.status === 401) {
+      if (await refreshToken()) {
+        res = await fetch(url, { headers: authHeaders() });
+      }
+      if (res.status === 401) AppBus.emit('auth:required');
+    }
+    return res;
+  }
+
   function get(path, onFresh, opts) {
-    return swrJson(API_BASE_URL + path, onFresh, Object.assign({ headers: authHeaders() }, opts || {}));
+    return swrJson(API_BASE_URL + path, onFresh, Object.assign({}, opts || {}, { fetchFn: authFetch }));
   }
   function post(path, body) { return request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
   function put(path, body) { return request(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }

@@ -277,11 +277,17 @@ function _swrWrite(url, data) {
  * 注意: onFresh の中から自分自身（swrJson を呼ぶ読み込み関数）を再帰的に
  * 呼び戻さないこと。レスポンスが毎回微妙に変わるAPIで無限ループになる。
  * onFresh では「データ反映＋再描画」だけを行う。
+ *
+ * @param {object} [opts]
+ * @param {function(string): Promise<Response>} [opts.fetchFn] - fetch の代わりに使う関数
+ *   （認証ヘッダー付与や401リトライなど、呼び出し元固有の挙動を注入するため）。
+ *   未指定時は fetch(url, { headers: opts.headers }) を使う。
  */
 async function swrJson(url, onFresh, opts) {
   opts = opts || {};
+  var doFetch = opts.fetchFn || function(u) { return fetch(u, { headers: (opts.headers || {}) }); };
   var cached = opts.force ? null : _swrRead(url);
-  var network = fetch(url, { headers: (opts.headers || {}) }).then(function(res) {
+  var network = doFetch(url).then(function(res) {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return res.json();
   }).then(function(data) {
