@@ -103,7 +103,7 @@ async function handleEvent(
         .digest('hex')
         .slice(0, 16);
       const token = `${tsB36}.${userId}.${hmac}`;
-      const loginUrl = `${getDashboardUrl()}?token=${token}`;
+      const loginUrl = getDashboardUrl({ token });
       await replyFlexMessage(
         webhookEvent.replyToken,
         'ログインリンク',
@@ -242,7 +242,7 @@ async function buildTodayScheduleFlex(): Promise<Record<string, unknown>> {
   const dayOfWeek = getDayOfWeekJa(todayStr);
   const month = jstNow.getMonth() + 1;
   const day = jstNow.getDate();
-  const dashboardUrl = getDashboardUrl(weekId);
+  const dashboardUrl = getDashboardUrl({ weekId });
 
   const inputs = await getAllScheduleInputs(weekId);
   const memberInputs = inputs.filter(i => i.userId !== DB_KEYS.DAIZU_STATUS_USER);

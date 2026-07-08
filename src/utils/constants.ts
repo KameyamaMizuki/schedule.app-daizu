@@ -2,6 +2,14 @@
  * アプリケーション全体で使用する定数
  */
 
+// =============================================================
+// アプリのリンク生成（ここが唯一の窓口）
+// -------------------------------------------------------------
+// ボットが送る全リンクはこの区画の関数だけで生成する。
+// 各ハンドラー側で "?tab=..." などを文字列連結しないこと。
+// パラメータを増やす／appv の付け方を変える等は、ここだけ直せばよい。
+// =============================================================
+
 /**
  * S3静的ウェブサイトのベースURL
  */
@@ -10,19 +18,51 @@ export const S3_BASE_URL =
   'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com';
 
 /**
- * ダッシュボードURL生成
+ * アプリのバージョン。ビルド時に esbuild が git SHA を注入（ローカルは 'dev'）。
+ * 全リンクに ?appv= として付与し、デプロイごとにURL文字列を変える。
+ * これで LINE内蔵ブラウザ等がURL単位でキャッシュしても、必ず最新を取り直す。
  */
-export function getDashboardUrl(weekId?: string): string {
-  return weekId
-    ? `${S3_BASE_URL}/dashboard.html?weekId=${weekId}`
-    : `${S3_BASE_URL}/dashboard.html`;
+export const APP_VERSION = process.env.APP_VERSION || 'dev';
+
+/** dashboard.html のリンクに付けられるパラメータ */
+export interface DashboardLinkParams {
+  weekId?: string;
+  tab?: 'schedule' | 'yousu' | 'diary' | 'wansta';
+  subTab?: string;
+  token?: string;
+}
+
+/**
+ * クエリ文字列を組み立てる。appv は常に最後に付与。
+ * URLSearchParams なので "?" は1つだけ・値は自動エンコードされる。
+ */
+function buildQuery(params: Record<string, string | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') q.set(k, v);
+  }
+  q.set('appv', APP_VERSION);
+  return q.toString();
+}
+
+/**
+ * ダッシュボードURL生成（全パラメータをここで受ける）。
+ * 例: getDashboardUrl({ tab: 'diary' }) / getDashboardUrl({ weekId }) / getDashboardUrl()
+ */
+export function getDashboardUrl(params: DashboardLinkParams = {}): string {
+  return `${S3_BASE_URL}/dashboard.html?${buildQuery({
+    weekId: params.weekId,
+    tab: params.tab,
+    subTab: params.subTab,
+    token: params.token
+  })}`;
 }
 
 /**
  * ホームURL生成
  */
 export function getHomeUrl(): string {
-  return `${S3_BASE_URL}/home.html`;
+  return `${S3_BASE_URL}/home.html?${buildQuery({})}`;
 }
 
 // ========== DynamoDB キー ==========
