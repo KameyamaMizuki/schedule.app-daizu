@@ -90,8 +90,9 @@
       <!-- 投稿フォーム（非表示） -->
       <div id="diaryInputArea" class="diary-input-area" style="display:none">
         <div class="diary-input-header">
-          <span id="diaryInputTitle"><i class="ph-bold ph-note-pencil"></i> 日記を書く</span>
           <button class="diary-close-btn" onclick="toggleDiaryInput()"><i class="ph-bold ph-x"></i></button>
+          <span id="diaryInputTitle"><i class="ph-bold ph-note-pencil"></i> 日記を書く</span>
+          <button id="diarySubmitBtn" class="diary-submit-btn diary-submit-top" onclick="submitDiary()">投稿する</button>
         </div>
         <!-- 日付選択 -->
         <div class="diary-date-row">
@@ -125,7 +126,6 @@
         <div class="diary-editor-wrapper">
           <div id="diaryRichEditor" class="diary-rich-editor" contenteditable="true" data-placeholder="今日のだいずの様子..."></div>
         </div>
-        <button id="diarySubmitBtn" class="diary-submit-btn" onclick="submitDiary()">投稿する</button>
       </div>
     </div>
   </div>
