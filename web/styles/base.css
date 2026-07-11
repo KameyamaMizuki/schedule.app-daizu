@@ -144,6 +144,15 @@
   --c-line: #3A423C; --c-cell-off: #313832; --c-accent-soft: #3D3426;
   --shadow-card: 0 2px 10px rgba(0,0,0,.3);
 }
+/* 自動テーマ(OSダーク)時も data-theme="dark" と同じ新トークン値を適用 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --c-bg: #1C211E; --c-surface: #272E29; --c-green: #6FA08B; --c-green-deep: #223B30;
+    --c-green-soft: #2E3B34; --c-ink: #E9E5DA; --c-ink-soft: #B9C0BA; --c-ink-faint: #7C857F;
+    --c-line: #3A423C; --c-cell-off: #313832; --c-accent-soft: #3D3426;
+    --shadow-card: 0 2px 10px rgba(0,0,0,.3);
+  }
+}
 
 /* === リセット・ボディ === */
 *{margin:0;padding:0;box-sizing:border-box}
