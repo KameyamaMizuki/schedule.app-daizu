@@ -69,13 +69,11 @@ async function submitDaizuLiffForm() {
   try {
     // 既存のだいずデータを取得してnotesをマージ
     var existingNotes = {};
-    try {
-      var data = await Api.getWeek(weekId, null, { force: true });
-      var daizuUser = data.users ? data.users.find(function(u) { return u.userId === 'daizu-status'; }) : null;
-      if (daizuUser && daizuUser.notes) {
-        existingNotes = Object.assign({}, daizuUser.notes);
-      }
-    } catch (e2) { /* 既存データ取得失敗は無視、新規として保存を続行 */ }
+    var data = await Api.getWeek(weekId, null, { force: true });
+    var daizuUser = data.users ? data.users.find(function(u) { return u.userId === 'daizu-status'; }) : null;
+    if (daizuUser && daizuUser.notes) {
+      existingNotes = Object.assign({}, daizuUser.notes);
+    }
     existingNotes[dateStr] = note;
 
     await Api.submitSchedule({
