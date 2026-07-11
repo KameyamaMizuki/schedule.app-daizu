@@ -64,17 +64,14 @@ async function loadWanstaData() {
   };
 
   // 3本を並列で取得（従来は直列で3往復待っていた）。SWRでキャッシュがあれば即返る。
-  var imgUrl = API_BASE_URL + AppConfig.API.CHIROL_IMAGES;
-  var chirolUrl = API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=chirol';
-  var daizuUrl = API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=daizu';
   await Promise.all([
-    swrJson(imgUrl, function(fresh) { applyImages(fresh); renderWansta(); })
+    Api.getChirolImages(function(fresh) { applyImages(fresh); renderWansta(); })
       .then(applyImages)
       .catch(function(e) { console.error('Failed to load wansta images:', e); applyImages(null); }),
-    swrJson(chirolUrl, function(fresh) { applyChirolHitokoto(fresh); renderWansta(); })
+    Api.getHitokoto('chirol', function(fresh) { applyChirolHitokoto(fresh); renderWansta(); })
       .then(applyChirolHitokoto)
       .catch(function(e) { console.error('Failed to load chirol hitokoto:', e); }),
-    swrJson(daizuUrl, function(fresh) { applyDaizuHitokoto(fresh); renderWansta(); })
+    Api.getHitokoto('daizu', function(fresh) { applyDaizuHitokoto(fresh); renderWansta(); })
       .then(applyDaizuHitokoto)
       .catch(function(e) { console.error('Failed to load daizu hitokoto:', e); })
   ]);
@@ -245,28 +242,14 @@ async function wanstaUploadPhoto() {
     var tag = wanstaCurrentAccount === 'daizu' ? 'wansta-daizu' : 'normal';
 
     // 1. プリサインド URL を取得
-    var urlRes = await fetch(
-      API_BASE_URL + AppConfig.API.CHIROL_UPLOAD_URL + '?tag=' + tag + '&contentType=' + encodeURIComponent('image/jpeg')
-    );
-    if (!urlRes.ok) throw new Error('アップロード URL の取得に失敗しました');
-    var urlData = await urlRes.json();
+    var urlData = await Api.getUploadUrl(tag, 'image/jpeg');
 
     // 2. base64 → Blob に変換して S3 へ直接 PUT
     var blob = dataUrlToBlob(wanstaUploadData);
-    var uploadRes = await fetch(urlData.uploadUrl, {
-      method: 'PUT',
-      body: blob,
-      headers: { 'Content-Type': 'image/jpeg' }
-    });
-    if (!uploadRes.ok) throw new Error('S3 へのアップロードに失敗しました');
+    await Api.upload(urlData.uploadUrl, blob, 'image/jpeg');
 
     // 3. メタデータを保存
-    var saveRes = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ s3Key: urlData.s3Key, tag: tag })
-    });
-    if (!saveRes.ok) throw new Error('メタデータの保存に失敗しました');
+    await Api.saveImageMeta({ s3Key: urlData.s3Key, tag: tag });
 
     wanstaPhotos[wanstaCurrentAccount].unshift({
       id: urlData.imageId,
@@ -301,24 +284,14 @@ async function wanstaSubmitHitokoto() {
   btn.textContent = '追加中...';
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, dog: wanstaCurrentAccount })
+    var data = await Api.postHitokoto({ text: text, dog: wanstaCurrentAccount });
+    wanstaHitokoto[wanstaCurrentAccount].unshift({
+      id: data.hitokotoId,
+      text: text,
+      createdAt: new Date().toISOString()
     });
-
-    if (res.ok) {
-      var data = await res.json();
-      wanstaHitokoto[wanstaCurrentAccount].unshift({
-        id: data.hitokotoId,
-        text: text,
-        createdAt: new Date().toISOString()
-      });
-      wanstaCloseHitokotoModal();
-      renderWansta();
-    } else {
-      alert('追加に失敗しました');
-    }
+    wanstaCloseHitokotoModal();
+    renderWansta();
   } catch (e) {
     console.error('Hitokoto error:', e);
     alert('追加に失敗しました');
@@ -332,18 +305,9 @@ async function wanstaDeleteHitokoto(hitokotoId) {
   if (!confirm('この一言を削除しますか？')) return;
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hitokotoId: hitokotoId, dog: wanstaCurrentAccount })
-    });
-
-    if (res.ok) {
-      wanstaHitokoto[wanstaCurrentAccount] = wanstaHitokoto[wanstaCurrentAccount].filter(function(h) { return h.id !== hitokotoId; });
-      renderWansta();
-    } else {
-      alert('削除に失敗しました');
-    }
+    await Api.deleteHitokoto({ hitokotoId: hitokotoId, dog: wanstaCurrentAccount });
+    wanstaHitokoto[wanstaCurrentAccount] = wanstaHitokoto[wanstaCurrentAccount].filter(function(h) { return h.id !== hitokotoId; });
+    renderWansta();
   } catch (e) {
     console.error('Hitokoto delete error:', e);
     alert('削除に失敗しました');

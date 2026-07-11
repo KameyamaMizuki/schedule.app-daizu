@@ -16,7 +16,7 @@ async function loadAccountSettings() {
     });
   };
   try {
-    var data = await swrJson(API_BASE_URL + AppConfig.API.ACCOUNT, function(fresh) {
+    var data = await Api.getAccounts(function(fresh) {
       apply(fresh);
       if (typeof updateHeaderAvatar === 'function') updateHeaderAvatar();
     });

@@ -70,12 +70,7 @@ async function _submitPin() {
   if (errorEl) errorEl.textContent = '';
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT + '/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: _pinBuffer })
-    });
-    var data = await res.json();
+    var data = await Api.authPin(_pinBuffer);
 
     if (data.success && data.account) {
       if (data.sessionToken && window.Api) Api.setToken(data.sessionToken);

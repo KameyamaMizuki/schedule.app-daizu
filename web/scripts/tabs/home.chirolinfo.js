@@ -1,6 +1,7 @@
 // ========== [HOME:CHIROLINFO] 知ってるチロル/だいず機能 ==========
 // 依存（グローバル参照）:
-//   state.js  : homeDogImages, homeDaizuImages, API_BASE_URL
+//   state.js  : homeDogImages, homeDaizuImages
+//   core/api.js : Api
 //   modals.js : openCropModal
 //   home.js   : homeState, homeHideAllAreas, updateHomeFab,
 //               homeSetRandomDogImage, homeSetSpeechText, homeReturnToMenu,
@@ -142,15 +143,10 @@ async function chirolSubmitHitokoto() {
   try {
     // Note: Currently hitokoto is saved to the same table for both chirol and daizu
     // A 'dog' field could be added to the API for differentiation
-    const [res] = await Promise.all([
-      fetch(`${API_BASE_URL}${AppConfig.API.CHIROL_HITOKOTO}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, dog: selectedInfoDog })
-      }),
+    await Promise.all([
+      Api.postHitokoto({ text, dog: selectedInfoDog }),
       new Promise(r => setTimeout(r, AppConfig.TIMING.MSG_DISPLAY))
     ]);
-    if (!res.ok) throw new Error('保存失敗');
 
     // 保存成功 → 一言リストにも追加
     homeHitokotoList.push(text);
@@ -250,31 +246,17 @@ async function chirolSubmitImage() {
 
   try {
     // Step 1: Presigned URL を取得
-    const urlRes = await fetch(
-      `${API_BASE_URL}${AppConfig.API.CHIROL_UPLOAD_URL}?tag=${uploadTag}&contentType=${encodeURIComponent(contentType)}`
-    );
-    if (!urlRes.ok) throw new Error('URL取得失敗');
-    const { uploadUrl, s3Key, imageUrl } = await urlRes.json();
+    const { uploadUrl, s3Key, imageUrl } = await Api.getUploadUrl(uploadTag, contentType);
 
     // Step 2: S3 に直接アップロード（Lambda を経由しない）
     // ※ S3バケットのCORSにPUTメソッドを許可する設定が必要
-    const [uploadRes] = await Promise.all([
-      fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': contentType },
-        body: imageBlob
-      }),
+    await Promise.all([
+      Api.upload(uploadUrl, imageBlob, contentType),
       new Promise(r => setTimeout(r, AppConfig.TIMING.MSG_DISPLAY))
     ]);
-    if (!uploadRes.ok) throw new Error('S3アップロード失敗');
 
     // Step 3: DynamoDBにメタデータ保存
-    const metaRes = await fetch(`${API_BASE_URL}${AppConfig.API.CHIROL_IMAGES}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ s3Key, tag: uploadTag })
-    });
-    if (!metaRes.ok) throw new Error('メタデータ保存失敗');
+    await Api.saveImageMeta({ s3Key, tag: uploadTag });
 
     // アップロード成功 → 画像リストにも追加
     if (imageUrl && chirolSelectedTag && homeDogImages[chirolSelectedTag]) {

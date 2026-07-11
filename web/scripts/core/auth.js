@@ -39,12 +39,7 @@ async function initAuth() {
 /** LINEトークンで自動ログイン */
 async function _authByLineToken(token) {
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT + '/auth/line-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: token })
-    });
-    var data = await res.json();
+    var data = await Api.authLineToken(token);
     if (data.success && data.account) {
       if (data.sessionToken && window.Api) Api.setToken(data.sessionToken);
       var member = familyMembers.find(function(m) { return m.userId === data.account.userId; });

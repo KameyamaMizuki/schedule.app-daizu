@@ -59,16 +59,9 @@ async function wanstaToggleLike() {
 
   // API 呼び出し
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like', imageId: photoId, userId: userId })
-    });
-    if (res.ok) {
-      var data = await res.json();
-      wanstaSelectedPhoto.likes = data.likes || likes;
-      wanstaUpdateLikeUI();
-    }
+    var data = await Api.imageAction({ action: 'like', imageId: photoId, userId: userId });
+    wanstaSelectedPhoto.likes = data.likes || likes;
+    wanstaUpdateLikeUI();
   } catch (e) {
     console.error('Like error:', e);
   }
@@ -125,28 +118,21 @@ async function wanstaAddComment() {
 
   // API 呼び出し
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'addComment',
-        imageId: photoId,
-        userId: currentUser.userId,
-        userName: getDisplayName(currentUser),
-        text: text
-      })
+    var data = await Api.imageAction({
+      action: 'addComment',
+      imageId: photoId,
+      userId: currentUser.userId,
+      userName: getDisplayName(currentUser),
+      text: text
     });
-    if (res.ok) {
-      var data = await res.json();
-      // 仮IDを正式IDで置換
-      for (var i = 0; i < wanstaSelectedPhoto.comments.length; i++) {
-        if (wanstaSelectedPhoto.comments[i].id === tmpId && data.comment) {
-          wanstaSelectedPhoto.comments[i] = data.comment;
-          break;
-        }
+    // 仮IDを正式IDで置換
+    for (var i = 0; i < wanstaSelectedPhoto.comments.length; i++) {
+      if (wanstaSelectedPhoto.comments[i].id === tmpId && data.comment) {
+        wanstaSelectedPhoto.comments[i] = data.comment;
+        break;
       }
-      wanstaRenderComments();
     }
+    wanstaRenderComments();
   } catch (e) {
     console.error('Comment error:', e);
   }
@@ -163,11 +149,7 @@ async function wanstaDeleteComment(commentId) {
 
   // API 呼び出し
   try {
-    await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageId: photoId, commentId: commentId })
-    });
+    await Api.deleteImage({ imageId: photoId, commentId: commentId });
   } catch (e) {
     console.error('Delete comment error:', e);
   }
@@ -233,19 +215,10 @@ async function wanstaDeletePhoto() {
   }
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_IMAGES, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageId: wanstaSelectedPhoto.id })
-    });
-
-    if (res.ok) {
-      wanstaPhotos[wanstaCurrentAccount] = wanstaPhotos[wanstaCurrentAccount].filter(function(p) { return p.id !== wanstaSelectedPhoto.id; });
-      wanstaCloseViewer();
-      renderWansta();
-    } else {
-      alert('削除に失敗しました');
-    }
+    await Api.deleteImage({ imageId: wanstaSelectedPhoto.id });
+    wanstaPhotos[wanstaCurrentAccount] = wanstaPhotos[wanstaCurrentAccount].filter(function(p) { return p.id !== wanstaSelectedPhoto.id; });
+    wanstaCloseViewer();
+    renderWansta();
   } catch (e) {
     console.error('Delete error:', e);
     alert('削除に失敗しました');
@@ -275,16 +248,9 @@ async function wanstaToggleHitokotoLike(hitokotoId) {
   renderWansta();
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like', hitokotoId: hitokotoId, dog: wanstaCurrentAccount, userId: userId })
-    });
-    if (res.ok) {
-      var data = await res.json();
-      h.likes = data.likes || likes;
-      renderWansta();
-    }
+    var data = await Api.postHitokoto({ action: 'like', hitokotoId: hitokotoId, dog: wanstaCurrentAccount, userId: userId });
+    h.likes = data.likes || likes;
+    renderWansta();
   } catch (e) {
     console.error('Hitokoto like error:', e);
   }
@@ -349,29 +315,22 @@ async function wanstaAddHitokotoComment(hitokotoId) {
   renderWansta();
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'addComment',
-        hitokotoId: hitokotoId,
-        dog: wanstaCurrentAccount,
-        userId: currentUser.userId,
-        userName: getDisplayName(currentUser),
-        text: text
-      })
+    var data = await Api.postHitokoto({
+      action: 'addComment',
+      hitokotoId: hitokotoId,
+      dog: wanstaCurrentAccount,
+      userId: currentUser.userId,
+      userName: getDisplayName(currentUser),
+      text: text
     });
-    if (res.ok) {
-      var data = await res.json();
-      // 仮IDを正式IDで置換
-      for (var i = 0; i < h.comments.length; i++) {
-        if (h.comments[i].id === tmpId && data.comment) {
-          h.comments[i] = data.comment;
-          break;
-        }
+    // 仮IDを正式IDで置換
+    for (var i = 0; i < h.comments.length; i++) {
+      if (h.comments[i].id === tmpId && data.comment) {
+        h.comments[i] = data.comment;
+        break;
       }
-      wanstaRenderHitokotoComments(hitokotoId);
     }
+    wanstaRenderHitokotoComments(hitokotoId);
   } catch (e) {
     console.error('Hitokoto comment error:', e);
   }
@@ -387,11 +346,7 @@ async function wanstaDeleteHitokotoComment(hitokotoId, commentId) {
   renderWansta();
 
   try {
-    await fetch(API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ hitokotoId: hitokotoId, dog: wanstaCurrentAccount, commentId: commentId })
-    });
+    await Api.deleteHitokoto({ hitokotoId: hitokotoId, dog: wanstaCurrentAccount, commentId: commentId });
   } catch (e) {
     console.error('Hitokoto delete comment error:', e);
   }

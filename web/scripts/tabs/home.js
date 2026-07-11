@@ -18,7 +18,7 @@
 async function loadChirolImagesFromDB() {
   try {
     // SWR: 2回目以降はキャッシュ即返し（このページ表示中の追記は1回だけなのでonFresh不要）
-    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.CHIROL_IMAGES}`);
+    const data = await Api.getChirolImages();
     {
       if (data.images && data.images.length > 0) {
         for (const img of data.images) {
@@ -42,7 +42,7 @@ let homeHitokotoList = [...AppConfig.CHIROL_HITOKOTO_TEXTS];
 // DynamoDBから追加された一言を読み込み
 async function loadHitokotoFromDB() {
   try {
-    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.CHIROL_HITOKOTO}`);
+    const data = await Api.getHitokoto();
     {
       if (data.hitokotoList && data.hitokotoList.length > 0) {
         // テキストが有効なもののみ追加（絵文字のみ、空文字などを除外）
@@ -127,7 +127,7 @@ async function updateHomeTodayInfo() {
   };
   try {
     const weekId = getWeekId(now);
-    const data = await swrJson(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`, applyPerson);
+    const data = await Api.getWeek(weekId, applyPerson);
     applyPerson(data);
   } catch (e) {
     console.error('Failed to load today info:', e);
@@ -359,13 +359,10 @@ async function homeSubmitDaizuYousu() {
   try {
     // 既存のだいずデータを取得してnotesをマージ
     let existingNotes = {};
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`);
-    if (response.ok) {
-      const data = await response.json();
-      const daizuUser = data.users ? data.users.find(u => u.userId === 'daizu-status') : null;
-      if (daizuUser && daizuUser.notes) {
-        existingNotes = { ...daizuUser.notes };
-      }
+    const data = await Api.getWeek(weekId, null, { force: true });
+    const daizuUser = data.users ? data.users.find(u => u.userId === 'daizu-status') : null;
+    if (daizuUser && daizuUser.notes) {
+      existingNotes = { ...daizuUser.notes };
     }
     existingNotes[dateStr] = note;
 

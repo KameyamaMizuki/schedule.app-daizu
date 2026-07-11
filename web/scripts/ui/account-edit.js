@@ -139,13 +139,7 @@ async function saveAccountEdit() {
       birthday: birthdayInput ? (birthdayInput.value || '') : ''
     };
 
-    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('保存失敗');
-    var updated = await res.json();
+    var updated = await Api.updateAccount(payload);
     accountSettingsCache[currentUser.userId] = updated;
 
     cancelEditAccount();
@@ -170,12 +164,7 @@ async function savePin() {
   if (!/^\d{4}$/.test(pin)) { alert('PINは4桁の数字で入力してください'); return; }
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.ACCOUNT + '/pin', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: currentUser.userId, pin: pin })
-    });
-    if (!res.ok) throw new Error('PIN設定失敗');
+    await Api.setPin({ userId: currentUser.userId, pin: pin });
     alert('PINを設定しました');
     if (input) input.value = '';
     openPinSetting();
