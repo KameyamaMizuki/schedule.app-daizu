@@ -164,20 +164,10 @@ function dataUrlToBlob(dataUrl) {
  */
 async function uploadImageToS3(dataUrl, tag) {
   tag = tag || 'diary';
-  var urlRes = await fetch(
-    API_BASE_URL + AppConfig.API.CHIROL_UPLOAD_URL +
-    '?tag=' + tag + '&contentType=' + encodeURIComponent('image/jpeg')
-  );
-  if (!urlRes.ok) throw new Error('アップロードURL取得失敗');
-  var urlData = await urlRes.json();
+  var urlData = await Api.getUploadUrl(tag, 'image/jpeg');
 
   var blob = dataUrlToBlob(dataUrl);
-  var uploadRes = await fetch(urlData.uploadUrl, {
-    method: 'PUT',
-    body: blob,
-    headers: { 'Content-Type': 'image/jpeg' }
-  });
-  if (!uploadRes.ok) throw new Error('S3アップロード失敗');
+  await Api.upload(urlData.uploadUrl, blob, 'image/jpeg');
 
   return urlData.imageUrl;
 }

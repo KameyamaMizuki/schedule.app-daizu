@@ -130,13 +130,11 @@ async function loadDiaryPosts(append, force) {
   };
 
   try {
-    var url = API_BASE_URL + AppConfig.API.POSTS + '?type=DIARY&limit=50';
+    var query = '?type=DIARY&limit=50';
     if (append && diaryLastKey) {
       // 追加読み込みは従来どおりネットワーク直
-      url += '&lastKey=' + encodeURIComponent(diaryLastKey);
-      var response = await fetch(url);
-      if (!response.ok) throw new Error('取得失敗');
-      var data = await response.json();
+      query += '&lastKey=' + encodeURIComponent(diaryLastKey);
+      var data = await Api.getPosts(query, null, { force: true });
       diaryLastKey = data.lastEvaluatedKey || null;
       diaryPosts = diaryPosts.concat(data.posts || []);
       renderDiaryPosts();
@@ -144,7 +142,7 @@ async function loadDiaryPosts(append, force) {
       // 初回はSWR: キャッシュ即表示→裏で最新化して差分があれば再描画
       diaryPosts = [];
       diaryLastKey = null;
-      applyList(await swrJson(url, applyList, { force: force }));
+      applyList(await Api.getPosts(query, applyList, { force: force }));
     }
   } catch (error) {
     console.error('日記読み込みエラー:', error);
@@ -371,24 +369,13 @@ async function submitDiary() {
       catchImageUrl: finalCatchImageUrl || ''
     };
 
-    var response;
     if (diaryEditingPostId) {
       // 編集モード: PUT
-      response = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + diaryEditingPostId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ sk: editPost ? editPost.SK : '' }, payload))
-      });
+      await Api.updatePost(diaryEditingPostId, Object.assign({ sk: editPost ? editPost.SK : '' }, payload));
     } else {
       // 新規作成: POST
-      response = await fetch(API_BASE_URL + AppConfig.API.POSTS, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({ userId: currentUser.userId }, payload))
-      });
+      await Api.createPost(Object.assign({ userId: currentUser.userId }, payload));
     }
-
-    if (!response.ok) throw new Error(diaryEditingPostId ? '更新失敗' : '投稿失敗');
 
     // リセット
     diaryEditingPostId = null;
@@ -499,9 +486,7 @@ async function deleteDiary(postId) {
   if (!post) return;
 
   try {
-    await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '?type=DIARY&sk=' + encodeURIComponent(post.SK), {
-      method: 'DELETE'
-    });
+    await Api.deletePost(postId, 'DIARY', post.SK);
     await loadDiaryPosts(false, true);
   } catch (error) {
     alert('削除に失敗しました');

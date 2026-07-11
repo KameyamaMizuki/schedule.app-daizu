@@ -20,21 +20,20 @@ async function loadYousuPosts(append, force) {
     yousuLastKey = null;
   }
 
-  var postsUrl = API_BASE_URL + AppConfig.API.POSTS + '?type=YOUSU&limit=50';
+  var postsQuery = '?type=YOUSU&limit=50';
   if (append && yousuLastKey) {
-    postsUrl += '&lastKey=' + encodeURIComponent(yousuLastKey);
+    postsQuery += '&lastKey=' + encodeURIComponent(yousuLastKey);
   }
 
   try {
     if (append) {
       // 追加読み込みは従来どおりネットワーク直
-      var res = await fetch(postsUrl);
-      var postsData = res.ok ? await res.json() : { posts: [] };
+      var postsData = await Api.getPosts(postsQuery, null, { force: true });
       yousuLastKey = postsData.lastEvaluatedKey || null;
       yousuPosts = yousuPosts.concat(postsData.posts || []);
     } else {
       // 初回はSWR: キャッシュ即表示→裏で最新化して差分があれば再描画
-      var data = await swrJson(postsUrl, function(fresh) {
+      var data = await Api.getPosts(postsQuery, function(fresh) {
         yousuPosts = fresh.posts || [];
         yousuLastKey = fresh.lastEvaluatedKey || null;
         renderYousuTab();
@@ -203,32 +202,23 @@ async function saveYousuPost() {
   btn.textContent = '記録中...';
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.POSTS, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'YOUSU',
-        userId: currentUser ? currentUser.userId : 'unknown',
-        displayName: currentUser ? getDisplayName(currentUser) : '不明',
-        text: text
-      })
+    await Api.createPost({
+      type: 'YOUSU',
+      userId: currentUser ? currentUser.userId : 'unknown',
+      displayName: currentUser ? getDisplayName(currentUser) : '不明',
+      text: text
     });
 
-    if (res.ok) {
-      input.value = '';
-      var countEl = document.getElementById('yousuCharCount');
-      if (countEl) countEl.textContent = '0';
-      showToast('だいずの様子を記録しました');
-      // リロード（先頭から再取得、保存直後なのでキャッシュを使わない）
-      await loadYousuPosts(false, true);
-      renderYousuTab();
-    } else {
-      var errData = await res.json().catch(function() { return {}; });
-      showToast(errData.error || '保存に失敗しました');
-    }
+    input.value = '';
+    var countEl = document.getElementById('yousuCharCount');
+    if (countEl) countEl.textContent = '0';
+    showToast('だいずの様子を記録しました');
+    // リロード（先頭から再取得、保存直後なのでキャッシュを使わない）
+    await loadYousuPosts(false, true);
+    renderYousuTab();
   } catch (e) {
     console.error('Failed to save yousu:', e);
-    showToast('保存に失敗しました');
+    showToast(e.message || '保存に失敗しました');
   } finally {
     btn.disabled = false;
     btn.textContent = '記録する';
@@ -254,25 +244,17 @@ async function yousuSaveEdit(postId, sk) {
   }
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: text,
-        type: 'YOUSU',
-        sk: sk,
-        displayName: currentUser ? getDisplayName(currentUser) : '不明'
-      })
+    await Api.updatePost(postId, {
+      text: text,
+      type: 'YOUSU',
+      sk: sk,
+      displayName: currentUser ? getDisplayName(currentUser) : '不明'
     });
 
-    if (res.ok) {
-      yousuEditingPostSk = null;
-      showToast('更新しました');
-      await loadYousuPosts(false, true);
-      renderYousuTab();
-    } else {
-      showToast('更新に失敗しました');
-    }
+    yousuEditingPostSk = null;
+    showToast('更新しました');
+    await loadYousuPosts(false, true);
+    renderYousuTab();
   } catch (e) {
     console.error('Failed to edit yousu:', e);
     showToast('更新に失敗しました');
@@ -283,17 +265,11 @@ async function yousuDeletePost(postId, sk) {
   if (!confirm('この記録を削除しますか？')) return;
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '?type=YOUSU&sk=' + encodeURIComponent(sk), {
-      method: 'DELETE'
-    });
+    await Api.deletePost(postId, 'YOUSU', sk);
 
-    if (res.ok) {
-      showToast('削除しました');
-      await loadYousuPosts(false, true);
-      renderYousuTab();
-    } else {
-      showToast('削除に失敗しました');
-    }
+    showToast('削除しました');
+    await loadYousuPosts(false, true);
+    renderYousuTab();
   } catch (e) {
     console.error('Failed to delete yousu:', e);
     showToast('削除に失敗しました');

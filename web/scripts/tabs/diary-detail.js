@@ -84,15 +84,10 @@ async function toggleDiaryLike(postId, sk) {
   }
 
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '/reaction', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: userId, action: 'like', type: 'DIARY',
-        sk: decodeURIComponent(sk)
-      })
+    await Api.toggleReaction(postId, {
+      userId: userId, action: 'like', type: 'DIARY',
+      sk: decodeURIComponent(sk)
     });
-    if (!res.ok) throw new Error('API error');
   } catch (error) {
     console.error('いいねエラー:', error);
     if (wasLiked) {
@@ -126,16 +121,12 @@ async function submitDiaryComment(postId, sk) {
   if (btn) btn.disabled = true;
 
   try {
-    await fetch(API_BASE_URL + AppConfig.API.POSTS + '/' + postId + '/comment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: currentUser.userId,
-        displayName: currentUser.displayName,
-        text: text,
-        type: 'DIARY',
-        sk: decodeURIComponent(sk)
-      })
+    await Api.addComment(postId, {
+      userId: currentUser.userId,
+      displayName: currentUser.displayName,
+      text: text,
+      type: 'DIARY',
+      sk: decodeURIComponent(sk)
     });
     input.value = '';
     await loadDiaryPosts(false, true);
