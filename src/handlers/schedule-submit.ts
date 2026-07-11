@@ -122,7 +122,7 @@ export const handler = withHandler(async (event) => {
           const noteText = notes?.[todayStr] || '';
 
           if (noteText) {
-            const calendarUrl = `${getDashboardUrl()}?tab=schedule&subTab=calendar`;
+            const calendarUrl = getDashboardUrl({ tab: 'schedule', subTab: 'calendar' });
             const flex = buildFlexBubble(
               `🐕 だいずの様子 ${month}/${day}(${dayOfWeek})`,
               FLEX_COLORS.DAIZU,
@@ -134,7 +134,7 @@ export const handler = withHandler(async (event) => {
           }
         } else if (changes || isNewEntry) {
           // スケジュール更新通知（既存ロジック）
-          const dashboardUrl = getDashboardUrl(weekId);
+          const dashboardUrl = getDashboardUrl({ weekId });
           const notifier = parsed.data.notifierName || displayName;
           const flex = buildFlexBubble(
             '📅 スケジュール更新',
