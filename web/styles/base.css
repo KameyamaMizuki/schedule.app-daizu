@@ -114,6 +114,37 @@
     --grad-header-wansta:   var(--grad-header-schedule);
   }
 }
+/* === デザイントークン（Phase C以降の新シェル/新タブ用。旧 --color-* は当面併存。
+   --shadow-card/--font-display/--font-body は旧 :root と重複するため、
+   このブロックを後段に置いて新トークンの値を優先させる） === */
+:root {
+  --c-bg: #FBF6EC;          /* アプリ背景(クリーム) */
+  --c-surface: #FFFFFF;      /* カード面 */
+  --c-green: #3F6E5B;        /* ブランド深緑(主ボタン・選択・ヘッダー) */
+  --c-green-deep: #2E5344;   /* ヘッダーグラデ終端 */
+  --c-green-soft: #EDF3EF;   /* 淡緑(◯セル閲覧時・軽い強調) */
+  --c-ink: #2F3B33;          /* 本文 */
+  --c-ink-soft: #5D6A63;     /* 副文 */
+  --c-ink-faint: #97A09D;    /* 補足・非活性 */
+  --c-line: #E7E0D2;         /* 罫線 */
+  --c-cell-off: #F1EDE3;     /* ✕セル・OFF状態 */
+  --c-accent: #E8A13A;       /* オレンジ(変更マーク・時短バー) */
+  --c-accent-soft: #FDEFD2;  /* 淡オレンジ(今日・時短バー背景) */
+  --c-danger: #C96A5A;       /* 赤(不在・削除) */
+  --c-sat: #5A82C9;          /* 土曜 */
+  --radius-card: 20px;
+  --radius-cell: 12px;
+  --shadow-card: 0 2px 10px rgba(47,59,51,.08);
+  --font-display: 'Kaisei Decol', serif;
+  --font-body: 'M PLUS Rounded 1c', sans-serif;
+}
+[data-theme="dark"] {
+  --c-bg: #1C211E; --c-surface: #272E29; --c-green: #6FA08B; --c-green-deep: #223B30;
+  --c-green-soft: #2E3B34; --c-ink: #E9E5DA; --c-ink-soft: #B9C0BA; --c-ink-faint: #7C857F;
+  --c-line: #3A423C; --c-cell-off: #313832; --c-accent-soft: #3D3426;
+  --shadow-card: 0 2px 10px rgba(0,0,0,.3);
+}
+
 /* === リセット・ボディ === */
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{overscroll-behavior:none;-webkit-overflow-scrolling:touch}

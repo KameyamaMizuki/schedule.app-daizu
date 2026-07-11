@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <title>管理ダッシュボード</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#3F6E5B">
@@ -17,44 +17,13 @@
 </head>
 <body>
 <div id="pinLoginOverlay" class="pin-login-overlay"></div>
-  <div class="header" id="mainHeader">
-    <button class="hamburger" onclick="toggleSidebar()"><i class="ph-bold ph-list"></i></button>
-    <h1 id="headerTitle">スケジュール管理</h1>
-    <button id="themeToggleBtn" class="theme-toggle-btn" onclick="cycleTheme()" aria-label="テーマ切替"><i class="ph-bold ph-sun-horizon"></i></button>
-    <button class="home-btn account-avatar-btn" onclick="openAccountModal()" id="accountBtn">
-      <span id="headerUserAvatar" class="header-avatar">👤</span>
-    </button>
-  </div>
-
-  <!-- サイドバー -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h2>メニュー</h2>
-      <button class="sidebar-close" onclick="toggleSidebar()"><i class="ph-bold ph-x"></i></button>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-item" onclick="window.location.href='home.html'"><i class="ph-bold ph-house"></i> ホーム</div>
-      <div class="nav-item" onclick="navigateTo('schedule')"><i class="ph-bold ph-calendar"></i> スケジュール</div>
-      <div class="nav-item" onclick="navigateTo('yousu')"><i class="ph-bold ph-paw-print"></i> 様子</div>
-      <div class="nav-item" onclick="navigateTo('diary')"><i class="ph-bold ph-book-open"></i> ダイ日記</div>
-      <div class="nav-item" onclick="navigateTo('wansta')"><i class="ph-bold ph-camera"></i> WANsta</div>
-    </nav>
-  </div>
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-  <div class="tabs">
-    <div class="tab green" onclick="window.location.href='home.html'">ホーム</div>
-    <div class="tab" onclick="switchTab('schedule')">スケジュール</div>
-    <div class="tab" onclick="switchTab('yousu')">様子</div>
-    <div class="tab" onclick="switchTab('diary')">ダイ日記</div>
-    <div class="tab" onclick="switchTab('wansta')">WANsta</div>
-  </div>
+  <div class="app-header"><h1 id="headerTitle">ホーム</h1><div class="app-header-actions"><button id="themeToggleBtn" onclick="cycleTheme()"><i class="ph-bold ph-sun-horizon"></i></button><button class="account-avatar-btn" onclick="openAccountModal()"><span id="headerUserAvatar" class="header-avatar"></span></button></div></div>
 
   <!-- スケジュールサブタブ（スケジュールタブ選択時のみ表示） -->
-  <div class="sub-tabs" id="scheduleSubTabs" style="display:none">
-    <div class="sub-tab active" onclick="switchScheduleSubTab('calendar')">カレンダー</div>
-    <div class="sub-tab" onclick="switchScheduleSubTab('thisWeek')">今週</div>
-    <div class="sub-tab" onclick="switchScheduleSubTab('nextWeek')">来週</div>
+  <div class="sub-chips" id="scheduleSubTabs" style="display:none">
+    <button class="sub-chip active" onclick="switchScheduleSubTab('calendar')">カレンダー</button>
+    <button class="sub-chip" onclick="switchScheduleSubTab('thisWeek')">今週</button>
+    <button class="sub-chip" onclick="switchScheduleSubTab('nextWeek')">来週</button>
   </div>
 
   <!-- ホームタブは home.html に移動済み -->
@@ -85,8 +54,7 @@
       <div id="diaryPosts" class="diary-posts">
         <div class="loading">読み込み中...</div>
       </div>
-      <!-- 投稿ボタン（フローティング） -->
-      <button class="diary-fab" onclick="toggleDiaryInput()"><i class="ph-bold ph-note-pencil"></i></button>
+      <!-- 投稿ボタンは共有FAB(#fabBtn)に統合 -->
       <!-- 投稿フォーム（非表示） -->
       <div id="diaryInputArea" class="diary-input-area" style="display:none">
         <div class="diary-input-header">
@@ -168,8 +136,7 @@
       <div id="wanstaHitokotoList" class="wansta-hitokoto-list" style="display:none">
         <div class="loading">読み込み中...</div>
       </div>
-      <!-- FABボタン（写真追加 / 一言追加） -->
-      <button class="wansta-fab" id="wanstaFabBtn" onclick="wanstaFabClick()">+</button>
+      <!-- FABボタン（写真追加 / 一言追加）は共有FAB(#fabBtn)に統合 -->
     </div>
   </div>
 
@@ -378,6 +345,15 @@
     </div>
     <div id="diaryDetailContent" class="diary-detail-content"></div>
   </div>
+
+  <button class="fab" id="fabBtn" style="display:none"><i class="ph-bold ph-plus"></i></button>
+  <nav class="bottom-nav">
+    <button class="bn-item active" data-tab="home" onclick="window.location.href='home.html'"><i class="ph-bold ph-house"></i><span>ホーム</span></button>
+    <button class="bn-item" data-tab="schedule" onclick="switchTab('schedule')"><i class="ph-bold ph-calendar"></i><span>予定</span></button>
+    <button class="bn-item" data-tab="yousu" onclick="switchTab('yousu')"><i class="ph-bold ph-paw-print"></i><span>様子</span></button>
+    <button class="bn-item" data-tab="diary" onclick="switchTab('diary')"><i class="ph-bold ph-book-open"></i><span>日記</span></button>
+    <button class="bn-item" data-tab="wansta" onclick="switchTab('wansta')"><i class="ph-bold ph-camera"></i><span>WANsta</span></button>
+  </nav>
 
   <script>var LIFF_ID = 'LIFF_ID_PLACEHOLDER';</script>
   <script src="scripts/dashboard.bundle.js"></script>

@@ -13,6 +13,14 @@ async function initYousuTab() {
   renderYousuTab();
 }
 
+// 共有FAB（＋）から呼ばれる：常時表示の「今日の入力」欄にスクロール＋フォーカス
+function yousuFocusInput() {
+  var input = document.getElementById('yousuTodayInput');
+  if (!input) return;
+  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  input.focus();
+}
+
 async function loadYousuPosts(append, force) {
   // 初回ロード時はリセット
   if (!append) {

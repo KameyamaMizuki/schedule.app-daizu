@@ -48,7 +48,6 @@ const DASHBOARD_JS = [
   'scripts/core/state.js',
   'scripts/core/utils.js',
   'scripts/core/api.js',
-  'scripts/ui/sidebar.ui.js',
   'scripts/core/account.js',
   'scripts/core/auth.js',
   'scripts/ui/pin-login.js',
@@ -77,6 +76,7 @@ const HOME_CSS = [
 
 const DASHBOARD_CSS = [
   'styles/base.css',
+  'styles/shell.css',
   'styles/crop.css',
   'styles/pin-login.css',
   'styles/tabs/schedule.css',

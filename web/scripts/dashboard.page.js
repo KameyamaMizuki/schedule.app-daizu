@@ -1,19 +1,6 @@
 // ========== dashboard.page.js — ページ初期化・タブ切り替え ==========
-// 現在のタブ（ヘッダー色切り替え用）
+// 現在のタブ
 let currentTab = 'thisWeek';
-
-function navigateTo(tab) {
-  toggleSidebar();
-  if (tab === 'home') {
-    window.location.href = 'home.html';
-  } else {
-    switchTab(tab);
-  }
-}
-
-function goToHome() {
-  window.location.href = 'home.html';
-}
 
 async function init() {
   await initAuth();
@@ -54,40 +41,26 @@ async function switchTab(tab) {
   if (cropModal) cropModal.classList.remove('active');
   if (diaryCropModal) diaryCropModal.classList.remove('active');
 
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.remove('active');
-    t.classList.remove('pink');
-    t.classList.remove('green');
-  });
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
 
   currentTab = tab;
 
-  // タブのインデックスとコンテンツを決定
-  const tabNames = ['home', 'schedule', 'yousu', 'diary', 'wansta'];
-  const tabColors = { home: 'green', schedule: 'pink', yousu: 'orange', diary: 'brown', wansta: 'purple' };
-  const index = tabNames.indexOf(tab);
-  if (index !== -1) {
-    const tabEl = document.querySelectorAll('.tab')[index];
-    tabEl.classList.add('active');
-    if (tabColors[tab]) {
-      tabEl.classList.add(tabColors[tab]);
-    }
-  }
+  // 下部タブのアクティブ状態を更新
+  document.querySelectorAll('.bn-item').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
 
-  // サブタブ表示/非表示
+  // サブタブ（チップ）表示/非表示
   const scheduleSubTabs = document.getElementById('scheduleSubTabs');
-  scheduleSubTabs.style.display = (tab === 'schedule') ? 'flex' : 'none';
+  if (scheduleSubTabs) scheduleSubTabs.style.display = (tab === 'schedule') ? 'flex' : 'none';
 
-  // ヘッダーの色切り替え
-  const header = document.getElementById('mainHeader');
+  // ヘッダータイトル更新
   const headerTitle = document.getElementById('headerTitle');
-  header.classList.remove('pink', 'green', 'wansta', 'sky', 'brown', 'purple', 'orange');
-  if (tabColors[tab]) {
-    header.classList.add(tabColors[tab]);
-  }
-  const tabTitles = { home: 'ホーム', schedule: 'スケジュール', yousu: '様子', diary: 'ダイ日記', wansta: 'WANsta' };
-  headerTitle.textContent = tabTitles[tab] || 'スケジュール';
+  const tabTitles = { home: 'ホーム', schedule: '予定', yousu: '様子', diary: '日記', wansta: 'WANsta' };
+  if (headerTitle) headerTitle.textContent = tabTitles[tab] || '予定';
+
+  // FABをタブに応じて切り替え
+  updateFab(tab);
 
   // hash更新
   history.replaceState(null, '', AppRoutes.buildHash(tab,
@@ -123,6 +96,44 @@ async function switchTab(tab) {
   // タブ切り替え後にアバターを再描画（ヘッダー色変更で上書きされるのを防ぐ）
   updateHeaderAvatar();
   if (window.rescanReveal) window.rescanReveal();
+}
+
+// 共有FAB（タブごとにアイコン/挙動を差し替え）
+function updateFab(tab) {
+  const fab = document.getElementById('fabBtn');
+  if (!fab) return;
+
+  if (tab === 'home') {
+    fab.style.display = 'none';
+    fab.onclick = null;
+    return;
+  }
+
+  if (tab === 'schedule') {
+    if (typeof scheduleStartEdit === 'function') {
+      fab.style.display = '';
+      fab.innerHTML = '<i class="ph-bold ph-pencil-simple"></i>';
+      fab.onclick = function() { scheduleStartEdit(); };
+    } else {
+      // T12でscheduleStartEdit実装まではFAB非表示
+      fab.style.display = 'none';
+      fab.onclick = null;
+    }
+    return;
+  }
+
+  fab.style.display = '';
+  fab.innerHTML = '<i class="ph-bold ph-plus"></i>';
+  if (tab === 'yousu') {
+    fab.onclick = function() { if (typeof yousuFocusInput === 'function') yousuFocusInput(); };
+  } else if (tab === 'diary') {
+    fab.onclick = function() { toggleDiaryInput(); };
+  } else if (tab === 'wansta') {
+    fab.onclick = function() { wanstaFabClick(); };
+  } else {
+    fab.style.display = 'none';
+    fab.onclick = null;
+  }
 }
 
 // bfcache（ブラウザ戻るキャッシュ）から復元された場合にWANstaをリセット

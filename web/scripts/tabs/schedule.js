@@ -20,12 +20,12 @@ var currentScheduleSubTab = 'calendar'; // var: dashboard.js からも参照さ�
 async function switchScheduleSubTab(subTab) {
   currentScheduleSubTab = subTab;
 
-  // サブタブのアクティブ状態を更新
-  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  // サブタブ（チップ）のアクティブ状態を更新
+  document.querySelectorAll('.sub-chip').forEach(t => t.classList.remove('active'));
   const subTabNames = ['calendar', 'thisWeek', 'nextWeek'];
   const index = subTabNames.indexOf(subTab);
   if (index !== -1) {
-    document.querySelectorAll('.sub-tab')[index].classList.add('active');
+    document.querySelectorAll('.sub-chip')[index].classList.add('active');
   }
 
   // 全コンテンツを非表示にしてから該当コンテンツを表示
