@@ -39,16 +39,13 @@ async function loadExistingDaizuNote(now, textarea) {
   var dateStr = formatDateForApi(now);
   var weekId = getWeekId(now);
   try {
-    var res = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + weekId);
-    if (res.ok) {
-      var data = await res.json();
-      var daizuUser = data.users ? data.users.find(function(u) { return u.userId === 'daizu-status'; }) : null;
-      if (daizuUser && daizuUser.notes && daizuUser.notes[dateStr]) {
-        textarea.value = daizuUser.notes[dateStr];
-        // 文字数カウンター更新
-        var charcount = document.querySelector('.daizu-liff-charcount');
-        if (charcount) charcount.textContent = textarea.value.length + '/200';
-      }
+    var data = await Api.getWeek(weekId, null, { force: true });
+    var daizuUser = data.users ? data.users.find(function(u) { return u.userId === 'daizu-status'; }) : null;
+    if (daizuUser && daizuUser.notes && daizuUser.notes[dateStr]) {
+      textarea.value = daizuUser.notes[dateStr];
+      // 文字数カウンター更新
+      var charcount = document.querySelector('.daizu-liff-charcount');
+      if (charcount) charcount.textContent = textarea.value.length + '/200';
     }
   } catch (e) {
     // 読み込み失敗は無視、空欄のまま入力可能
@@ -72,40 +69,29 @@ async function submitDaizuLiffForm() {
   try {
     // 既存のだいずデータを取得してnotesをマージ
     var existingNotes = {};
-    var res = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + weekId);
-    if (res.ok) {
-      var data = await res.json();
+    try {
+      var data = await Api.getWeek(weekId, null, { force: true });
       var daizuUser = data.users ? data.users.find(function(u) { return u.userId === 'daizu-status'; }) : null;
       if (daizuUser && daizuUser.notes) {
         existingNotes = Object.assign({}, daizuUser.notes);
       }
-    }
+    } catch (e2) { /* 既存データ取得失敗は無視、新規として保存を続行 */ }
     existingNotes[dateStr] = note;
 
-    var saveRes = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_SUBMIT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        weekId: weekId,
-        userId: 'daizu-status',
-        displayName: 'だいず',
-        slots: {},
-        notes: existingNotes,
-        skipNotification: false
-      })
+    await Api.submitSchedule({
+      weekId: weekId,
+      userId: 'daizu-status',
+      displayName: 'だいず',
+      slots: {},
+      notes: existingNotes,
+      skipNotification: false
     });
 
-    if (saveRes.ok) {
-      input.style.display = 'none';
-      btn.style.display = 'none';
-      var charcount = document.querySelector('.daizu-liff-charcount');
-      if (charcount) charcount.style.display = 'none';
-      document.getElementById('daizuLiffResult').style.display = 'block';
-    } else {
-      alert('保存に失敗しました');
-      btn.disabled = false;
-      btn.textContent = '保存する';
-    }
+    input.style.display = 'none';
+    btn.style.display = 'none';
+    var charcount = document.querySelector('.daizu-liff-charcount');
+    if (charcount) charcount.style.display = 'none';
+    document.getElementById('daizuLiffResult').style.display = 'block';
   } catch (e) {
     alert('保存に失敗しました: ' + e.message);
     btn.disabled = false;

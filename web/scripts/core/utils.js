@@ -225,21 +225,16 @@ function compressImage(file, maxSize, quality) {
 // home.js / home.schedule.js / schedule.js の重複 fetch を統一
 
 /**
- * スケジュール送信
+ * スケジュール送信（Api.submitScheduleの薄いラッパー）
+ * 失敗時はErrorをthrow（従来どおり）。
+ * 呼び出し元に res.ok で判定するコードが残っているため、
+ * 戻り値は { ok: true } 互換のオブジェクトを返す（成功時は必ずthrowせず解決する）。
  * @param {object} body - { weekId, userId, displayName, slots, notes, skipNotification? }
- * @returns {Promise<Response>}
+ * @returns {Promise<{ok: true}>}
  */
 async function submitScheduleData(body) {
-  const res = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_SUBMIT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || '保存に失敗しました');
-  }
-  return res;
+  await Api.submitSchedule(body);
+  return { ok: true };
 }
 
 // ========== SWR(Stale-While-Revalidate)キャッシュ ==========
@@ -310,19 +305,15 @@ async function swrJson(url, onFresh, opts) {
 function prewarmAppData() {
   setTimeout(function() {
     try {
-      var urls = [
-        API_BASE_URL + AppConfig.API.POSTS + '?type=YOUSU&limit=50',
-        API_BASE_URL + AppConfig.API.POSTS + '?type=DIARY&limit=50',
-        API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + getWeekId(new Date()),
-        API_BASE_URL + AppConfig.API.CHIROL_IMAGES,
-        API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=chirol',
-        API_BASE_URL + AppConfig.API.CHIROL_HITOKOTO + '?dog=daizu',
-        API_BASE_URL + AppConfig.API.WANNADE,
-        API_BASE_URL + AppConfig.API.ACCOUNT
-      ];
-      urls.forEach(function(u) {
-        swrJson(u).catch(function() { /* 先読み失敗は無視 */ });
-      });
+      var noop = function() { /* 先読み失敗は無視 */ };
+      Api.getPosts('?type=YOUSU&limit=50').catch(noop);
+      Api.getPosts('?type=DIARY&limit=50').catch(noop);
+      Api.getWeek(getWeekId(new Date())).catch(noop);
+      Api.getChirolImages().catch(noop);
+      Api.getHitokoto('chirol').catch(noop);
+      Api.getHitokoto('daizu').catch(noop);
+      Api.get(AppConfig.API.WANNADE).catch(noop);
+      Api.getAccounts().catch(noop);
     } catch (e) { /* 無視 */ }
   }, 2000);
 }

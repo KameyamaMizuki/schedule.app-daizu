@@ -68,8 +68,7 @@ async function homeConfirmCalendarSelection() {
     homeShowThinking(3000),
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/schedule/week/${weekId}`);
-        if (res.ok) return await res.json();
+        return await Api.getWeek(weekId, null, { force: true });
       } catch (e) { console.error(e); }
       return null;
     })()

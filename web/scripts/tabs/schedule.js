@@ -127,15 +127,7 @@ let currentMemberFilter = 'all';
 async function loadAllSchedulesForWeek(targetWeekId) {
   allSchedules = [];
   try {
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${targetWeekId}`);
-    if (!response.ok) {
-      for (const member of familyMembers) {
-        allSchedules.push({userId: member.userId, displayName: member.displayName, weekId: targetWeekId, startDate: '', endDate: '', deadline: '', isLocked: false, slots: {}, notes: {}});
-      }
-      return;
-    }
-
-    const data = await response.json();
+    const data = await Api.getWeek(targetWeekId, null, { force: true });
     for (const member of familyMembers) {
       const userData = data.users.find(u => u.userId === member.userId);
       if (userData) {
@@ -353,32 +345,29 @@ async function openEditModal(weekId) {
   modalBody.innerHTML = '<div class="loading">読み込み中...</div>';
   try {
     const schedules = [];
-    const response = await fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`);
-    if (response.ok) {
-      const data = await response.json();
-      for (const member of familyMembers) {
-        const userData = data.users.find(u => u.userId === member.userId);
-        if (userData) {
-          schedules.push({
-            userId: userData.userId,
-            displayName: userData.displayName,
-            weekId: data.weekId,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            slots: userData.slots || {},
-            notes: userData.notes || {}
-          });
-        } else {
-          schedules.push({
-            userId: member.userId,
-            displayName: member.displayName,
-            weekId: data.weekId,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            slots: {},
-            notes: {}
-          });
-        }
+    const data = await Api.getWeek(weekId, null, { force: true });
+    for (const member of familyMembers) {
+      const userData = data.users.find(u => u.userId === member.userId);
+      if (userData) {
+        schedules.push({
+          userId: userData.userId,
+          displayName: userData.displayName,
+          weekId: data.weekId,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          slots: userData.slots || {},
+          notes: userData.notes || {}
+        });
+      } else {
+        schedules.push({
+          userId: member.userId,
+          displayName: member.displayName,
+          weekId: data.weekId,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          slots: {},
+          notes: {}
+        });
       }
     }
 

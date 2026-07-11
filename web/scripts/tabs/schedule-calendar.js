@@ -7,11 +7,8 @@ let calendarDiaryPosts = [];
 
 async function preloadCalendarPosts() {
   try {
-    const diaryRes = await fetch(`${API_BASE_URL}${AppConfig.API.POSTS}?type=DIARY`);
-    if (diaryRes.ok) {
-      const d = await diaryRes.json();
-      calendarDiaryPosts = d.posts || [];
-    }
+    const d = await Api.getPosts('?type=DIARY');
+    calendarDiaryPosts = d.posts || [];
   } catch (e) {
     console.error('Posts preload failed:', e);
   }
@@ -124,8 +121,7 @@ async function preloadMonthScheduleData(year, month) {
 
   await Promise.allSettled(
     uncached.map(weekId =>
-      fetch(`${API_BASE_URL}${AppConfig.API.SCHEDULE_WEEK}/${weekId}`)
-        .then(r => r.ok ? r.json() : null)
+      Api.getWeek(weekId, null)
         .then(data => { if (data) scheduleCalendarData[weekId] = data; })
     )
   );

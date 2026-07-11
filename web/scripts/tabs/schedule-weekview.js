@@ -119,20 +119,15 @@ function createWeekView(config) {
       for (var i = 0; i < schedules.length; i++) {
         var schedule = schedules[i];
         var isLast = (i === schedules.length - 1);
-        var response = await fetch(API_BASE_URL + AppConfig.API.SCHEDULE_SUBMIT, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            weekId: weekId,
-            userId: schedule.userId,
-            displayName: schedule.displayName,
-            slots: schedule.slots,
-            notes: schedule.notes || {},
-            skipNotification: !isLast,
-            notifierName: isLast ? editorName : undefined
-          })
+        await Api.submitSchedule({
+          weekId: weekId,
+          userId: schedule.userId,
+          displayName: schedule.displayName,
+          slots: schedule.slots,
+          notes: schedule.notes || {},
+          skipNotification: !isLast,
+          notifierName: isLast ? editorName : undefined
         });
-        if (!response.ok) throw new Error(schedule.displayName + 'の保存に失敗');
       }
       alert('保存しました');
       editMode = false;
@@ -225,7 +220,7 @@ function createWeekView(config) {
         // 編集中はユーザーの入力を上書きしないためスキップする。
         var data = null;
         try {
-          data = await swrJson(API_BASE_URL + AppConfig.API.SCHEDULE_WEEK + '/' + currentWeekId, function(fresh) {
+          data = await Api.getWeek(currentWeekId, function(fresh) {
             if (editMode) return;
             applyWeekData(fresh, currentWeekId);
             load(true);
