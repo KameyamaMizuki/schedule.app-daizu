@@ -1,107 +1,109 @@
 /* ダイ日記タブ - 記事風デザイン */
-.diary-container{min-height:calc(100vh - 180px);padding:16px;padding-bottom:120px;background:linear-gradient(180deg,var(--color-brown-light) 0%,var(--color-brown-lighter) 100%)}
+.diary-container{min-height:calc(100vh - 180px);padding:16px;padding-bottom:120px;background:var(--c-bg)}
 .diary-posts{display:flex;flex-direction:column;gap:20px}
-.diary-entry{background:var(--color-surface);border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.diary-entry{background:var(--c-surface);border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-card)}
 .diary-entry-photo{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
-.diary-entry-title{font-size:18px;font-weight:700;color:var(--color-brown-dark);margin-bottom:8px}
+.diary-entry-title{font-size:18px;font-weight:700;color:var(--c-ink);margin-bottom:8px}
 .diary-entry-body{padding:16px}
-.diary-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--color-border-soft)}
-.diary-entry-date{font-weight:700;font-size:15px;color:#8d6e63}
-.diary-entry-author{font-size:13px;color:#a1887f;background:var(--color-brown-light);padding:4px 10px;border-radius:12px}
-.diary-entry-text{font-size:15px;color:var(--color-text-primary);line-height:1.7}
+.diary-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--c-line)}
+.diary-entry-date{font-weight:700;font-size:15px;color:var(--c-green)}
+.diary-entry-author{font-size:13px;color:var(--c-ink-soft);background:var(--c-green-soft);padding:4px 10px;border-radius:12px}
+.diary-entry-text{font-size:15px;color:var(--c-ink);line-height:1.7}
 .diary-text-wrapper{position:relative}
 .diary-text-wrapper.collapsed{max-height:120px;overflow:hidden;cursor:pointer}
-.diary-text-fade{position:absolute;bottom:0;left:0;right:0;height:72px;background:linear-gradient(to bottom,transparent 0%,var(--color-surface) 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;pointer-events:none}
-.diary-expand-label{font-size:12px;color:#8d6e63;opacity:.75;font-weight:600;letter-spacing:.5px}
-.diary-collapse-btn{width:100%;background:none;border:none;color:#8d6e63;font-size:12px;padding:4px 0 2px;cursor:pointer;text-align:center;font-weight:600;opacity:.75;letter-spacing:.5px;font-family:inherit;-webkit-appearance:none;appearance:none}
+.diary-text-fade{position:absolute;bottom:0;left:0;right:0;height:72px;background:linear-gradient(to bottom,transparent 0%,var(--c-surface) 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;pointer-events:none}
+.diary-expand-label{font-size:12px;color:var(--c-green);opacity:.85;font-weight:600;letter-spacing:.5px}
+.diary-collapse-btn{width:100%;min-height:44px;background:none;border:none;color:var(--c-green);font-size:12px;padding:4px 0 2px;cursor:pointer;text-align:center;font-weight:600;opacity:.85;letter-spacing:.5px;font-family:inherit;-webkit-appearance:none;appearance:none}
 .diary-collapse-btn:active{opacity:.4}
-.diary-entry-actions{display:flex;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--color-border-soft);font-size:13px;color:#8d6e63}
-.diary-entry-action{cursor:pointer;padding:6px 12px;border-radius:16px;background:var(--color-brown-light);transition:background 0.2s}
-.diary-entry-action:hover{background:var(--color-brown-lighter)}
-.diary-fab{position:fixed;bottom:80px;right:16px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(141,110,99,0.4);z-index:100}
-.diary-fab:active{transform:scale(0.95)}
-.diary-input-area{position:fixed;top:0;left:0;right:0;width:100%;height:100vh;height:100svh;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom));background:var(--color-surface);z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.15);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
-.diary-input-header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-16px -16px 12px;padding:12px 16px;background:var(--color-surface);border-bottom:1px solid var(--color-border-soft);font-size:15px;font-weight:600;color:#8d6e63}
+.diary-entry-actions{display:flex;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft)}
+.diary-entry-action{cursor:pointer;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:16px;background:var(--c-cell-off);color:var(--c-ink-soft);transition:background 0.2s}
+.diary-entry-action:hover{background:var(--c-line)}
+.diary-entry-action.liked{color:var(--c-danger)}
+.diary-input-area{position:fixed;top:0;left:0;right:0;width:100%;height:100vh;height:100svh;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom));background:var(--c-surface);z-index:9999;box-shadow:var(--shadow-modal);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+.diary-input-header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-16px -16px 12px;padding:12px 16px;background:var(--c-surface);border-bottom:1px solid var(--c-line);font-size:15px;font-weight:600;color:var(--c-ink)}
 .diary-input-header #diaryInputTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.diary-input-header .diary-submit-top{width:auto;flex-shrink:0;position:static;bottom:auto;margin-top:0;padding:9px 18px;font-size:14px;border-radius:10px}
-.diary-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--color-text-muted);padding:4px 8px}
-.diary-photo-select{display:block;text-align:center;padding:16px;background:var(--color-surface-alt);border:2px dashed #a1887f;border-radius:12px;cursor:pointer;margin-bottom:12px;font-size:14px;color:#8d6e63}
-.diary-photo-select:hover{background:var(--color-brown-light);border-color:#8d6e63}
+.diary-input-header .diary-submit-top{width:auto;flex-shrink:0;position:static;bottom:auto;margin-top:0;padding:9px 18px;min-height:44px;font-size:14px;border-radius:10px}
+.diary-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--c-ink-soft);padding:4px 8px;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.diary-photo-select{display:block;text-align:center;padding:16px;background:var(--c-green-soft);border:2px dashed var(--c-green);border-radius:12px;cursor:pointer;margin-bottom:12px;font-size:14px;color:var(--c-green);min-height:44px}
+.diary-photo-select:active{opacity:.8}
 .diary-photo-preview{position:relative;margin-bottom:12px}
 .diary-photo-preview img{width:100%;max-height:180px;object-fit:cover;border-radius:12px}
-.diary-photo-remove{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:16px}
-.diary-text-input{width:100%;padding:14px;border:1px solid var(--color-border-soft);border-radius:12px;font-size:15px;resize:none;font-family:inherit;line-height:1.6}
-.diary-text-input:focus{border-color:#8d6e63;outline:none}
-.diary-submit-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;position:sticky;bottom:0;z-index:10;flex-shrink:0}
-.diary-submit-btn:disabled{background:var(--color-border)}
-.diary-empty{text-align:center;padding:60px 20px;color:#8d6e63;font-size:15px}
-.diary-title-input{width:100%;padding:12px 14px;border:1px solid var(--color-border-soft);border-radius:10px;font-size:16px;font-weight:600;margin-bottom:10px;box-sizing:border-box}
-.diary-title-input:focus{border-color:#8d6e63;outline:none}
+.diary-photo-remove{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:16px}
+.diary-text-input{width:100%;padding:14px;border:1px solid var(--c-line);border-radius:12px;font-size:15px;resize:none;font-family:inherit;line-height:1.6;background:var(--c-surface);color:var(--c-ink)}
+.diary-text-input:focus{border-color:var(--c-green);outline:none}
+.diary-submit-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--c-green) 0%,var(--c-green-deep) 100%);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;position:sticky;bottom:0;z-index:10;flex-shrink:0;min-height:44px}
+.diary-submit-btn:disabled{background:var(--c-cell-off);color:var(--c-ink-faint)}
+.diary-empty{text-align:center;padding:60px 20px;color:var(--c-ink-faint);font-size:15px}
+.diary-title-input{width:100%;padding:12px 14px;border:1px solid var(--c-line);border-radius:10px;font-size:16px;font-weight:600;margin-bottom:10px;box-sizing:border-box;background:var(--c-surface);color:var(--c-ink)}
+.diary-title-input:focus{border-color:var(--c-green);outline:none}
 .diary-date-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.diary-date-label{font-size:14px;color:#8d6e63;font-weight:500}
-.diary-date-input{padding:10px 14px;border:1px solid var(--color-border-soft);border-radius:10px;font-size:15px;flex:1}
-.diary-date-input:focus{border-color:#8d6e63;outline:none}
+.diary-date-label{font-size:14px;color:var(--c-ink-soft);font-weight:500}
+.diary-date-input{padding:10px 14px;border:1px solid var(--c-line);border-radius:10px;font-size:15px;flex:1;background:var(--c-surface);color:var(--c-ink)}
+.diary-date-input:focus{border-color:var(--c-green);outline:none}
 .diary-editor-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}
 .diary-rich-editor{flex:1;min-height:100px}
 .header.brown{background:var(--grad-header-brown)}
 
 /* リッチテキストエディター */
-.diary-editor-toolbar{display:flex;gap:6px;margin-bottom:8px;padding:8px;background:var(--color-brown-light);border-radius:8px;flex-wrap:wrap}
-.diary-toolbar-btn{width:36px;height:36px;border:none;border-radius:6px;background:var(--color-surface);cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
-.diary-toolbar-btn:hover{background:#8d6e63;color:#fff}
-.diary-toolbar-btn.active{background:#8d6e63;color:#fff}
-.diary-toolbar-sep{width:1px;background:var(--color-border-soft);margin:0 4px}
-.diary-rich-editor{width:100%;min-height:120px;padding:14px;border:1px solid var(--color-border-soft);border-radius:12px;font-size:15px;line-height:1.8;background:var(--color-surface);overflow-y:auto}
-.diary-rich-editor:focus{border-color:#8d6e63;outline:none}
-.diary-rich-editor:empty::before{content:attr(data-placeholder);color:var(--color-text-faint)}
+.diary-editor-toolbar{display:flex;gap:6px;margin-bottom:8px;padding:8px;background:var(--c-green-soft);border-radius:8px;flex-wrap:wrap}
+.diary-toolbar-btn{width:40px;height:40px;border:none;border-radius:6px;background:var(--c-surface);color:var(--c-ink);cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.diary-toolbar-btn:hover{background:var(--c-green);color:#fff}
+.diary-toolbar-btn.active{background:var(--c-green);color:#fff}
+.diary-toolbar-sep{width:1px;background:var(--c-line);margin:0 4px}
+.diary-rich-editor{width:100%;min-height:120px;padding:14px;border:1px solid var(--c-line);border-radius:12px;font-size:15px;line-height:1.8;background:var(--c-surface);color:var(--c-ink);overflow-y:auto}
+.diary-rich-editor:focus{border-color:var(--c-green);outline:none}
+.diary-rich-editor:empty::before{content:attr(data-placeholder);color:var(--c-ink-faint)}
 .diary-rich-editor img{max-width:100%;border-radius:8px;margin:8px 0}
 .diary-photo-position{display:flex;gap:8px;margin-bottom:12px}
-.diary-position-btn{flex:1;padding:10px 8px;border:2px solid var(--color-border);border-radius:8px;font-size:12px;background:var(--color-surface);cursor:pointer;text-align:center;transition:all 0.2s}
-.diary-position-btn:hover{border-color:#8d6e63}
-.diary-position-btn.selected{background:#8d6e63;color:#fff;border-color:#8d6e63}
+.diary-position-btn{flex:1;padding:10px 8px;min-height:44px;border:2px solid var(--c-line);border-radius:8px;font-size:12px;background:var(--c-surface);color:var(--c-ink);cursor:pointer;text-align:center;transition:all 0.2s}
+.diary-position-btn:hover{border-color:var(--c-green)}
+.diary-position-btn.selected{background:var(--c-green);color:#fff;border-color:var(--c-green)}
 .diary-position-btn .icon{display:block;font-size:20px;margin-bottom:4px}
 .diary-entry-text img{max-width:100%;border-radius:8px;margin:8px 0}
 .diary-entry{cursor:pointer;transition:box-shadow 0.15s}
 .diary-entry:active{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
 
 /* 詳細表示モーダル - フルスクリーン（iOS対応） */
-.diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:var(--color-surface);z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:var(--c-surface);z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .diary-detail-modal.active{display:flex;flex-direction:column}
-.diary-detail-header{display:flex;align-items:center;padding:12px 16px;background:var(--color-surface);box-shadow:0 2px 4px rgba(0,0,0,.08);position:sticky;top:0;z-index:1;flex-shrink:0;min-height:48px}
-.diary-detail-close{background:none;border:none;font-size:15px;font-weight:700;color:#8d6e63;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
+.diary-detail-header{display:flex;align-items:center;padding:12px 16px;background:var(--c-surface);box-shadow:0 2px 4px rgba(0,0,0,.08);position:sticky;top:0;z-index:1;flex-shrink:0;min-height:48px}
+.diary-detail-close{background:none;border:none;font-size:15px;font-weight:700;color:var(--c-green);cursor:pointer;padding:4px 0;min-height:44px;display:flex;align-items:center;gap:4px}
 .diary-detail-content{padding:20px 16px;flex:1;overflow-y:auto}
 /* body scroll lock for iOS */
 body.modal-open{position:fixed;width:100%;overflow:hidden}
-.diary-detail-date{font-weight:700;font-size:15px;color:#8d6e63;margin-bottom:8px}
-.diary-detail-title{font-size:20px;font-weight:700;color:var(--color-brown-dark);margin-bottom:10px;line-height:1.4}
-.diary-detail-author{font-size:13px;color:#a1887f;background:var(--color-brown-lighter);padding:4px 10px;border-radius:12px;display:inline-block;margin-bottom:16px}
-.diary-detail-text{font-size:15px;color:var(--color-text-primary);line-height:1.8;white-space:pre-wrap}
+.diary-detail-date{font-weight:700;font-size:15px;color:var(--c-green);margin-bottom:8px}
+.diary-detail-title{font-size:20px;font-weight:700;color:var(--c-ink);margin-bottom:10px;line-height:1.4}
+.diary-detail-author{font-size:13px;color:var(--c-ink-soft);background:var(--c-green-soft);padding:4px 10px;border-radius:12px;display:inline-block;margin-bottom:16px}
+.diary-detail-text{font-size:15px;color:var(--c-ink);line-height:1.8;white-space:pre-wrap}
 .diary-detail-text img{max-width:100%;border-radius:8px;margin:12px 0;display:block}
-.diary-detail-actions{display:flex;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--color-border-soft);font-size:13px;color:#8d6e63}
+.diary-detail-actions{display:flex;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft)}
 
 /* キャッチ画像（入力フォーム） */
 .diary-catch-section{margin-bottom:10px}
-.diary-catch-select-btn{width:100%;padding:12px;background:var(--color-brown-light);border:2px dashed #a1887f;border-radius:10px;color:#8d6e63;font-size:14px;cursor:pointer;text-align:center}
-.diary-catch-select-btn:hover{background:var(--color-brown-lighter)}
+.diary-catch-select-btn{width:100%;padding:12px;min-height:44px;background:var(--c-green-soft);border:2px dashed var(--c-green);border-radius:10px;color:var(--c-green);font-size:14px;cursor:pointer;text-align:center}
+.diary-catch-select-btn:active{opacity:.8}
 .diary-catch-preview{position:relative;margin-top:8px}
 .diary-catch-preview img{width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block}
 
 /* キャッチ画像（一覧カード）— 常に 4:3 固定 */
-.diary-entry-catch{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:16px 16px 0 0}
+.diary-entry-catch{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:var(--radius-card) var(--radius-card) 0 0}
 
 /* キャッチ画像（詳細モーダル）— クロップした比率をそのまま表示 */
 .diary-detail-catch{width:100%;display:block;border-radius:0;margin-bottom:20px}
 
 /* いいね/コメント */
-.diary-entry-action.liked{color:#e91e63;background:#fce4ec}
-.diary-detail-like-section{display:flex;gap:12px;margin-top:16px;padding:12px 0;border-top:1px solid var(--color-border-soft)}
-.diary-detail-like-btn{cursor:pointer;padding:6px 12px;border-radius:16px;background:var(--color-brown-light);font-size:13px;color:#8d6e63;transition:background 0.2s}
-.diary-detail-like-btn.liked{color:#e91e63;background:#fce4ec}
-.diary-comment-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border-soft)}
-.diary-comment{padding:8px 0;font-size:13px;color:var(--color-text-primary);border-bottom:1px solid var(--color-brown-light)}
-.diary-comment strong{color:var(--color-brown-dark)}
+.diary-detail-like-section{display:flex;gap:12px;margin-top:16px;padding:12px 0;border-top:1px solid var(--c-line)}
+.diary-detail-like-btn{cursor:pointer;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:16px;background:var(--c-cell-off);font-size:13px;color:var(--c-ink-soft);transition:background 0.2s}
+.diary-detail-like-btn.liked{color:var(--c-danger)}
+.diary-comment-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--c-line)}
+.diary-comment{padding:8px 0;font-size:13px;color:var(--c-ink);border-bottom:1px solid var(--c-line)}
+.diary-comment strong{color:var(--c-ink)}
 .diary-comment-input-row{display:flex;gap:6px;margin-top:8px}
-.diary-comment-input{flex:1;width:auto;padding:10px 12px;border:1px solid var(--color-border-soft);border-radius:10px;font-size:13px;box-sizing:border-box}
-.diary-comment-input:focus{border-color:#8d6e63;outline:none}
-.diary-comment-submit{background:#3F6E5B;color:#fff;border:none;border-radius:16px;padding:0 16px;font-size:13px;font-weight:600;cursor:pointer}
-.diary-comment-submit:disabled{background:#A9C2B8;cursor:default}
+.diary-comment-input{flex:1;width:auto;padding:10px 12px;border:1px solid var(--c-line);border-radius:10px;font-size:13px;box-sizing:border-box;background:var(--c-surface);color:var(--c-ink)}
+.diary-comment-input:focus{border-color:var(--c-green);outline:none}
+.diary-comment-submit{background:var(--c-green);color:#fff;border:none;border-radius:16px;padding:0 16px;min-height:44px;font-size:13px;font-weight:600;cursor:pointer}
+.diary-comment-submit:disabled{background:var(--c-cell-off);color:var(--c-ink-faint);cursor:default}
+
+/* もっと見るボタン */
+.diary-loadmore-wrap{text-align:center;padding:16px}
+.diary-loadmore-btn{background:var(--c-green);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer;min-height:44px}

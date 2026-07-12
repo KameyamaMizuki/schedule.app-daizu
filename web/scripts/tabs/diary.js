@@ -194,8 +194,8 @@ function renderDiaryPosts() {
 
   // 「もっと見る」ボタン（次ページがある場合のみ）
   if (diaryLastKey) {
-    html += '<div style="text-align:center;padding:16px">'
-      + '<button onclick="loadMoreDiaryPosts()" style="background:#8d6e63;color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer">もっと見る</button>'
+    html += '<div class="diary-loadmore-wrap">'
+      + '<button class="diary-loadmore-btn" onclick="loadMoreDiaryPosts()">もっと見る</button>'
       + '</div>';
   }
 
