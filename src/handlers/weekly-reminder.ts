@@ -28,7 +28,7 @@ export const handler: Handler = async () => {
   const endMonth = endDate.getMonth() + 1;
   const endDay = endDate.getDate();
 
-  const dashboardUrl = getDashboardUrl({ weekId });
+  const dashboardUrl = getDashboardUrl({ weekId, tab: 'schedule' });
 
   const flex = buildFlexBubble(
     '🔔 リマインド',

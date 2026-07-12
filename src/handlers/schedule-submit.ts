@@ -134,7 +134,7 @@ export const handler = withHandler(async (event) => {
           }
         } else if (changes || isNewEntry) {
           // スケジュール更新通知（既存ロジック）
-          const dashboardUrl = getDashboardUrl({ weekId });
+          const dashboardUrl = getDashboardUrl({ weekId, tab: 'schedule' });
           const notifier = parsed.data.notifierName || displayName;
           const flex = buildFlexBubble(
             '📅 スケジュール更新',
