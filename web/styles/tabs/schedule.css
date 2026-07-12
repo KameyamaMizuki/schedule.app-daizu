@@ -55,8 +55,68 @@
 .wv-btn-cancel{background:var(--c-cell-off);color:var(--c-ink-soft)}
 .wv-btn-save{background:var(--c-green);color:#fff}
 
+/* ========== 予定タブ — カレンダービュー(月グリッド+日別詳細) ========== */
+.cal-card{background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px;margin-bottom:14px}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-nav-btn{width:38px;height:38px;border-radius:12px;background:var(--c-cell-off);color:var(--c-green);border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.cal-month-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--c-ink)}
+
+.cal-weekday-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px}
+.cal-weekday-row div{text-align:center;font-size:11.5px;font-weight:700;color:var(--c-ink-faint);padding:4px 0}
+.cal-weekday-row .su{color:var(--c-danger)}
+.cal-weekday-row .sa{color:var(--c-sat)}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day{position:relative;height:46px;border-radius:var(--radius-cell);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;color:var(--c-ink);cursor:pointer}
+.cal-day.dim{color:var(--c-ink-faint);cursor:default}
+.cal-day.su{color:var(--c-danger)}
+.cal-day.sa{color:var(--c-sat)}
+.cal-day.today{background:var(--c-accent-soft);font-weight:700}
+.cal-day.sel{background:var(--c-green);color:#fff;font-weight:700}
+.cal-day-num{line-height:1}
+
+.cal-dot,.cal-legend-dot{border-radius:50%;display:inline-block}
+.cal-dot{width:5px;height:5px}
+.cal-legend-dot{width:7px;height:7px}
+.cal-dot.full,.cal-legend-dot.full{background:var(--c-green)}
+.cal-dot.partial,.cal-legend-dot.partial{background:var(--c-accent)}
+.cal-dot.none,.cal-legend-dot.none{background:var(--c-danger)}
+.cal-day.sel .cal-dot.full{background:#fff}
+
+.cal-marks{position:absolute;top:3px;right:4px;display:flex;gap:1px}
+.cal-mark{font-size:9px}
+.cal-mark.diary{color:var(--color-highlight)}
+.cal-mark.yousu{color:var(--c-green)}
+.cal-day.sel .cal-mark{color:#fff}
+
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--c-line)}
+.cal-legend-item{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--c-ink-soft)}
+.cal-legend-icon{font-size:12px}
+.cal-legend-icon.diary{color:var(--color-highlight)}
+.cal-legend-icon.yousu{color:var(--c-green)}
+
+.cal-detail{background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:16px}
+.cal-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.cal-detail-date{font-size:15px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:8px}
+.cal-detail-edit{background:none;border:none;color:var(--c-green);font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:4px 0}
+.cal-empty{text-align:center;color:var(--c-ink-faint);padding:20px 0;font-size:13px}
+
+.cal-section-title{margin-top:14px;font-size:12.5px;font-weight:700;color:var(--c-ink-soft);border-bottom:1px solid var(--c-line);padding-bottom:5px;display:flex;align-items:center;gap:5px}
+
+.cal-daizu-note{margin-top:10px;padding:10px 12px;background:var(--c-green-soft);border-radius:var(--radius-cell);font-size:12.5px;color:var(--c-ink);display:flex;gap:8px;align-items:flex-start}
+.cal-daizu-note i{color:var(--c-green);flex-shrink:0;margin-top:1px;font-size:14px}
+.cal-daizu-note-text{white-space:pre-wrap;margin-top:2px}
+
+.cal-postlink{margin-top:8px;padding:10px 12px;border-radius:var(--radius-cell);font-size:12.5px;display:flex;align-items:flex-start;gap:8px;cursor:pointer;color:var(--c-ink)}
+.cal-postlink i{flex-shrink:0;margin-top:1px;font-size:14px}
+.cal-postlink.diary{background:var(--c-accent-soft)}
+.cal-postlink.diary i{color:var(--color-highlight)}
+.cal-postlink.yousu{background:var(--c-green-soft)}
+.cal-postlink.yousu i{color:var(--c-green)}
+.cal-postlink-title strong{color:var(--c-ink)}
+
 /* ========== 犬の記録タブ用CSS ========== */
-/* カレンダー */
+/* カレンダー（home.schedule.js のミニカレンダーウィジェットが使用。上記 .cal-* とは無関係、変更禁止） */
 .calendar-container{background:var(--color-surface);border-radius:8px;padding:16px;margin-bottom:16px}
 .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .calendar-header h2{font-size:16px;color:var(--color-text-strong)}

@@ -1,43 +1,108 @@
 // [SCHED:CAL] ========== カレンダーサブタブ ==========
-// 依存: core/state.js, core/utils.js, schedule.js (controller)
+// 依存: core/state.js (familyMembers), core/utils.js (日付ヘルパー/escapeHtml),
+//       core/account.js (getDisplayName), core/api.js (Api), schedule.js (switchScheduleSubTab),
+//       schedule-weekview.js (scheduleStartEdit, .wv-grid/.wv-cell/.wv-badge-today 系CSSクラス)
 let scheduleCalendarMonth = new Date();
 let scheduleCalendarSelectedDate = null;
 let scheduleCalendarData = {};
 let calendarDiaryPosts = [];
+let calendarYousuPosts = [];
+let calendarDiaryDates = new Set();
+let calendarYousuDates = new Set();
+
+// ダイ日記の「その日」判定: [DATE:] タグ優先、なければ createdAt の先頭10文字（既存ロジック踏襲）
+function diaryDateForPost(post) {
+  const text = post.text || '';
+  const dateMatch = text.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
+  if (dateMatch) return dateMatch[1];
+  return post.createdAt ? post.createdAt.substring(0, 10) : null;
+}
+
+// 様子(YOUSU)投稿の createdAt(UTC ISO)をJST日付文字列に変換
+function jstDateFromIso(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.getUTCFullYear() + '-' + String(jst.getUTCMonth() + 1).padStart(2, '0') + '-' + String(jst.getUTCDate()).padStart(2, '0');
+}
+
+function rebuildCalendarMarkSets() {
+  calendarDiaryDates = new Set();
+  calendarDiaryPosts.forEach(function(post) {
+    const d = diaryDateForPost(post);
+    if (d) calendarDiaryDates.add(d);
+  });
+  calendarYousuDates = new Set();
+  calendarYousuPosts.forEach(function(post) {
+    const d = jstDateFromIso(post.createdAt);
+    if (d) calendarYousuDates.add(d);
+  });
+}
 
 async function preloadCalendarPosts() {
-  try {
-    const d = await Api.getPosts('?type=DIARY');
-    calendarDiaryPosts = d.posts || [];
-  } catch (e) {
-    console.error('Posts preload failed:', e);
+  const [diaryResult, yousuResult] = await Promise.allSettled([
+    Api.getPosts('?type=DIARY'),
+    Api.getPosts('?type=YOUSU&limit=100')
+  ]);
+  if (diaryResult.status === 'fulfilled') {
+    calendarDiaryPosts = diaryResult.value.posts || [];
+  } else {
+    console.error('Diary preload failed:', diaryResult.reason);
   }
+  if (yousuResult.status === 'fulfilled') {
+    calendarYousuPosts = yousuResult.value.posts || [];
+  } else {
+    console.error('Yousu preload failed:', yousuResult.reason);
+  }
+  rebuildCalendarMarkSets();
 }
 
 async function renderScheduleCalendar() {
   const container = document.getElementById('calendarContent');
   const year = scheduleCalendarMonth.getFullYear();
   const month = scheduleCalendarMonth.getMonth();
+  const dayNames = AppConfig.SCHEDULE.DAYS;
 
-  let html = '<div class="calendar-container" style="background:var(--color-surface);border-radius:8px;padding:16px;margin-bottom:16px">';
-  html += '<div class="calendar-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
-  html += `<button onclick="changeScheduleCalendarMonth(-1)" style="background:${AppConfig.CALENDAR_COLORS.PRIMARY};color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px">◀</button>`;
-  html += `<h2 style="font-size:16px;color:var(--color-text-strong);margin:0">${year}年${month + 1}月</h2>`;
-  html += `<button onclick="changeScheduleCalendarMonth(1)" style="background:${AppConfig.CALENDAR_COLORS.PRIMARY};color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;font-size:14px">▶</button>`;
+  let html = '<div class="cal-card">';
+  html += '<div class="cal-nav">';
+  html += '<button class="cal-nav-btn" onclick="changeScheduleCalendarMonth(-1)"><i class="ph-bold ph-caret-left"></i></button>';
+  html += `<h2 class="cal-month-title">${year}年${month + 1}月</h2>`;
+  html += '<button class="cal-nav-btn" onclick="changeScheduleCalendarMonth(1)"><i class="ph-bold ph-caret-right"></i></button>';
   html += '</div>';
-  html += '<div class="calendar-grid" id="scheduleCalendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>';
+
+  html += '<div class="cal-weekday-row">';
+  dayNames.forEach(function(name, i) {
+    const cls = i === 0 ? 'su' : i === 6 ? 'sa' : '';
+    html += `<div class="${cls}">${name}</div>`;
+  });
   html += '</div>';
-  html += '<div id="scheduleCalendarDetail" style="background:var(--color-surface);border-radius:8px;padding:16px"></div>';
+
+  html += '<div class="cal-grid" id="scheduleCalendarGrid"></div>';
+  html += renderCalendarLegend();
+  html += '</div>';
+  html += '<div id="scheduleCalendarDetail" class="cal-detail"></div>';
 
   container.innerHTML = html;
-  // 日記プリロードとグリッド描画を並列実行
+  // 投稿(日記/様子)プリロードとグリッド描画を並列実行
   const postsPromise = preloadCalendarPosts();
   const gridPromise = renderScheduleCalendarGrid();
   await Promise.all([postsPromise, gridPromise]);
-  // 日記データが後から到着した場合、詳細を再描画
+  // 投稿データが後から到着した場合、詳細を再描画（マークが最新化される）
   if (scheduleCalendarSelectedDate) {
     await showScheduleCalendarDetail(formatDateForApi(scheduleCalendarSelectedDate));
   }
+}
+
+function renderCalendarLegend() {
+  let html = '<div class="cal-legend">';
+  html += '<span class="cal-legend-item"><span class="cal-legend-dot full"></span>不在時間なし</span>';
+  html += '<span class="cal-legend-item"><span class="cal-legend-dot partial"></span>一部不在あり</span>';
+  html += '<span class="cal-legend-item"><span class="cal-legend-dot none"></span>終日不在</span>';
+  html += '<span class="cal-legend-item"><i class="ph-bold ph-book-open cal-legend-icon diary"></i>日記あり</span>';
+  html += '<span class="cal-legend-item"><i class="ph-bold ph-paw-print cal-legend-icon yousu"></i>様子あり</span>';
+  html += '</div>';
+  return html;
 }
 
 async function renderScheduleCalendarGrid() {
@@ -47,53 +112,32 @@ async function renderScheduleCalendarGrid() {
   const today = new Date();
   const todayStr = formatDateForApi(today);
 
-  let html = '';
-  const dayNames = AppConfig.SCHEDULE.DAYS;
-  dayNames.forEach((name, i) => {
-    const color = i === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : i === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : AppConfig.CALENDAR_COLORS.WEEKDAY;
-    html += `<div style="text-align:center;font-size:12px;color:${color};padding:8px 0;font-weight:600">${name}</div>`;
-  });
-
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
 
   // 月の範囲のスケジュールデータをプリロード
   await preloadMonthScheduleData(year, month);
 
+  let html = '';
+
   // 前月の日
   const startDayOfWeek = firstDay.getDay();
   const prevMonthLastDay = new Date(year, month, 0).getDate();
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
-    html += `<div style="text-align:center;padding:10px 4px;color:var(--color-text-faint);font-size:14px">${prevMonthLastDay - i}</div>`;
+    html += `<div class="cal-day dim">${prevMonthLastDay - i}</div>`;
   }
 
   // 当月の日
   for (let day = 1; day <= lastDay.getDate(); day++) {
     const date = new Date(year, month, day);
     const dateStr = formatDateForApi(date);
-    const isToday = dateStr === todayStr;
-    const isSelected = scheduleCalendarSelectedDate && formatDateForApi(scheduleCalendarSelectedDate) === dateStr;
-    const dayOfWeek = date.getDay();
-
-    let bgColor = isSelected ? AppConfig.CALENDAR_COLORS.PRIMARY : isToday ? 'var(--color-today-bg)' : 'var(--color-surface)';
-    let textColor = isSelected ? '#fff' : dayOfWeek === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dayOfWeek === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : 'var(--color-text-primary)';
-    let fontWeight = isToday || isSelected ? '600' : '400';
-
-    // スケジュール状態インジケーター
-    const status = getDateScheduleStatus(dateStr);
-    let indicator = '';
-    if (status === 'all') indicator = `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:${AppConfig.CALENDAR_COLORS.STATUS_ALL};border-radius:50%"></span>`;
-    else if (status === 'partial') indicator = `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:${AppConfig.CALENDAR_COLORS.STATUS_PARTIAL};border-radius:50%"></span>`;
-    else if (status === 'self') indicator = `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:${AppConfig.CALENDAR_COLORS.STATUS_SELF};border-radius:50%"></span>`;
-    else if (status === 'none') indicator = `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:${AppConfig.CALENDAR_COLORS.STATUS_NONE};border-radius:50%"></span>`;
-
-    html += `<div data-cal-date="${dateStr}" onclick="selectScheduleCalendarDate('${dateStr}')" style="position:relative;text-align:center;padding:10px 4px;border-radius:6px;cursor:pointer;font-size:14px;min-height:44px;display:flex;align-items:center;justify-content:center;background:${bgColor};color:${textColor};font-weight:${fontWeight}">${day}${indicator}</div>`;
+    html += renderCalendarDayCell(dateStr, day, dateStr === todayStr);
   }
 
   // 次月の日
   const endDayOfWeek = lastDay.getDay();
   for (let i = 1; i < 7 - endDayOfWeek; i++) {
-    html += `<div style="text-align:center;padding:10px 4px;color:var(--color-text-faint);font-size:14px">${i}</div>`;
+    html += `<div class="cal-day dim">${i}</div>`;
   }
 
   grid.innerHTML = html;
@@ -103,6 +147,35 @@ async function renderScheduleCalendarGrid() {
     scheduleCalendarSelectedDate = today;
   }
   await showScheduleCalendarDetail(formatDateForApi(scheduleCalendarSelectedDate));
+}
+
+function renderCalendarDayCell(dateStr, day, isToday) {
+  const isSelected = scheduleCalendarSelectedDate && formatDateForApi(scheduleCalendarSelectedDate) === dateStr;
+  const date = new Date(dateStr + 'T00:00:00+09:00');
+  const dow = date.getDay();
+  const coverage = getDateCoverage(dateStr);
+  const hasDiary = calendarDiaryDates.has(dateStr);
+  const hasYousu = calendarYousuDates.has(dateStr);
+
+  let cls = 'cal-day';
+  if (dow === 0) cls += ' su';
+  else if (dow === 6) cls += ' sa';
+  if (isToday) cls += ' today';
+  if (isSelected) cls += ' sel';
+
+  let html = `<div class="${cls}" data-cal-date="${dateStr}" onclick="selectScheduleCalendarDate('${dateStr}')">`;
+  html += `<span class="cal-day-num">${day}</span>`;
+  if (coverage) {
+    html += `<span class="cal-dot ${coverage}"></span>`;
+  }
+  if (hasDiary || hasYousu) {
+    html += '<span class="cal-marks">';
+    if (hasDiary) html += '<i class="ph-bold ph-book-open cal-mark diary"></i>';
+    if (hasYousu) html += '<i class="ph-bold ph-paw-print cal-mark yousu"></i>';
+    html += '</span>';
+  }
+  html += '</div>';
+  return html;
 }
 
 async function preloadMonthScheduleData(year, month) {
@@ -127,21 +200,27 @@ async function preloadMonthScheduleData(year, month) {
   );
 }
 
-function getDateScheduleStatus(dateStr) {
-  const weekId = getWeekId(new Date(dateStr + 'T00:00:00+09:00'));
-  const data = scheduleCalendarData[weekId];
-  if (!data || !data.users || data.users.length === 0) return null;
-
-  const usersWithSlots = data.users.filter(u => {
-    if (u.userId === 'daizu-status') return false;
-    const slots = u.slots || {};
-    return Object.keys(slots).some(k => k.startsWith(dateStr) && slots[k]);
+// 日別カバレッジ判定: 9/17/21/24 の4枠それぞれ「誰か1人でも◯がいるか」で full/partial/none を判定。
+// 誰も入力していない日は null（ドット非表示）。
+// [T13 self-review] allday:true のみが立っていて09/17/21/24が個別に展開されていないデータでも
+// カバレッジを正しく認識できるよう、allday も各枠のカバレッジとして扱う（現行の全入力経路は
+// allday→4枠へカスケードするため通常は発生しないが、過去データ互換のため防御的に対応）。
+function getDateCoverage(dateStr) {
+  var weekId = getWeekId(new Date(dateStr + 'T00:00:00+09:00'));
+  var data = scheduleCalendarData[weekId];
+  if (!data || !data.users) return null;
+  var members = data.users.filter(function(u) { return u.userId !== 'daizu-status'; });
+  var anyInput = members.some(function(u) {
+    return Object.keys(u.slots || {}).some(function(k) { return k.indexOf(dateStr) === 0; });
   });
-
-  if (usersWithSlots.length === familyMembers.length) return 'all';
-  if (usersWithSlots.length > 1) return 'partial';
-  if (usersWithSlots.length === 1) return 'self';
-  return 'none';
+  if (!anyInput) return null;
+  var covered = ['09', '17', '21', '24'].filter(function(slot) {
+    return members.some(function(u) {
+      var slots = u.slots || {};
+      return slots[dateStr + ':' + slot] || slots[dateStr + ':allday'];
+    });
+  }).length;
+  return covered === 4 ? 'full' : covered > 0 ? 'partial' : 'none';
 }
 
 function changeScheduleCalendarMonth(delta) {
@@ -149,36 +228,56 @@ function changeScheduleCalendarMonth(delta) {
   // ヘッダーの月表示を即時更新（グリッドのみ再描画されヘッダーが更新されないバグを修正）
   const year = scheduleCalendarMonth.getFullYear();
   const month = scheduleCalendarMonth.getMonth();
-  const header = document.querySelector('#calendarContent .calendar-header h2');
-  if (header) header.textContent = `${year}年${month + 1}月`;
+  const title = document.querySelector('#calendarContent .cal-month-title');
+  if (title) title.textContent = `${year}年${month + 1}月`;
   renderScheduleCalendarGrid();
 }
 
 async function selectScheduleCalendarDate(dateStr) {
   const prevDate = scheduleCalendarSelectedDate ? formatDateForApi(scheduleCalendarSelectedDate) : null;
   scheduleCalendarSelectedDate = new Date(dateStr + 'T00:00:00+09:00');
-  const today = new Date();
-  const todayStr = formatDateForApi(today);
 
-  // 前の選択セルのスタイルをリセット
+  // 前の選択セルのスタイルをリセット（状態はクラスのみが担うので付け外しだけでよい）
   if (prevDate) {
     const prevCell = document.querySelector(`[data-cal-date="${prevDate}"]`);
-    if (prevCell) {
-      const d = new Date(prevDate + 'T00:00:00+09:00');
-      const dow = d.getDay();
-      prevCell.style.background = prevDate === todayStr ? 'var(--color-today-bg)' : 'var(--color-surface)';
-      prevCell.style.color = dow === 0 ? AppConfig.CALENDAR_COLORS.SUNDAY : dow === 6 ? AppConfig.CALENDAR_COLORS.SATURDAY : 'var(--color-text-primary)';
-      prevCell.style.fontWeight = prevDate === todayStr ? '600' : '400';
-    }
+    if (prevCell) prevCell.classList.remove('sel');
   }
-  // 新しい選択セルにスタイル適用
   const newCell = document.querySelector(`[data-cal-date="${dateStr}"]`);
-  if (newCell) {
-    newCell.style.background = AppConfig.CALENDAR_COLORS.PRIMARY;
-    newCell.style.color = '#fff';
-    newCell.style.fontWeight = '600';
-  }
+  if (newCell) newCell.classList.add('sel');
+
   await showScheduleCalendarDetail(dateStr);
+}
+
+// 週ビュー閲覧と同一クラス(.wv-grid/.wv-grid-cell/.wv-cell.on|.off等)を使った読み取り専用グリッド
+function renderCalendarDetailGrid(dateStr, data) {
+  const timeSlots = AppConfig.SCHEDULE.SLOTS;
+  const timeLabels = AppConfig.SCHEDULE.LABEL_MAP;
+
+  let html = '<div class="wv-grid">';
+  html += '<div class="wv-grid-cell wv-grid-head"></div>';
+  familyMembers.forEach(function(m) {
+    html += '<div class="wv-grid-cell wv-grid-head">' + escapeHtml(getDisplayName(m)) + '</div>';
+  });
+
+  timeSlots.forEach(function(slot) {
+    html += '<div class="wv-grid-cell wv-slot-label">' + timeLabels[slot] + '</div>';
+    familyMembers.forEach(function(m) {
+      const user = data.users.find(function(u) { return u.userId === m.userId; });
+      const key = dateStr + ':' + slot;
+      const on = !!(user && user.slots && user.slots[key]);
+      html += '<div class="wv-grid-cell wv-cell ' + (on ? 'on' : 'off') + '">' + (on ? '◯' : '✕') + '</div>';
+    });
+  });
+  html += '</div>';
+  return html;
+}
+
+// その日が今週/来週(getCalendarWeekId/getNextWeekId)に該当すれば、該当サブタブへ切替して編集開始する
+function calendarEditWeekFor(dateStr) {
+  const weekId = getWeekId(new Date(dateStr + 'T00:00:00+09:00'));
+  const target = weekId === getCalendarWeekId() ? 'thisWeek' : (weekId === getNextWeekId() ? 'nextWeek' : null);
+  if (!target) return;
+  switchScheduleSubTab(target).then(function() { scheduleStartEdit(); });
 }
 
 async function showScheduleCalendarDetail(dateStr) {
@@ -186,89 +285,79 @@ async function showScheduleCalendarDetail(dateStr) {
   const date = new Date(dateStr + 'T00:00:00+09:00');
   const dayNames = AppConfig.SCHEDULE.DAYS;
   const dateDisplay = `${date.getMonth() + 1}/${date.getDate()}(${dayNames[date.getDay()]})`;
+  const todayStr = formatDateForApi(new Date());
+  const isToday = dateStr === todayStr;
 
   const weekId = getWeekId(date);
   const data = scheduleCalendarData[weekId];
+  const canEditWeek = weekId === getCalendarWeekId() || weekId === getNextWeekId();
 
-  let html = `<h3 style="font-size:14px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid ${AppConfig.CALENDAR_COLORS.PRIMARY};color:var(--color-text-strong)">${dateDisplay} の予定</h3>`;
+  let html = '<div class="cal-detail-head">';
+  html += `<div class="cal-detail-date">${dateDisplay}`;
+  if (isToday) html += ' <span class="wv-badge-today">きょう</span>';
+  html += '</div>';
+  if (canEditWeek) {
+    html += `<button class="cal-detail-edit" onclick="calendarEditWeekFor('${dateStr}')"><i class="ph-bold ph-pencil-simple"></i>この週を編集</button>`;
+  }
+  html += '</div>';
 
   if (!data || !data.users) {
-    html += `<p style="color:${AppConfig.CALENDAR_COLORS.WEEKDAY};text-align:center">データがありません</p>`;
+    html += '<p class="cal-empty">データがありません</p>';
   } else {
-    const timeSlots = AppConfig.SCHEDULE.SLOTS;
-    const timeLabels = AppConfig.SCHEDULE.LABEL_MAP;
-
-    html += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    html += '<thead><tr><th style="padding:6px;text-align:left;border:1px solid var(--color-border-soft);background:var(--color-surface-alt)">時間</th>';
-    familyMembers.forEach(m => {
-      html += `<th style="padding:6px;text-align:center;border:1px solid var(--color-border-soft);background:var(--color-surface-alt)">${getDisplayName(m)}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-
-    timeSlots.forEach(slot => {
-      html += `<tr><td style="padding:6px;border:1px solid var(--color-border-soft);font-weight:600">${timeLabels[slot]}</td>`;
-      familyMembers.forEach(member => {
-        const user = data.users.find(u => u.userId === member.userId);
-        const key = `${dateStr}:${slot}`;
-        const isAvailable = user && user.slots && user.slots[key];
-        const bgColor = isAvailable ? 'var(--color-available-bg)' : 'var(--color-unavailable-bg)';
-        const textColor = isAvailable ? 'var(--color-available-text)' : 'var(--color-unavailable-text)';
-        html += `<td style="padding:6px;text-align:center;border:1px solid var(--color-border-soft);background:${bgColor};color:${textColor}">${isAvailable ? '◯' : '✕'}</td>`;
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
+    html += renderCalendarDetailGrid(dateStr, data);
 
     // 備考表示（daizu-statusは除外）
     const notesHtml = [];
-    data.users.forEach(user => {
+    data.users.forEach(function(user) {
       if (user.userId === 'daizu-status') return;
       if (user.notes && user.notes[dateStr]) {
-        const calMember = familyMembers.find(m => m.userId === user.userId);
+        const calMember = familyMembers.find(function(m) { return m.userId === user.userId; });
         const calName = calMember ? getDisplayName(calMember) : user.displayName;
-        notesHtml.push(`<div style="margin-top:8px;padding:8px;background:var(--color-available-bg);border-left:3px solid #3F6E5B;border-radius:4px;font-size:12px"><strong>${calName}:</strong> ${user.notes[dateStr]}</div>`);
+        notesHtml.push('<div class="wv-note-display"><strong>' + escapeHtml(calName) + '</strong>: ' + escapeHtml(user.notes[dateStr]) + '</div>');
       }
     });
-    if (notesHtml.length > 0) {
-      html += notesHtml.join('');
-    }
+    html += notesHtml.join('');
   }
 
-  // だいずの様子（読み取り専用）
+  // だいずの様子（読み取り専用・ScheduleInputsのdaizu-status擬似ユーザー由来）
   if (data && data.users) {
-    const daizuUser = data.users.find(u => u.userId === 'daizu-status');
+    const daizuUser = data.users.find(function(u) { return u.userId === 'daizu-status'; });
     const daizuNote = daizuUser && daizuUser.notes ? (daizuUser.notes[dateStr] || '') : '';
     if (daizuNote) {
-      html += '<div style="margin-top:12px;padding:10px 12px;background:var(--color-surface);border-radius:8px;border-left:4px solid #3F6E5B;font-size:13px">';
-      html += '<div style="font-weight:600;color:#274A3D;margin-bottom:4px"><i class="ph-bold ph-paw-print"></i> だいずの様子</div>';
-      html += `<div style="white-space:pre-wrap;color:var(--color-text-primary)">${escapeHtml(daizuNote)}</div>`;
+      html += '<div class="cal-daizu-note"><i class="ph-bold ph-paw-print"></i>';
+      html += '<span><strong>だいずの様子</strong><div class="cal-daizu-note-text">' + escapeHtml(daizuNote) + '</div></span>';
       html += '</div>';
     }
   }
 
-  // ダイ日記の表示
-  const dayDiaries = calendarDiaryPosts.filter(post => {
-    const dateMatch = (post.text || '').match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
-    if (dateMatch) return dateMatch[1] === dateStr;
-    return post.createdAt && post.createdAt.startsWith(dateStr);
-  });
-
+  // ダイ日記リンク（個別ジャンプ・既存ロジック維持）
+  const dayDiaries = calendarDiaryPosts.filter(function(post) { return diaryDateForPost(post) === dateStr; });
   if (dayDiaries.length > 0) {
-    html += `<h4 style="margin-top:16px;font-size:13px;color:#3F6E5B;border-bottom:1px solid #ECE2D2;padding-bottom:6px"><i class="ph-bold ph-book-open"></i> ダイ日記 (${dayDiaries.length}件)</h4>`;
-    dayDiaries.forEach(post => {
+    html += '<div class="cal-section-title"><i class="ph-bold ph-book-open"></i>ダイ日記 (' + dayDiaries.length + '件)</div>';
+    dayDiaries.forEach(function(post) {
       let text = post.text || '';
       const titleMatch = text.match(/\[TITLE:([^\]]+)\]/);
       const title = titleMatch ? titleMatch[1] : '';
       text = text.replace(/^\[DATE:[^\]]+\]/, '').replace(/^\[TITLE:[^\]]+\]/, '').replace(/^\[PHOTO_POS:[^\]]+\]/, '').replace(/^\[CATCH_IMG:[^\]]+\]/, '');
       const preview = text.replace(/<[^>]*>/g, '').substring(0, 60);
-      const calMember = familyMembers.find(m => m.userId === post.userId);
+      const calMember = familyMembers.find(function(m) { return m.userId === post.userId; });
       const calName = calMember ? getDisplayName(calMember) : post.displayName;
-      html += `<div onclick="switchTab('diary');setTimeout(function(){diaryShowDetail('${post.postId}')},300)" style="padding:8px;margin:4px 0;background:var(--color-brown-light);border-radius:6px;cursor:pointer;font-size:12px">
-        <strong>${escapeHtml(title || calName)}</strong>: ${escapeHtml(preview)}${preview.length >= 60 ? '...' : ''}
-      </div>`;
+      html += `<div class="cal-postlink diary" onclick="switchTab('diary');setTimeout(function(){diaryShowDetail('${post.postId}')},300)">`;
+      html += '<i class="ph-bold ph-book-open"></i>';
+      html += '<span class="cal-postlink-title"><strong>' + escapeHtml(title || calName) + '</strong>: ' + escapeHtml(preview) + (preview.length >= 60 ? '…' : '') + '</span>';
+      html += '</div>';
     });
+  }
+
+  // 様子リンク（個別ジャンプ不要・一覧先頭へ）
+  const dayYousu = calendarYousuPosts.filter(function(post) { return jstDateFromIso(post.createdAt) === dateStr; });
+  if (dayYousu.length > 0) {
+    const yousuPreview = (dayYousu[0].text || '').replace(/<[^>]*>/g, '').substring(0, 40);
+    html += '<div class="cal-postlink yousu" onclick="switchTab(\'yousu\')">';
+    html += '<i class="ph-bold ph-paw-print"></i>';
+    html += '<span class="cal-postlink-title"><strong>様子</strong> (' + dayYousu.length + '件): ' + escapeHtml(yousuPreview) + (yousuPreview.length >= 40 ? '…' : '') + '</span>';
+    html += '</div>';
   }
 
   detail.innerHTML = html;
 }
-
