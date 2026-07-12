@@ -289,7 +289,7 @@ async function swrJson(url, onFresh, opts) {
 }
 
 // ========== プリウォーム（先読み） ==========
-// ページ表示が落ち着いたあと、他タブのデータとページ資材を裏で取得しておく。
+// ページ表示が落ち着いたあと、他タブのデータを裏で取得しておく。
 // SWRキャッシュが温まる＋Lambdaのコールドスタートも解消され、タブ切替が速くなる。
 
 function prewarmAppData() {
@@ -306,26 +306,4 @@ function prewarmAppData() {
       Api.getAccounts().catch(noop);
     } catch (e) { /* 無視 */ }
   }, 2000);
-}
-
-/**
- * もう一方のページ（home⇄dashboard）のHTML/JS/CSSを裏で取得して
- * Service Workerのキャッシュに載せ、ページ遷移を速くする。
- * バンドルのキャッシュバスト値(?v=)は自ページのscriptタグから流用する。
- */
-function prewarmSiblingPage(currentPage) {
-  setTimeout(function() {
-    try {
-      var other = currentPage === 'home' ? 'dashboard' : 'home';
-      var script = document.querySelector('script[src*=".bundle.js"]');
-      var v = (script && script.src.indexOf('?') !== -1) ? '?' + script.src.split('?')[1] : '';
-      [
-        other + '.html',
-        'scripts/' + other + '.bundle.js' + v,
-        'styles/' + other + '.bundle.css' + v
-      ].forEach(function(u) {
-        fetch(u).catch(function() { /* 先読み失敗は無視 */ });
-      });
-    } catch (e) { /* 無視 */ }
-  }, 3000);
 }

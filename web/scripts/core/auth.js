@@ -3,7 +3,7 @@
 
 /**
  * アプリ起動時の認証エントリポイント
- * dashboard.page.js / home.page.js の init() から呼ぶ
+ * dashboard.page.js の init() から呼ぶ
  */
 async function initAuth() {
   // LINEトークン（?token=）があれば自動ログイン

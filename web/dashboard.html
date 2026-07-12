@@ -26,7 +26,205 @@
     <button class="sub-chip" onclick="switchScheduleSubTab('nextWeek')">来週</button>
   </div>
 
-  <!-- ホームタブは home.html に移動済み -->
+  <!-- ホームタブ -->
+  <div id="homeContent" class="content">
+    <div class="home-container">
+      <!-- 犬の画像 -->
+      <div class="dog-area reveal">
+        <img id="homeDogImage" class="dog-image" src="images/dog/chirol/normal/IMG_3707.webp" alt="犬" onclick="homeDogTapped()" style="cursor:pointer" onerror="this.src='images/dog/chirol/normal/IMG_3707.webp'">
+      </div>
+
+      <!-- 吹き出し -->
+      <div id="homeSpeechBubble" class="speech-bubble reveal">
+        <p id="homeSpeechText">今日は <span class="highlight" id="homeTodayDate">-</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！</p>
+      </div>
+
+      <!-- プログレスバー -->
+      <div id="homeProgressContainer" class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-bar-inner"></div>
+        </div>
+        <p class="progress-text">ちょっと待ってくれ...</p>
+      </div>
+
+      <!-- メニューボタン -->
+      <div id="homeMenuButtons" class="menu-buttons active reveal-stagger">
+        <button class="menu-btn uranau" onclick="homeStartUranau()">
+          <i class="ph-bold ph-shooting-star icon"></i>
+          <span class="label">うらなう</span>
+          <span class="desc">今日の運勢は？</span>
+        </button>
+        <button class="menu-btn asobu" onclick="homeStartAsobu()">
+          <i class="ph-bold ph-hand-waving icon"></i>
+          <span class="label">あそぶ</span>
+          <span class="desc">なでなでタイム</span>
+        </button>
+        <button class="menu-btn shitteru" onclick="homeStartChirolInfo()">
+          <i class="ph-bold ph-note-pencil icon"></i>
+          <span class="label">しってる</span>
+          <span class="desc">写真・一言を追加</span>
+        </button>
+        <button class="menu-btn daizu-yousu" onclick="homeStartDaizuYousu()">
+          <i class="ph-bold ph-paw-print icon"></i>
+          <span class="label">だいずのようす</span>
+          <span class="desc">今日の記録</span>
+        </button>
+        <button class="menu-btn kiroku" onclick="switchTab('diary')">
+          <i class="ph-bold ph-book-open icon"></i>
+          <span class="label">ダイ日記</span>
+          <span class="desc">日記を見る・書く</span>
+        </button>
+      </div>
+
+      <!-- 選択肢ボタン -->
+      <div id="homeChoiceButtons" class="choice-buttons">
+      </div>
+
+      <!-- カレンダー選択エリア -->
+      <div id="homeCalendarArea" class="calendar-area">
+        <div class="calendar-header">
+          <button class="calendar-nav-btn" onclick="homeChangeCalendarMonth(-1)">◀</button>
+          <h3 id="homeCalendarTitle">2024年1月</h3>
+          <button class="calendar-nav-btn" onclick="homeChangeCalendarMonth(1)">▶</button>
+        </div>
+        <div class="calendar-grid" id="homeCalendarGrid"></div>
+        <button class="calendar-confirm-btn" onclick="homeConfirmCalendarSelection()">この日を確認する</button>
+        <button class="back-btn" onclick="homeBackToMenu()">戻る</button>
+      </div>
+
+      <!-- スケジュール表示エリア -->
+      <div id="homeScheduleDisplay" class="schedule-display">
+        <h4 id="homeScheduleTitle">予定</h4>
+        <div id="homeScheduleContent"></div>
+      </div>
+
+      <!-- スケジュール編集エリア -->
+      <div id="homeScheduleEdit" class="schedule-edit">
+        <div id="homeScheduleEditContent"></div>
+        <button class="submit-btn home-submit" onclick="homeSubmitScheduleEdit()">変更を保存する</button>
+        <button class="back-btn" onclick="homeBackToScheduleDisplay()">戻る</button>
+      </div>
+
+      <!-- 知ってる犬選択エリア -->
+      <div id="dogSelectArea" class="chirol-choice-area">
+        <p style="margin-bottom:12px;color:#5d4037;font-weight:600">誰のことを教える？</p>
+        <button class="chirol-choice-btn" onclick="selectDogForInfo('chirol')">
+          <i class="ph-bold ph-paw-print icon"></i>
+          <span>チロル</span>
+        </button>
+        <button class="chirol-choice-btn" onclick="selectDogForInfo('daizu')">
+          <i class="ph-bold ph-paw-print icon"></i>
+          <span>だいず</span>
+        </button>
+        <button class="chirol-choice-btn cancel" onclick="chirolCancel()">
+          <i class="ph-bold ph-x-circle icon"></i>
+          <span>やっぱやめる</span>
+        </button>
+      </div>
+
+      <!-- 知ってる登録タイプ選択エリア -->
+      <div id="chirolChoiceArea" class="chirol-choice-area">
+        <p id="infoTargetLabel" style="margin-bottom:12px;color:#5d4037;font-weight:600">チロルに何を追加する？</p>
+        <button class="chirol-choice-btn" onclick="chirolStartImage()">
+          <i class="ph-bold ph-camera icon"></i>
+          <span>写真を追加する</span>
+        </button>
+        <button class="chirol-choice-btn" onclick="chirolStartHitokoto()">
+          <i class="ph-bold ph-chat-circle-text icon"></i>
+          <span>一言を追加する</span>
+        </button>
+        <button class="chirol-choice-btn cancel" onclick="chirolBackToDogSelect()">
+          <i class="ph-bold ph-arrow-left icon"></i>
+          <span>戻る</span>
+        </button>
+      </div>
+
+      <!-- 一言入力エリア -->
+      <div id="chirolHitokotoArea" class="chirol-hitokoto-area">
+        <textarea id="chirolHitokotoText" placeholder="チロルの一言を入力..." maxlength="100" oninput="document.getElementById('chirolHitokotoCount').textContent = this.value.length"></textarea>
+        <div class="char-count"><span id="chirolHitokotoCount">0</span>/100</div>
+        <button class="submit-btn home-submit" onclick="chirolSubmitHitokoto()" style="background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%)">追加する</button>
+        <button class="back-btn" onclick="chirolBackToChoice()">戻る</button>
+      </div>
+
+      <!-- 画像追加エリア -->
+      <div id="chirolImageArea" class="chirol-image-area">
+        <label for="chirolImageInput" class="image-preview-container">
+          <input type="file" id="chirolImageInput" accept="image/*" style="display:none" onchange="chirolImageSelected(event)">
+          <img id="chirolImagePreview" class="image-preview" src="" alt="">
+          <div class="image-placeholder">
+            <div class="icon"><i class="ph-bold ph-camera"></i></div>
+            <span>タップして写真を選択</span>
+          </div>
+        </label>
+        <div class="tag-selector">
+          <button class="tag-btn" data-tag="normal" onclick="chirolSelectTag('normal')">😊 normal</button>
+          <button class="tag-btn" data-tag="happy" onclick="chirolSelectTag('happy')">😄 happy</button>
+          <button class="tag-btn" data-tag="thinking" onclick="chirolSelectTag('thinking')">🤔 thinking</button>
+          <button class="tag-btn" data-tag="sad" onclick="chirolSelectTag('sad')">😢 sad</button>
+        </div>
+        <button class="submit-btn home-submit" id="chirolImageSubmitBtn" onclick="chirolSubmitImage()" style="background:linear-gradient(135deg,#8d6e63 0%,#a1887f 100%)" disabled>追加する</button>
+        <button class="back-btn" onclick="chirolBackToChoice()">戻る</button>
+      </div>
+
+      <!-- だいずのようすエリア -->
+      <div id="homeDaizuYousuArea" class="home-daizu-yousu-area">
+        <div class="daizu-yousu-bubble">
+          <div class="daizu-yousu-bubble-content">
+            <textarea id="homeDaizuYousuInput" placeholder="今日のだいずの様子を書いてね..." maxlength="200" oninput="document.getElementById('homeDaizuYousuCount').textContent = this.value.length"></textarea>
+            <div class="char-count"><span id="homeDaizuYousuCount">0</span>/200</div>
+          </div>
+          <div class="daizu-yousu-bubble-tail"></div>
+        </div>
+        <button class="submit-btn home-submit" id="homeDaizuYousuSubmitBtn" onclick="homeSubmitDaizuYousu()" style="background:linear-gradient(135deg,#ff9800 0%,#e65100 100%)">保存する</button>
+        <button class="back-btn" onclick="homeDaizuYousuCancel()">やめる</button>
+      </div>
+
+      <!-- だいず占いエリア -->
+      <div id="homeUranauArea" class="home-uranau-area">
+        <div class="uranau-bg"><div class="stars"></div><div class="fireflies"></div></div>
+        <div class="uranau-header">
+          <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" class="uranau-daizu-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+          <h3><i class="ph-bold ph-sparkle"></i> だいずの占いワン <i class="ph-bold ph-sparkle"></i></h3>
+        </div>
+        <div id="uranauPersonSelect"></div>
+        <div id="uranauResult" style="display:none"></div>
+        <button class="back-btn" onclick="uranauBackToHome()" style="margin-top:16px;background:rgba(255,255,255,0.9)">ホームに戻る</button>
+      </div>
+
+      <!-- わんなでエリア -->
+      <div id="homeWannadeArea" class="home-wannade-area">
+        <div class="wannade-sun-glow"></div>
+        <div class="wannade-header">
+          <h3><i class="ph-bold ph-paw-print"></i> わんなで <i class="ph-bold ph-paw-print"></i></h3>
+          <div id="wannadeTimer" class="wannade-timer" style="display:none">10</div>
+        </div>
+        <div class="wannade-dogs">
+          <div class="wannade-dog" id="wannadeChirol" ontouchstart="wannadeTap('chirol')" onclick="wannadeTap('chirol')">
+            <img src="images/dog/chirol/normal/IMG_3707.webp" alt="チロル" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+            <span>チロル</span>
+          </div>
+          <div class="wannade-dog" id="wannadeDaizu" ontouchstart="wannadeTap('daizu')" onclick="wannadeTap('daizu')">
+            <img src="images/dog/daizu/normal/IMG_0734.jpg" alt="だいず" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐕</text></svg>'">
+            <span>だいず</span>
+          </div>
+        </div>
+        <p class="wannade-instruction" id="wannadeInstruction">タップしてなでなで！</p>
+        <div class="wannade-count" id="wannadeCount">なでなで: <span id="wannadeCountNum">0</span>回</div>
+        <button class="wannade-start-btn" id="wannadeStartBtn" onclick="wannadeStart()">スタート！</button>
+        <div class="wannade-ranking" id="wannadeRanking">
+          <h4><i class="ph-bold ph-trophy"></i> ランキング</h4>
+          <div id="wannadeRankingList" class="wannade-ranking-list">
+            <div class="loading">読み込み中...</div>
+          </div>
+        </div>
+        <button class="back-btn" onclick="wannadeBackToHome()" style="margin-top:16px">ホームに戻る</button>
+        <div class="wannade-grass"></div>
+      </div>
+      <!-- ホームFABボタン -->
+      <button class="home-fab" id="homeFab" onclick="homeReturnToInitial()"><i class="ph-bold ph-house"></i></button>
+    </div>
+  </div>
 
   <!-- スケジュール系タブ -->
   <div id="calendarContent" class="content">
@@ -346,9 +544,58 @@
     <div id="diaryDetailContent" class="diary-detail-content"></div>
   </div>
 
+  <!-- チロル誕生日オーバーレイ（毎年7/3から1週間、birthday.jsが表示制御） -->
+  <div id="birthdayOverlay" class="birthday-overlay">
+    <div class="birthday-confetti"></div>
+    <div class="birthday-card">
+      <div class="birthday-garland">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <!-- シーン1: お祝いカード -->
+      <div id="birthdayScene1">
+        <div class="birthday-photo-frame">
+          <span class="birthday-photo-fallback">🐶</span>
+          <img id="birthdayPhoto" class="birthday-photo" src="images/dog/chirol/normal/IMG_3707.webp" alt="チロル" onerror="this.style.display='none'">
+        </div>
+        <p class="birthday-eyebrow">7月3日</p>
+        <h2 class="birthday-title">チロル<br>誕生日おめでとう！</h2>
+        <p class="birthday-message">「今日はオレの誕生日だぜ！<br>いっぱい祝ってくれよな」</p>
+        <button class="birthday-close-btn" onclick="chirolBirthdayCongrats(this)">おめでとう！🎉</button>
+        <button class="birthday-hide-btn" onclick="chirolBirthdayHideToday()">今日はもう表示しない</button>
+      </div>
+      <!-- シーン2: smileチロル -->
+      <div id="birthdayScene2" style="display:none">
+        <div class="birthday-photo-frame">
+          <span class="birthday-photo-fallback">🐶</span>
+          <img id="birthdayPhoto2" class="birthday-photo" src="images/dog/chirol/happy/IMG_3713.webp" alt="チロル" onerror="this.style.display='none'">
+        </div>
+        <h2 class="birthday-title" style="margin-top:4px">これからも<br>大好きだよ</h2>
+        <button class="birthday-close-btn" onclick="chirolBirthdayClose()">閉じる</button>
+      </div>
+      <!-- クラッカー演出用 -->
+      <div id="birthdayBurst" class="birthday-burst"></div>
+    </div>
+  </div>
+
+  <!-- だいずの様子入力フォーム (LIFF mode=daizu) -->
+  <div id="daizuLiffForm" class="daizu-liff-form" style="display:none">
+    <div class="daizu-liff-container">
+      <h2>だいずの様子</h2>
+      <p class="daizu-liff-date" id="daizuLiffDate"></p>
+      <textarea id="daizuLiffInput" class="daizu-liff-textarea" placeholder="今日のだいずの様子を書いてね..." maxlength="200"
+        oninput="document.getElementById('daizuLiffCount').textContent = this.value.length"></textarea>
+      <div class="daizu-liff-charcount"><span id="daizuLiffCount">0</span>/200</div>
+      <button class="daizu-liff-submit" id="daizuLiffSubmitBtn" onclick="submitDaizuLiffForm()">保存する</button>
+      <div id="daizuLiffResult" style="display:none">
+        <p class="daizu-liff-success">保存しました!</p>
+        <button class="daizu-liff-close" onclick="closeDaizuLiff()">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <button class="fab" id="fabBtn" style="display:none"><i class="ph-bold ph-plus"></i></button>
   <nav class="bottom-nav">
-    <button class="bn-item active" data-tab="home" onclick="window.location.href='home.html'"><i class="ph-bold ph-house"></i><span>ホーム</span></button>
+    <button class="bn-item active" data-tab="home" onclick="switchTab('home')"><i class="ph-bold ph-house"></i><span>ホーム</span></button>
     <button class="bn-item" data-tab="schedule" onclick="switchTab('schedule')"><i class="ph-bold ph-calendar"></i><span>予定</span></button>
     <button class="bn-item" data-tab="yousu" onclick="switchTab('yousu')"><i class="ph-bold ph-paw-print"></i><span>様子</span></button>
     <button class="bn-item" data-tab="diary" onclick="switchTab('diary')"><i class="ph-bold ph-book-open"></i><span>日記</span></button>
@@ -361,7 +608,7 @@
     (async function() {
       if (!('serviceWorker' in navigator)) return;
 
-      var APP_SW_VERSION = 'v17';
+      var APP_SW_VERSION = 'v18';
       var lastSWVersion = localStorage.getItem('sw-version');
       if (lastSWVersion !== APP_SW_VERSION) {
         var keys = await caches.keys();

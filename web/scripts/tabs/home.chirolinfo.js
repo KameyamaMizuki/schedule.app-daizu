@@ -120,7 +120,7 @@ function chirolBackToChoice() {
   document.getElementById('chirolChoiceArea').classList.add('active');
 }
 
-// 一言入力の文字数カウントは home.page.js に移動済み
+// 一言入力の文字数カウントは dashboard.html の oninput 属性で処理
 
 async function chirolSubmitHitokoto() {
   const text = document.getElementById('chirolHitokotoText').value.trim();

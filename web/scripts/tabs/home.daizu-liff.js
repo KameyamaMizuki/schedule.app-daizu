@@ -5,15 +5,17 @@
   var params = new URLSearchParams(window.location.search);
   if (params.get('mode') !== 'daizu') return;
 
-  // 通常UIを非表示
+  // 通常UIを非表示（ダッシュボードの共通シェルごと隠し、フォームのみを表示する）
   document.addEventListener('DOMContentLoaded', function() {
-    var hide = ['mainHeader', 'sidebar', 'sidebarOverlay', 'homeContent', 'userSelectModal'];
+    var hide = ['homeContent', 'userSelectModal', 'fabBtn'];
     hide.forEach(function(id) {
       var el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    var tabs = document.querySelector('.tabs');
-    if (tabs) tabs.style.display = 'none';
+    ['.app-header', '.bottom-nav', '.sub-chips'].forEach(function(sel) {
+      var el = document.querySelector(sel);
+      if (el) el.style.display = 'none';
+    });
 
     // フォーム表示
     var form = document.getElementById('daizuLiffForm');

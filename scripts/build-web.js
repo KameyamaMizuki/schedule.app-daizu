@@ -3,9 +3,9 @@
  *
  * グローバル変数スタイルのスクリプト群を 1 ファイルにまとめ、
  * HTTP リクエスト数を削減する。
- *   home.html      : 17 個の <script> → 1 つの home.bundle.js
- *   dashboard.html : 19 個の <script> → 1 つの dashboard.bundle.js
- *   CSS も同様に各ページ 1 ファイルにまとめる。
+ *   dashboard.html : 全タブ（ホーム/スケジュール/様子/日記/WANsta）1ページ統合 → 1 つの dashboard.bundle.js
+ *   home.html      : dashboard.html?tab=home へリダイレクトするだけのスタブ（バンドル不要）
+ *   CSS も同様に dashboard.html 用の 1 ファイルにまとめる。
  */
 
 const fs = require('fs');
@@ -13,33 +13,9 @@ const path = require('path');
 
 const WEB = path.join(__dirname, '..', 'web');
 
-// ── home.html 用 JS（読み込み順を厳守） ──────────────────────────────
-const HOME_JS = [
-  'scripts/routes.js',
-  'scripts/core/config.js',
-  'scripts/core/theme.js',
-  'scripts/core/motion.js',
-  'scripts/core/state.js',
-  'scripts/core/utils.js',
-  'scripts/core/api.js',
-  'scripts/ui/sidebar.ui.js',
-  'scripts/core/account.js',
-  'scripts/core/auth.js',
-  'scripts/ui/pin-login.js',
-  'scripts/ui/account-edit.js',
-  'scripts/ui/user-select.js',
-  'scripts/ui/crop-square.js',
-  'scripts/ui/birthday.js',
-  'scripts/tabs/home.js',
-  'scripts/tabs/home.schedule.js',
-  'scripts/tabs/home.uranau.js',
-  'scripts/tabs/home.wannade.js',
-  'scripts/tabs/home.chirolinfo.js',
-  'scripts/tabs/home.daizu-liff.js',
-  'scripts/home.page.js',
-];
-
 // ── dashboard.html 用 JS（読み込み順を厳守） ─────────────────────────
+// 旧 home.html のタブ（tabs/home*.js, ui/birthday.js）を core/* の直後・
+// 他タブ群の前に統合。ui/sidebar.ui.js は旧サイドバー廃止に伴い削除済み。
 const DASHBOARD_JS = [
   'scripts/routes.js',
   'scripts/core/config.js',
@@ -54,6 +30,13 @@ const DASHBOARD_JS = [
   'scripts/ui/account-edit.js',
   'scripts/ui/user-select.js',
   'scripts/ui/crop-square.js',
+  'scripts/ui/birthday.js',
+  'scripts/tabs/home.js',
+  'scripts/tabs/home.schedule.js',
+  'scripts/tabs/home.uranau.js',
+  'scripts/tabs/home.wannade.js',
+  'scripts/tabs/home.chirolinfo.js',
+  'scripts/tabs/home.daizu-liff.js',
   'scripts/tabs/schedule.js',
   'scripts/tabs/schedule-calendar.js',
   'scripts/tabs/schedule-weekview.js',
@@ -67,18 +50,12 @@ const DASHBOARD_JS = [
 ];
 
 // ── CSS ──────────────────────────────────────────────────────────────
-const HOME_CSS = [
-  'styles/base.css',
-  'styles/crop.css',
-  'styles/pin-login.css',
-  'styles/tabs/home.css',
-];
-
 const DASHBOARD_CSS = [
   'styles/base.css',
   'styles/shell.css',
   'styles/crop.css',
   'styles/pin-login.css',
+  'styles/tabs/home.css',
   'styles/tabs/schedule.css',
   'styles/tabs/yousu.css',
   'styles/tabs/diary.css',
@@ -105,9 +82,7 @@ function bundle(files, outRel) {
 
 console.log('\nBuilding web bundles...\n');
 
-bundle(HOME_JS,       'scripts/home.bundle.js');
 bundle(DASHBOARD_JS,  'scripts/dashboard.bundle.js');
-bundle(HOME_CSS,      'styles/home.bundle.css');
 bundle(DASHBOARD_CSS, 'styles/dashboard.bundle.css');
 
 console.log('\n✓ Done\n');

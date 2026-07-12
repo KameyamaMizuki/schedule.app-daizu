@@ -1,14 +1,13 @@
 (function() {
   'use strict';
   window.AppRoutes = {
-    // ページ定義
+    // ページ定義（全タブが dashboard.html に統合済み。home.html は互換用のリダイレクトスタブ）
     pages: {
-      home: 'home.html',
       dashboard: 'dashboard.html'
     },
     // タブ定義
     tabs: {
-      home:      { title: 'ホーム',       color: 'green',  page: 'home' },
+      home:      { title: 'ホーム',       color: 'green',  page: 'dashboard' },
       schedule:  { title: 'スケジュール', color: 'pink',   page: 'dashboard', hasSubTabs: true },
       yousu:     { title: '様子',         color: 'orange', page: 'dashboard' },
       diary:     { title: 'ダイ日記',     color: 'brown',  page: 'dashboard' },
@@ -38,7 +37,6 @@
       var def = this.tabs[tab];
       if (!def) return null;
       var page = this.pages[def.page];
-      if (def.page === 'home') return page;
       return page + this.buildHash(tab, subTab);
     }
   };

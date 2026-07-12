@@ -10,7 +10,7 @@
  *     常に最新データを取得。失敗時のみキャッシュを使用。
  */
 
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v22';
 const CACHE_NAME = `app-${CACHE_VERSION}`;
 
 // インストール: 即座に有効化

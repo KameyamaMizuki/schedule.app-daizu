@@ -1,6 +1,6 @@
 // ========== dashboard.page.js — ページ初期化・タブ切り替え ==========
 // 現在のタブ
-let currentTab = 'thisWeek';
+let currentTab = 'home';
 
 async function init() {
   await initAuth();
@@ -10,9 +10,9 @@ async function init() {
   var queryTab = urlParams.get('tab');
   var queryAction = urlParams.get('action');
 
-  // hashからタブを読み取る（デフォルトはschedule）
+  // hashからタブを読み取る（デフォルトはhome）
   var _route = AppRoutes.parseHash(window.location.hash);
-  var startTab = queryTab || _route.tab || 'schedule';
+  var startTab = queryTab || _route.tab || 'home';
 
   // 該当タブに切り替え
   await switchTab(startTab);
@@ -29,9 +29,8 @@ async function init() {
     }, 500);
   }
 
-  // 他タブのデータとホームの資材を先読み（タブ切替を速くする）
+  // 他タブのデータを先読み（タブ切替を速くする）
   prewarmAppData();
-  prewarmSiblingPage('dashboard');
 }
 
 async function switchTab(tab) {
@@ -67,7 +66,14 @@ async function switchTab(tab) {
     tab === 'schedule' ? currentScheduleSubTab : null));
 
   // タブ切り替え時に遅延読み込み
-  if (tab === 'schedule') {
+  if (tab === 'home') {
+    document.getElementById('homeContent').classList.add('active');
+    if (!window.homeLoaded) {
+      initHomeTab();
+      maybeShowChirolBirthday();
+      window.homeLoaded = true;
+    }
+  } else if (tab === 'schedule') {
     // スケジュールタブ：サブタブに応じてコンテンツ表示
     await switchScheduleSubTab(currentScheduleSubTab);
   } else if (tab === 'yousu') {

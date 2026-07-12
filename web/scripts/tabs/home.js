@@ -1,7 +1,7 @@
 // ========== ホームタブ — コントローラー ==========
-// 依存読み込み順: routes.js → core/state.js → core/utils.js → ui/modals.js → home.js(本ファイル)
-//   → home.record.js → home.schedule.js
-//   → home.uranau.js → home.wannade.js → home.chirolinfo.js → home.page.js
+// 依存読み込み順（dashboard.bundle.js内）: routes.js → core/state.js → core/utils.js → home.js(本ファイル)
+//   → home.schedule.js → home.uranau.js → home.wannade.js → home.chirolinfo.js → home.daizu-liff.js
+//   → dashboard.page.js（homeタブ表示時に initHomeTab() を呼ぶ）
 //
 // このファイルが担う責務:
 //   - データ読み込み (loadChirolImagesFromDB / loadHitokotoFromDB)
