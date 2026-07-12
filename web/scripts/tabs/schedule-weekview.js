@@ -514,6 +514,7 @@ function createWeekView(config) {
     toggleSlot: toggleSlot,
     save: save,
     cancel: cancel,
+    cancelEdit: cancel,
     load: load,
     startEdit: startEdit,
     headerTap: headerTap,

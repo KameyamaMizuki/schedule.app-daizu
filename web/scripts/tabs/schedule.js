@@ -18,6 +18,14 @@ function updateWeekStatus() {
 var currentScheduleSubTab = 'calendar'; // var: dashboard.js からも参照される
 
 async function switchScheduleSubTab(subTab) {
+  // 編集モード中のビューがあればキャンセルする（スナップショット復元+編集終了）
+  if (thisWeekView && thisWeekView.getEditMode && thisWeekView.getEditMode()) {
+    thisWeekView.cancelEdit();
+  }
+  if (nextWeekView && nextWeekView.getEditMode && nextWeekView.getEditMode()) {
+    nextWeekView.cancelEdit();
+  }
+
   currentScheduleSubTab = subTab;
 
   // サブタブ（チップ）のアクティブ状態を更新
@@ -49,6 +57,11 @@ async function switchScheduleSubTab(subTab) {
     nextWeekView.setSelectedWeekId(null);
     await renderNextWeek();
     window.nextWeekLoaded = true;
+  }
+
+  // FAB の状態を同期（編集モードから脱出したため、FAB を復元）
+  if (typeof updateFab === 'function') {
+    updateFab('schedule');
   }
 }
 
