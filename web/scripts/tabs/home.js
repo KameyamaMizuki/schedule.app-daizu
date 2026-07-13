@@ -1,16 +1,21 @@
 // ========== ホームタブ — コントローラー ==========
 // 依存読み込み順（dashboard.bundle.js内）: routes.js → core/state.js → core/utils.js → home.js(本ファイル)
-//   → home.schedule.js → home.uranau.js → home.wannade.js → home.chirolinfo.js → home.daizu-liff.js
+//   → home.schedule.js → home.chirolinfo.js → home.daizu-liff.js
 //   → dashboard.page.js（homeタブ表示時に initHomeTab() を呼ぶ）
 //
-// このファイルが担う責務:
+// このファイルが担う責務（T16でホーム画面を4ブロック構成に刷新）:
 //   - データ読み込み (loadChirolImagesFromDB / loadHitokotoFromDB)
-//   - 共有状態変数 (homeState / homeExpression / homeHitokotoList)
-//   - 初期化 (initHomeTab / initHomeTimeSelectors / homeSetCurrentTime)
-//   - 今日情報 (updateHomeTodayInfo / homeGetTodayPerson)
-//   - 共有UI (homeHideAllAreas / homeShowMenu / homeSetSpeechText / homeSetRandomDogImage / homeChangeDogImage)
-//   - メニューナビゲーション (homeBackToMenu / homeReturnToMenu / homeShowThinking / updateHomeFab)
-//   - 犬タップ一言 (homeDogTapped)
+//   - 共有状態変数 (homeExpression / homeHitokotoList)
+//   - 初期化 (initHomeTab)
+//   - ①チロル円形写真+吹き出し (updateHomeTodayInfo / homeGetTodayPerson /
+//     homeSetRandomDogImage / homeChangeDogImage / homeSetSpeechText / homeDogTapped)
+//   - ③今週のよていサマリーカード (renderHomeScheduleSummary)
+//   - ④きょうのだいずカード (renderHomeDaizuCard)
+// おさんぽ日和カード（②）は #walkCard のプレースホルダーのみ用意（Task 17で実装）。
+//
+// home.schedule.js / home.chirolinfo.js / home.daizu-liff.js は削除対象ではない
+// （chirolinfo=WANstaタブの写真/一言投稿に機能移行済みで現状呼び出し元なし、
+//   daizu-liff=?mode=daizu の独立LIFFフォームで本ファイルとは無関係に動作）。
 
 // ========== データ読み込み ==========
 
@@ -59,20 +64,16 @@ async function loadHitokotoFromDB() {
 
 // ========== 共有状態変数 ==========
 
-let homeState = 'menu';
 let homeExpression = 'normal';
-// 以下は各機能ファイルからも参照するためここで宣言
-let homeCalendarMonth = new Date();
-let homeSelectedCalendarDate = null;
-let homeScheduleDataCache = {};
-let homeCurrentRecordType = null;
+let homeDogTapBusy = false; // 一言表示中の連打防止
 
 // ========== 初期化 ==========
 
 function initHomeTab() {
-  initHomeTimeSelectors();
   updateHomeTodayInfo();
   homeSetRandomDogImage('normal');
+  renderHomeScheduleSummary();
+  renderHomeDaizuCard();
   // 一言・犬画像は初期表示に不要なので遅延読み込み（Lambdaコールドスタートの競合を避ける）
   setTimeout(function() {
     loadHitokotoFromDB();
@@ -80,34 +81,7 @@ function initHomeTab() {
   }, 800);
 }
 
-function initHomeTimeSelectors() {
-  const hourSelect = document.getElementById('homeRecordHour');
-  const minuteSelect = document.getElementById('homeRecordMinute');
-  if (!hourSelect || hourSelect.options.length > 0) return;
-  for (let h = 0; h < 24; h++) {
-    const opt = document.createElement('option');
-    opt.value = String(h).padStart(2, '0');
-    opt.textContent = `${h}時`;
-    hourSelect.appendChild(opt);
-  }
-  for (let m = 0; m < 60; m += 5) {
-    const opt = document.createElement('option');
-    opt.value = String(m).padStart(2, '0');
-    opt.textContent = `${m}分`;
-    minuteSelect.appendChild(opt);
-  }
-  homeSetCurrentTime();
-}
-
-function homeSetCurrentTime() {
-  const now = new Date();
-  const hourEl = document.getElementById('homeRecordHour');
-  const minEl = document.getElementById('homeRecordMinute');
-  if (hourEl) hourEl.value = String(now.getHours()).padStart(2, '0');
-  if (minEl) minEl.value = String(Math.round(now.getMinutes() / 5) * 5 % 60).padStart(2, '0');
-}
-
-// ========== 今日情報 ==========
+// ========== ①今日情報（チロルの吹き出し） ==========
 
 async function updateHomeTodayInfo() {
   const now = new Date();
@@ -156,7 +130,7 @@ function homeGetTodayPerson(data, dateStr) {
   }).join('と');
 }
 
-// ========== 共有UI — 犬画像・吹き出し ==========
+// ========== ①チロル画像・吹き出し ==========
 
 function homeSetRandomDogImage(expression) {
   const images = homeDogImages[expression];
@@ -187,29 +161,6 @@ function homeChangeDogImage(src, expression) {
   };
 }
 
-function homeHideAllAreas() {
-  ['homeMenuButtons', 'homeProgressContainer', 'homeRecordTypeSelect', 'homeRecordInput',
-   'homeChoiceButtons', 'homeCalendarArea', 'homeScheduleDisplay', 'homeScheduleEdit',
-   'dogSelectArea', 'chirolChoiceArea', 'chirolHitokotoArea', 'chirolImageArea',
-   'homeDaizuYousuArea', 'homeUranauArea', 'homeWannadeArea'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.display = '';
-      el.classList.remove('active');
-    }
-  });
-}
-
-function homeShowMenu() {
-  homeHideAllAreas();
-  const menu = document.getElementById('homeMenuButtons');
-  if (menu) {
-    menu.style.display = '';
-    menu.classList.add('active');
-  }
-}
-
-
 function homeSetSpeechText(text) {
   const bubble = document.getElementById('homeSpeechBubble');
   const textEl = document.getElementById('homeSpeechText');
@@ -222,184 +173,107 @@ function homeSetSpeechText(text) {
   }
 }
 
-// ========== メニューナビゲーション ==========
-
-async function homeShowThinking(minDuration = AppConfig.TIMING.MSG_DISPLAY) {
-  homeHideAllAreas();
-  homeSetRandomDogImage('thinking');
-  homeSetSpeechText('ちょっと待ってくれ...');
-  const prog = document.getElementById('homeProgressContainer');
-  if (prog) {
-    prog.style.display = 'block';
-    prog.classList.add('active');
-    const bar = prog.querySelector('.progress-bar-inner');
-    if (bar) {
-      bar.style.animation = 'none';
-      bar.offsetHeight;
-      bar.style.animation = `progress ${minDuration}ms ease-in-out`;
-    }
-  }
-  return new Promise(r => setTimeout(r, minDuration));
-}
-
-function homeReturnToMenu(delay = AppConfig.TIMING.MSG_DISPLAY) {
-  setTimeout(() => {
-    // 犬画像と吹き出しの表示を復元
-    const dogImg = document.getElementById('homeDogImage');
-    const speechBubble = document.getElementById('homeSpeechBubble');
-    if (dogImg) dogImg.style.display = '';
-    if (speechBubble) speechBubble.style.display = '';
-    homeState = 'menu';
-    homeSetRandomDogImage('normal');
-    const now = new Date();
-    const dayNames = AppConfig.SCHEDULE.DAYS;
-    const todayStr = `${now.getMonth() + 1}/${now.getDate()}(${dayNames[now.getDay()]})`;
-    homeSetSpeechText(`今日は <span class="highlight">${todayStr}</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！`);
-    homeShowMenu();
-    // speechText設定後にupdateHomeTodayInfoを呼ぶ
-    setTimeout(() => updateHomeTodayInfo(), AppConfig.TIMING.DOG_CHANGE);
-  }, delay);
-}
-
-function homeBackToMenu() {
-  homeState = 'menu';
-  // 犬画像と吹き出しの表示を確実に復元（占い/あそぶ等で非表示にされている場合）
-  const dogImg = document.getElementById('homeDogImage');
-  const speechBubble = document.getElementById('homeSpeechBubble');
-  if (dogImg) dogImg.style.display = '';
-  if (speechBubble) speechBubble.style.display = '';
-  homeSetRandomDogImage('normal');
+// 日付+担当の吹き出しテキストに戻す（HTML片を毎回作り直す＝span要素の再取得に対応）
+function homeSpeechDefaultHtml() {
   const now = new Date();
   const dayNames = AppConfig.SCHEDULE.DAYS;
   const todayStr = `${now.getMonth() + 1}/${now.getDate()}(${dayNames[now.getDay()]})`;
-  homeSetSpeechText(`今日は <span class="highlight">${todayStr}</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！`);
-  homeShowMenu();
-  updateHomeFab();
-  // speechText設定後にupdateHomeTodayInfoを呼ぶ
-  setTimeout(() => updateHomeTodayInfo(), 600);
+  return `今日は <span class="highlight" id="homeTodayDate">${todayStr}</span> ！<br>担当は <span class="highlight" id="homeTodayPerson">-</span>だぜ！`;
 }
 
-function homeReturnToInitial() {
-  homeHideAllAreas();
-  homeBackToMenu();
-}
-
-function updateHomeFab() {
-  const fab = document.getElementById('homeFab');
-  if (!fab) return;
-  // メニュー表示時はFAB非表示、それ以外では表示
-  if (homeState === 'menu') {
-    fab.classList.remove('active');
-  } else {
-    fab.classList.add('active');
-  }
-}
-
-// ========== 犬タップ — 一言表示 ==========
-
-// 犬の画像タップで一言表示
+// 犬の画像タップで一言表示 → 3秒後に日付+担当表示へ戻る
 function homeDogTapped() {
-  if (homeState !== 'menu') return; // メニュー表示中のみ有効
-  homeState = 'hitokoto';
-  // 吹き出しのみ変更（画像はそのまま）
+  if (homeDogTapBusy) return;
+  homeDogTapBusy = true;
   const hitokoto = homeHitokotoList[Math.floor(Math.random() * homeHitokotoList.length)];
   homeSetSpeechText(hitokoto);
-  homeHideAllAreas();
-  // 3秒後に画像を変えてホームに戻る
   setTimeout(() => {
-    homeBackToMenu();
+    homeSetSpeechText(homeSpeechDefaultHtml());
+    updateHomeTodayInfo();
+    homeDogTapBusy = false;
   }, AppConfig.TIMING.MSG_DISPLAY);
 }
 
-// ========== だいずのようす ==========
+// ========== ③今週のよていサマリーカード ==========
+// きょう・あすの「担当」を homeGetTodayPerson と同じロジックで要約表示。タップで予定タブへ。
 
-async function homeStartDaizuYousu() {
-  homeState = 'daizu-yousu';
-  homeHideAllAreas();
-
-  // だいず画像に切り替え
-  const daizuImages = homeDaizuImages.normal;
-  const img = daizuImages[Math.floor(Math.random() * daizuImages.length)];
-  homeChangeDogImage(img, 'normal');
-
-  // 吹き出しを確実に表示
-  const bubble = document.getElementById('homeSpeechBubble');
-  const textEl = document.getElementById('homeSpeechText');
-  if (bubble) bubble.style.display = '';
-  if (textEl) textEl.innerHTML = 'わたくしの様子、<br>どうですか？';
-  if (bubble) bubble.classList.remove('fade-out');
-
-  const area = document.getElementById('homeDaizuYousuArea');
-  const input = document.getElementById('homeDaizuYousuInput');
-  const countEl = document.getElementById('homeDaizuYousuCount');
-
-  input.value = '';
-  countEl.textContent = '0';
-
-  area.classList.add('active');
-  updateHomeFab();
-}
-
-async function homeSubmitDaizuYousu() {
-  const input = document.getElementById('homeDaizuYousuInput');
-  const note = input.value.trim();
-  if (!note) {
-    alert('だいずの様子を入力してください');
-    return;
-  }
-
-  const btn = document.getElementById('homeDaizuYousuSubmitBtn');
-  btn.disabled = true;
-  btn.textContent = '保存中...';
+async function renderHomeScheduleSummary() {
+  const body = document.getElementById('homeScheduleSummaryBody');
+  if (!body) return;
 
   const now = new Date();
-  const dateStr = formatDateForApi(now);
-  const weekId = getWeekId(now);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const todayStr = formatDateForApi(now);
+  const tomorrowStr = formatDateForApi(tomorrow);
+  const todayWeekId = getWeekId(now);
+  const tomorrowWeekId = getWeekId(tomorrow);
+  const sameWeek = todayWeekId === tomorrowWeekId;
+
+  let todayData = null;
+  let tomorrowData = null;
+
+  const paint = function() {
+    const todayPerson = todayData ? homeGetTodayPerson(todayData, todayStr) : null;
+    const tomorrowPerson = tomorrowData ? homeGetTodayPerson(tomorrowData, tomorrowStr) : null;
+    body.innerHTML =
+      '<div class="home-summary-row"><span class="home-summary-label">きょう</span><span class="home-summary-value">' + escapeHtml(todayPerson || '未定') + '</span></div>' +
+      '<div class="home-summary-row"><span class="home-summary-label">あす</span><span class="home-summary-value">' + escapeHtml(tomorrowPerson || '未定') + '</span></div>';
+  };
 
   try {
-    // 既存のだいずデータを取得してnotesをマージ
-    let existingNotes = {};
-    const data = await Api.getWeek(weekId, null, { force: true });
-    const daizuUser = data.users ? data.users.find(u => u.userId === 'daizu-status') : null;
-    if (daizuUser && daizuUser.notes) {
-      existingNotes = { ...daizuUser.notes };
-    }
-    existingNotes[dateStr] = note;
-
-    const saveRes = await submitScheduleData({
-      weekId: weekId,
-      userId: 'daizu-status',
-      displayName: 'だいず',
-      slots: {},
-      notes: existingNotes,
-      skipNotification: true
+    todayData = await Api.getWeek(todayWeekId, function(fresh) {
+      todayData = fresh;
+      if (sameWeek) tomorrowData = fresh;
+      paint();
     });
-
-    if (saveRes.ok) {
-      input.value = '';
-      var countEl = document.getElementById('homeDaizuYousuCount');
-      if (countEl) countEl.textContent = '0';
-      homeSetSpeechText('ありがとうございます！<br>記録しましたよ！');
-      homeSetRandomDogImage('happy');
-      homeHideAllAreas();
-      showToast('だいずの様子を保存しました');
-      homeReturnToMenu(AppConfig.TIMING.MSG_DISPLAY);
+    if (sameWeek) {
+      tomorrowData = todayData;
     } else {
-      showToast('保存に失敗しました（サーバーエラー）');
+      tomorrowData = await Api.getWeek(tomorrowWeekId, function(fresh) {
+        tomorrowData = fresh;
+        paint();
+      });
     }
+    paint();
   } catch (e) {
-    console.error('Failed to save daizu yousu:', e);
-    showToast('保存に失敗しました: ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '保存する';
+    console.error('Failed to load home schedule summary:', e);
+    body.innerHTML = '<div class="home-summary-row"><span class="home-summary-value">読み込みに失敗しました</span></div>';
   }
 }
 
-function homeDaizuYousuCancel() {
-  homeState = 'menu';
-  homeSetRandomDogImage('normal');
-  homeSetSpeechText('また教えて下さい！');
-  homeHideAllAreas();
-  homeShowMenu();
+// ========== ④きょうのだいずカード ==========
+// 最新YOUSU 1件のサムネ+時刻+冒頭を表示。タップで様子タブへ。
+
+async function renderHomeDaizuCard() {
+  const body = document.getElementById('homeDaizuCardBody');
+  if (!body) return;
+
+  const paint = function(data) {
+    const posts = (data && data.posts) || [];
+    if (posts.length === 0) {
+      body.innerHTML = '<div class="home-daizu-empty">まだ記録がありません</div>';
+      return;
+    }
+    const post = posts[0];
+    const postDate = post.createdAt ? new Date(post.createdAt) : null;
+    const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
+    const thumbHtml = post.imageUrl
+      ? '<img class="home-daizu-thumb" src="' + escapeHtml(post.imageUrl) + '" alt="だいず" onerror="this.style.display=\'none\'">'
+      : '';
+    body.innerHTML =
+      '<div class="home-daizu-entry">' + thumbHtml +
+      '<div class="home-daizu-entry-text">' +
+      '<span class="home-daizu-entry-time">' + escapeHtml(timeStr) + '</span>' +
+      '<p class="home-daizu-entry-body">' + escapeHtml(post.text || '') + '</p>' +
+      '</div></div>';
+  };
+
+  try {
+    const data = await Api.getPosts('?type=YOUSU&limit=1', paint);
+    paint(data);
+  } catch (e) {
+    console.error('Failed to load home daizu card:', e);
+    body.innerHTML = '<div class="home-daizu-empty">読み込みに失敗しました</div>';
+  }
 }

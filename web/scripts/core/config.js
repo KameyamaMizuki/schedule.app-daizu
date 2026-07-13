@@ -12,17 +12,9 @@ const AppConfig = Object.freeze({
 
   /** タイムアウト・遅延 (ms) */
   TIMING: {
-    MSG_DISPLAY: 3000,  // 結果画面の最小表示時間
+    MSG_DISPLAY: 3000,  // 結果画面・吹き出し一言の最小表示時間
     DOG_FADE:     500,  // 犬画像フェードアウト
     DOG_CHANGE:   600,  // 犬画像切り替え待機
-    INTERVAL:    1000,  // ゲームタイマー刻み
-  },
-
-  /** なでなでゲーム設定 */
-  WANNADE: {
-    GAME_SECONDS:       10,  // 1プレイ秒数
-    PHOTO_CHANGE_EVERY: 20,  // タップ何回ごとに画像切替
-    RANKING_TOP:         3,  // 表示ランキング件数
   },
 
   /** スケジュール時間帯（schedule.js / schedule-calendar.js / home.js 共通） */
@@ -59,7 +51,6 @@ const AppConfig = Object.freeze({
     SCHEDULE_SUBMIT: '/schedule/submit',
     POSTS:           '/posts',
     CHIROL_UPLOAD_URL: '/chirol/upload-url',
-    WANNADE:         '/wannade',
     ACCOUNT:         '/account',
   },
 
@@ -70,24 +61,6 @@ const AppConfig = Object.freeze({
     WANSTA_UPLOAD: { maxWidth:  800, quality: 0.85 },
     AVATAR_PHOTO:  { maxWidth:  200, quality: 0.80 },
     CROP_RESULT:   { maxWidth:  400, quality: 0.90 },
-  },
-
-  /** だいず占い グラデーション・色（home.uranau.js） */
-  FORTUNE: {
-    /** 運勢7段階の結果カード背景グラデーション */
-    BG: {
-      '大吉': 'linear-gradient(135deg,#ffd700,#ffeb3b)',
-      '中吉': 'linear-gradient(135deg,#ff9800,#ffb74d)',
-      '吉':   'linear-gradient(135deg,#4caf50,#81c784)',
-      '小吉': 'linear-gradient(135deg,#8bc34a,#aed581)',
-      '末吉': 'linear-gradient(135deg,#9e9e9e,#bdbdbd)',
-      '凶':   'linear-gradient(135deg,#9c27b0,#ba68c8)',
-      '大凶': 'linear-gradient(135deg,#673ab7,#9575cd)',
-    },
-    /** ローディングカード背景 */
-    LOADING_BG:  'linear-gradient(135deg,#FBF1D8,#F0C75E)',
-    /** ローディングプログレスバー */
-    LOADING_BAR: 'linear-gradient(90deg,#F0C75E,#C99A33)',
   },
 
   /** 犬画像パス（wansta.js / wansta-social.js / home.js 共通） */

@@ -302,7 +302,6 @@ function prewarmAppData() {
       Api.getChirolImages().catch(noop);
       Api.getHitokoto('chirol').catch(noop);
       Api.getHitokoto('daizu').catch(noop);
-      Api.get(AppConfig.API.WANNADE).catch(noop);
       Api.getAccounts().catch(noop);
     } catch (e) { /* 無視 */ }
   }, 2000);
