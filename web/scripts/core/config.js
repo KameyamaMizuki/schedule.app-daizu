@@ -69,6 +69,14 @@ const AppConfig = Object.freeze({
     DAIZU_AVATAR:  'images/dog/daizu/normal/IMG_0734.jpg',
   },
 
+  /** おさんぽ日和(Open-Meteo) — 東京都江東区東雲1丁目 */
+  WALK: {
+    LAT: 35.638, LON: 139.801,
+    HOT_LIMIT: 28,      // これ以上の気温は散歩非推奨(°C)
+    RAIN_LIMIT: 50,     // 降水確率しきい値(%)
+    CACHE_MIN: 60,      // キャッシュ分
+  },
+
   /** カレンダー色（schedule-calendar.js） */
   CALENDAR_COLORS: {
     PRIMARY:        '#3F6E5B',  // ナビゲーションボタン・選択日・ヘッダーボーダー

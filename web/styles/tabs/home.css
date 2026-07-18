@@ -1,5 +1,5 @@
 /* ========== ホームタブ用CSS（T16: チロル主役の4ブロック構成） ==========
-   構成: ①ヒーロー(チロル円形写真+吹き出し) ②おさんぽ日和(#walkCard, Task17実装)
+   構成: ①ヒーロー(チロル円形写真+吹き出し) ②おさんぽ日和(#walkCard)
         ③今週のよていサマリーカード ④きょうのだいずカード
    うらなう/あそぶ/わんなでランキングは削除済み（design doc §7）。 */
 #homeContent.content{padding:16px 12px 28px;background:var(--c-bg)}
@@ -19,8 +19,14 @@
 .speech-bubble .highlight{color:var(--c-green);font-weight:700}
 .speech-bubble.fade-out{opacity:0}
 
-/* ===== ②おさんぽ日和カード（プレースホルダー。Task17で実装） ===== */
-.walk-card{background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card);min-height:44px}
+/* ===== ②おさんぽ日和カード（Task17実装。モック: .superpowers/brainstorm/1619-1783078352/content/home-final.html） ===== */
+.walk-card{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(135deg,var(--c-accent-soft),var(--c-surface));border-radius:var(--radius-card);box-shadow:var(--shadow-card);min-height:44px}
+.walk-icon{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:var(--c-surface);display:flex;align-items:center;justify-content:center}
+.walk-icon i{font-size:24px;color:var(--c-accent)}
+.walk-body{flex:1;min-width:0}
+.walk-label{font-size:11.5px;font-weight:700;color:var(--c-accent);letter-spacing:0.04em}
+.walk-title{font-size:15.5px;font-weight:700;color:var(--c-ink);margin-top:2px}
+.walk-sub{font-size:12.5px;color:var(--c-ink-soft);margin-top:2px}
 
 /* ===== ③今週のよてい／④きょうのだいず：共通カードボタン ===== */
 .home-summary-card,.home-daizu-card{display:block;width:100%;text-align:left;background:var(--c-surface);border:none;border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px 16px;cursor:pointer;font-family:var(--font-body);min-height:44px;transition:transform 0.15s ease}

@@ -11,7 +11,7 @@
 //     homeSetRandomDogImage / homeChangeDogImage / homeSetSpeechText / homeDogTapped)
 //   - ③今週のよていサマリーカード (renderHomeScheduleSummary)
 //   - ④きょうのだいずカード (renderHomeDaizuCard)
-// おさんぽ日和カード（②）は #walkCard のプレースホルダーのみ用意（Task 17で実装）。
+// おさんぽ日和カード（②）は home.walk.js の renderWalkCard() が #walkCard に描画する（Task 17実装）。
 //
 // home.schedule.js / home.chirolinfo.js / home.daizu-liff.js は削除対象ではない
 // （chirolinfo=WANstaタブの写真/一言投稿に機能移行済みで現状呼び出し元なし、
@@ -72,6 +72,7 @@ let homeDogTapBusy = false; // 一言表示中の連打防止
 function initHomeTab() {
   updateHomeTodayInfo();
   homeSetRandomDogImage('normal');
+  if (typeof renderWalkCard === 'function') renderWalkCard(); // おさんぽ日和(Task17, home.walk.js) — 失敗時は静かに非表示なのでawait不要
   renderHomeScheduleSummary();
   renderHomeDaizuCard();
   // 一言・犬画像は初期表示に不要なので遅延読み込み（Lambdaコールドスタートの競合を避ける）

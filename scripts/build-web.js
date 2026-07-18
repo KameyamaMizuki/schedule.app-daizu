@@ -32,6 +32,7 @@ const DASHBOARD_JS = [
   'scripts/ui/crop-square.js',
   'scripts/ui/birthday.js',
   'scripts/tabs/home.js',
+  'scripts/tabs/home.walk.js',
   'scripts/tabs/home.schedule.js',
   'scripts/tabs/home.chirolinfo.js',
   'scripts/tabs/home.daizu-liff.js',
