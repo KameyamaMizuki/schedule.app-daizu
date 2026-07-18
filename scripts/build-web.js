@@ -33,8 +33,6 @@ const DASHBOARD_JS = [
   'scripts/ui/birthday.js',
   'scripts/tabs/home.js',
   'scripts/tabs/home.walk.js',
-  'scripts/tabs/home.schedule.js',
-  'scripts/tabs/home.chirolinfo.js',
   'scripts/tabs/home.daizu-liff.js',
   'scripts/tabs/schedule.js',
   'scripts/tabs/schedule-calendar.js',
