@@ -1,9 +1,8 @@
 // ========== ホームタブ — コントローラー ==========
 // 依存読み込み順（dashboard.bundle.js内）: routes.js → core/state.js → core/utils.js → home.js(本ファイル)
-//   → home.schedule.js → home.chirolinfo.js → home.daizu-liff.js
-//   → dashboard.page.js（homeタブ表示時に initHomeTab() を呼ぶ）
+//   → home.walk.js → home.daizu-liff.js → dashboard.page.js（homeタブ表示時に initHomeTab() を呼ぶ）
 //
-// このファイルが担う責務（T16でホーム画面を4ブロック構成に刷新）:
+// このファイルが担う責務（ホーム画面は4ブロック構成）:
 //   - データ読み込み (loadChirolImagesFromDB / loadHitokotoFromDB)
 //   - 共有状態変数 (homeExpression / homeHitokotoList)
 //   - 初期化 (initHomeTab)
@@ -11,11 +10,8 @@
 //     homeSetRandomDogImage / homeChangeDogImage / homeSetSpeechText / homeDogTapped)
 //   - ③今週のよていサマリーカード (renderHomeScheduleSummary)
 //   - ④きょうのだいずカード (renderHomeDaizuCard)
-// おさんぽ日和カード（②）は home.walk.js の renderWalkCard() が #walkCard に描画する（Task 17実装）。
-//
-// home.schedule.js / home.chirolinfo.js / home.daizu-liff.js は削除対象ではない
-// （chirolinfo=WANstaタブの写真/一言投稿に機能移行済みで現状呼び出し元なし、
-//   daizu-liff=?mode=daizu の独立LIFFフォームで本ファイルとは無関係に動作）。
+// おさんぽ日和カード（②）は home.walk.js の renderWalkCard() が #walkCard に描画する。
+// home.daizu-liff.js は ?mode=daizu の独立LIFFフォームで本ファイルとは無関係に動作する。
 
 // ========== データ読み込み ==========
 
