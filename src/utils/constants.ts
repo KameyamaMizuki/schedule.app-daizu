@@ -117,28 +117,32 @@ export const TEXT_LIMITS = {
 } as const;
 
 // ========== Flex Message カラー ==========
+// web UI と同一の識別色（深緑#3F6E5B / アクセント橙#E8A13A / 茶橙#B0713A /
+// 淡緑#6FA08B / 本文インク#2F3B33 / 補足グレー#97A09D）に統一。
 
 export const FLEX_COLORS = {
-  /** スケジュール・メニューヘッダー */
-  SCHEDULE: '#667eea',
+  /** スケジュール・メニューヘッダー、今日の予定の在宅時間文字色 */
+  SCHEDULE: '#3F6E5B',
   /** リマインダーヘッダー */
-  REMINDER: '#ff9800',
+  REMINDER: '#E8A13A',
   /** だいずステータスヘッダー */
-  DAIZU: '#f57f17',
+  DAIZU: '#6FA08B',
   /** 成功（送信完了など） */
-  SUCCESS: '#28a745',
+  SUCCESS: '#3F6E5B',
   /** エラー */
-  ERROR: '#dc3545',
-  /** ユーザーID表示 */
-  INFO: '#6c757d',
+  ERROR: '#C96A5A',
+  /** ユーザーID表示・案内系ヘッダー */
+  INFO: '#97A09D',
   /** 管理者メニュー */
-  ADMIN: '#495057',
+  ADMIN: '#2F3B33',
   /** 日記通知ヘッダー */
-  DIARY: '#8d6e63',
-  /** サイトボタン */
-  SITE_BUTTON: '#81c784',
+  DIARY: '#B0713A',
+  /** サイトボタン（CTA強調） */
+  SITE_BUTTON: '#E8A13A',
   /** 本文テキスト */
-  BODY_TEXT: '#555555',
+  BODY_TEXT: '#2F3B33',
+  /** 補足・お休み・プレビュー等の淡色テキスト */
+  MUTED: '#97A09D',
 } as const;
 
 // ========== スケジュール時間帯 ==========

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { ScheduleSubmitRequest } from '../types';
 import { saveScheduleInput, getScheduleInput, getSystemConfig } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
-import { pushFlexMessage, buildFlexBubble, getCommonQuickReply } from '../utils/line';
+import { pushFlexMessage, buildNotifyFlexBubble, getCommonQuickReply } from '../utils/line';
 import { withHandler, ok, err } from '../utils/handler';
 import { getDashboardUrl, getHomeUrl, FLEX_COLORS, DB_KEYS } from '../utils/constants';
 import { format } from 'date-fns';
@@ -123,10 +123,11 @@ export const handler = withHandler(async (event) => {
 
           if (noteText) {
             const calendarUrl = getDashboardUrl({ tab: 'schedule', subTab: 'calendar' });
-            const flex = buildFlexBubble(
+            const flex = buildNotifyFlexBubble(
               `🐕 だいずの様子 ${month}/${day}(${dayOfWeek})`,
               FLEX_COLORS.DAIZU,
-              [noteText],
+              'だいずの記録が更新されました',
+              noteText,
               [{ label: 'カレンダーを見る', uri: calendarUrl }]
             );
             const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
@@ -136,10 +137,11 @@ export const handler = withHandler(async (event) => {
           // スケジュール更新通知（既存ロジック）
           const dashboardUrl = getDashboardUrl({ weekId, tab: 'schedule' });
           const notifier = parsed.data.notifierName || displayName;
-          const flex = buildFlexBubble(
+          const flex = buildNotifyFlexBubble(
             '📅 スケジュール更新',
             FLEX_COLORS.SCHEDULE,
-            [`${notifier}さんが来週の予定を更新しました。`],
+            `${notifier}さんが来週の予定を更新しました。`,
+            undefined,
             [
               { label: '確認する', uri: dashboardUrl },
               { label: '今日の予定', text: '今日' }

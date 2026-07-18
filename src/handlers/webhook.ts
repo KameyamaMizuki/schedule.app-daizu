@@ -8,7 +8,7 @@ import { createHmac } from 'crypto';
 import { validateSignature } from '../utils/signature';
 import { getLineCredentials, LineCredentials } from '../utils/secrets';
 import { getSystemConfig, saveSystemConfig, getAllScheduleInputs, getScheduleInput } from '../utils/dynamodb';
-import { pushMessage, replyFlexMessage, buildFlexBubble, buildMenuFlexBubble, getCommonQuickReply } from '../utils/line';
+import { pushMessage, replyFlexMessage, buildFlexBubble, buildMenuFlexBubble, buildTodayScheduleFlexBubble, getCommonQuickReply, ScheduleRow } from '../utils/line';
 import { getCurrentWeekId, getDayOfWeekJa } from '../utils/weekId';
 import { getDashboardUrl, getHomeUrl, FLEX_COLORS, TIME_SLOT_LABELS, TIME_SLOTS, DB_KEYS } from '../utils/constants';
 import { format } from 'date-fns';
@@ -243,47 +243,38 @@ async function buildTodayScheduleFlex(): Promise<Record<string, unknown>> {
   const month = jstNow.getMonth() + 1;
   const day = jstNow.getDate();
   const dashboardUrl = getDashboardUrl({ weekId });
+  const dateLabel = `${month}/${day}(${dayOfWeek})`;
 
   const inputs = await getAllScheduleInputs(weekId);
   const memberInputs = inputs.filter(i => i.userId !== DB_KEYS.DAIZU_STATUS_USER);
 
   if (memberInputs.length === 0) {
-    return buildFlexBubble(
-      `📅 今日の予定 ${month}/${day}(${dayOfWeek})`,
-      FLEX_COLORS.SCHEDULE,
-      ['まだ予定が登録されていません。'],
-      [{ label: '予定を登録する', uri: dashboardUrl }]
-    );
+    return buildTodayScheduleFlexBubble(dateLabel, [], [{ label: '予定を登録する', uri: dashboardUrl }]);
   }
 
-  const bodyTexts: string[] = [];
-  for (const input of memberInputs) {
+  const rows: ScheduleRow[] = memberInputs.map(input => {
     const slots = input.slots || {};
     const timeSlots = TIME_SLOTS;
-    const isAllDay = slots[`${todayStr}:allday`];
+    const isAllDay = !!slots[`${todayStr}:allday`];
     const activeSlots = timeSlots.filter(s => s !== 'allday' && slots[`${todayStr}:${s}`]);
 
-    let line: string;
+    let timeLabel: string;
+    let isOff: boolean;
     if (isAllDay) {
-      line = `◯ ${input.displayName}: 終日`;
+      timeLabel = '終日';
+      isOff = false;
     } else if (activeSlots.length > 0) {
-      const labels = activeSlots.map(s => TIME_SLOT_LABELS[s]);
-      line = `◯ ${input.displayName}: ${labels.join(', ')}`;
+      timeLabel = activeSlots.map(s => TIME_SLOT_LABELS[s]).join('・');
+      isOff = false;
     } else {
-      line = `✕ ${input.displayName}: お休み`;
+      timeLabel = 'お休み';
+      isOff = true;
     }
 
-    if (input.notes?.[todayStr]) {
-      line += ` (${input.notes[todayStr]})`;
-    }
-    bodyTexts.push(line);
-  }
+    const note = input.notes?.[todayStr];
+    return { name: input.displayName, timeLabel, isOff, ...(note ? { note } : {}) };
+  });
 
-  return buildFlexBubble(
-    `📅 今日の予定 ${month}/${day}(${dayOfWeek})`,
-    FLEX_COLORS.SCHEDULE,
-    bodyTexts,
-    [{ label: '詳細を見る', uri: dashboardUrl }]
-  );
+  return buildTodayScheduleFlexBubble(dateLabel, rows, [{ label: '詳細を見る', uri: dashboardUrl }]);
 }
 

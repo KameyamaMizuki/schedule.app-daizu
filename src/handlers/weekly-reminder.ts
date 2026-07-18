@@ -7,8 +7,8 @@ import { Handler } from 'aws-lambda';
 import { getSystemConfig } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
 import { generateNextWeekId, getWeekInfo } from '../utils/weekId';
-import { pushFlexMessage, buildFlexBubble, getCommonQuickReply } from '../utils/line';
-import { getDashboardUrl, FLEX_COLORS } from '../utils/constants';
+import { pushFlexMessage, buildReminderFlexBubble, getCommonQuickReply } from '../utils/line';
+import { getDashboardUrl } from '../utils/constants';
 
 export const handler: Handler = async () => {
   const config = await getSystemConfig();
@@ -29,18 +29,15 @@ export const handler: Handler = async () => {
   const endDay = endDate.getDate();
 
   const dashboardUrl = getDashboardUrl({ weekId, tab: 'schedule' });
+  const weekRangeLabel = `${startMonth}/${startDay}(月)〜${endMonth}/${endDay}(日)`;
 
-  const flex = buildFlexBubble(
-    '🔔 リマインド',
-    FLEX_COLORS.REMINDER,
-    [
-      `来週（${startMonth}/${startDay}(月)〜${endMonth}/${endDay}(日)）の予定入力をお忘れなく！`,
-      'まだの方は早めにお願いします🙏'
-    ],
+  const flex = buildReminderFlexBubble(
+    weekRangeLabel,
+    ['来週の予定入力をお忘れなく！', 'まだの方は早めにお願いします🙏'],
     [{ label: '予定を入力する', uri: dashboardUrl }]
   );
 
   const quickReply = getCommonQuickReply(dashboardUrl);
-  await pushFlexMessage(config.groupId, 'リマインド', flex, credentials.channelAccessToken, quickReply);
+  await pushFlexMessage(config.groupId, `来週(${weekRangeLabel})の予定入力リマインド`, flex, credentials.channelAccessToken, quickReply);
   console.log('Friday reminder sent for week:', weekId);
 }

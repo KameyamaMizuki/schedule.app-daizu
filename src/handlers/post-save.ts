@@ -20,7 +20,7 @@ import {
   getSystemConfig
 } from '../utils/dynamodb';
 import { getLineCredentials } from '../utils/secrets';
-import { pushFlexMessage, buildFlexBubble, getCommonQuickReply } from '../utils/line';
+import { pushFlexMessage, buildNotifyFlexBubble, getCommonQuickReply } from '../utils/line';
 import { withHandler, ok, err } from '../utils/handler';
 import { TEXT_LIMITS, TTL_POST_DAYS, getTTLFromNow, getDashboardUrl, getHomeUrl, FLEX_COLORS } from '../utils/constants';
 
@@ -41,10 +41,11 @@ async function sendNotify(ev: NotifyEvent): Promise<void> {
         const notifyTitle = title || text?.match(/\[TITLE:([^\]]+)\]/)?.[1] || '(タイトルなし)';
         const preview = notifyTitle;
 
-        const flex = buildFlexBubble(
+        const flex = buildNotifyFlexBubble(
           '📔 ダイ日記が投稿されました',
           FLEX_COLORS.DIARY,
-          [`${displayName}さんが日記を書きました`, preview],
+          `${displayName}さんが日記を書きました`,
+          preview,
           [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=diary` }]
         );
         const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
@@ -62,10 +63,11 @@ async function sendNotify(ev: NotifyEvent): Promise<void> {
       if (config?.groupId) {
         const src = text || '';
         const preview = src.length > 50 ? src.substring(0, 50) + '...' : src;
-        const flex = buildFlexBubble(
+        const flex = buildNotifyFlexBubble(
           '🐕 だいずの様子が更新されました',
           FLEX_COLORS.DAIZU,
-          [`${displayName}さんが様子を記録しました`, preview],
+          `${displayName}さんが様子を記録しました`,
+          preview,
           [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=yousu` }]
         );
         const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
