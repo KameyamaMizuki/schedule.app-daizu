@@ -158,7 +158,7 @@ export function buildNotifyFlexBubble(
   };
 }
 
-/** 「今日の予定」1メンバー分の行Boxを生成（baseline: 名前bold flex2 / 時間右寄せflex3、備考は下にxs） */
+/** 「今日の予定」1メンバー分の行Boxを生成（horizontal: 名前bold flex2折返し / 時間右寄せflex3折返し、備考は下にxs） */
 function buildScheduleRowBox(row: ScheduleRow): Record<string, unknown> {
   const nameText = {
     type: 'text',
@@ -166,7 +166,8 @@ function buildScheduleRowBox(row: ScheduleRow): Record<string, unknown> {
     weight: 'bold',
     size: 'sm',
     color: FLEX_COLORS.BODY_TEXT,
-    flex: 2
+    flex: 2,
+    wrap: true
   };
 
   const timeText: Record<string, unknown> = {
@@ -175,14 +176,15 @@ function buildScheduleRowBox(row: ScheduleRow): Record<string, unknown> {
     size: 'sm',
     color: row.isOff ? FLEX_COLORS.MUTED : FLEX_COLORS.SCHEDULE,
     align: 'end',
-    flex: 3
+    flex: 3,
+    wrap: true
   };
   if (!row.isOff) {
     timeText.weight = 'bold';
   }
 
   const rowContents: Record<string, unknown>[] = [
-    { type: 'box', layout: 'baseline', contents: [nameText, timeText], spacing: 'sm' }
+    { type: 'box', layout: 'horizontal', contents: [nameText, timeText], spacing: 'sm' }
   ];
   if (row.note) {
     rowContents.push({ type: 'text', text: row.note, size: 'xs', color: FLEX_COLORS.MUTED, wrap: true, margin: 'xs' });

@@ -143,7 +143,7 @@ describe('buildTodayScheduleFlexBubble', () => {
     expect(bubble.header.contents[1].text).toContain('予定');
   });
 
-  it('終日は緑文字・お休みはグレー文字で右寄せ表示される（baseline行、flex比2:3）', () => {
+  it('終日は緑文字・お休みはグレー文字で右寄せ表示される（horizontal行、flex比2:3、折返し対応）', () => {
     const rows: ScheduleRow[] = [
       { name: 'パパ', timeLabel: '終日', isOff: false },
       { name: 'ママ', timeLabel: 'お休み', isOff: true }
@@ -152,15 +152,15 @@ describe('buildTodayScheduleFlexBubble', () => {
     const rowBoxes = bubble.body.contents;
     expect(rowBoxes).toHaveLength(2);
 
-    const papaBaseline = rowBoxes[0].contents[0];
-    expect(papaBaseline.layout).toBe('baseline');
-    const [papaName, papaTime] = papaBaseline.contents;
-    expect(papaName).toMatchObject({ text: 'パパ', weight: 'bold', flex: 2 });
-    expect(papaTime).toMatchObject({ text: '終日', color: FLEX_COLORS.SCHEDULE, weight: 'bold', flex: 3, align: 'end' });
+    const papaHorizontal = rowBoxes[0].contents[0];
+    expect(papaHorizontal.layout).toBe('horizontal');
+    const [papaName, papaTime] = papaHorizontal.contents;
+    expect(papaName).toMatchObject({ text: 'パパ', weight: 'bold', flex: 2, wrap: true });
+    expect(papaTime).toMatchObject({ text: '終日', color: FLEX_COLORS.SCHEDULE, weight: 'bold', flex: 3, align: 'end', wrap: true });
 
-    const mamaBaseline = rowBoxes[1].contents[0];
-    const [, mamaTime] = mamaBaseline.contents;
-    expect(mamaTime).toMatchObject({ text: 'お休み', color: FLEX_COLORS.MUTED, align: 'end' });
+    const mamaHorizontal = rowBoxes[1].contents[0];
+    const [, mamaTime] = mamaHorizontal.contents;
+    expect(mamaTime).toMatchObject({ text: 'お休み', color: FLEX_COLORS.MUTED, align: 'end', wrap: true });
     expect(mamaTime.weight).toBeUndefined();
   });
 
@@ -169,6 +169,16 @@ describe('buildTodayScheduleFlexBubble', () => {
     const bubble: any = buildTodayScheduleFlexBubble('7/14(火)', rows, []);
     const timeText = bubble.body.contents[0].contents[0].contents[1];
     expect(timeText.text).toBe('9時〜・17時〜');
+  });
+
+  it('4スロット+長い名前のときも行テキストが折返し対応', () => {
+    const rows: ScheduleRow[] = [{ name: '田中太郎おじいちゃん', timeLabel: '9時〜・17時〜・21時〜・24時〜', isOff: false }];
+    const bubble: any = buildTodayScheduleFlexBubble('7/14(火)', rows, []);
+    const rowBox = bubble.body.contents[0].contents[0];
+    expect(rowBox.layout).toBe('horizontal');
+    const [nameText, timeText] = rowBox.contents;
+    expect(nameText).toMatchObject({ text: '田中太郎おじいちゃん', weight: 'bold', flex: 2, wrap: true });
+    expect(timeText).toMatchObject({ text: '9時〜・17時〜・21時〜・24時〜', weight: 'bold', flex: 3, align: 'end', wrap: true });
   });
 
   it('備考があれば行の下にxsグレーで折返し表示される', () => {
