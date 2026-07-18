@@ -161,7 +161,7 @@ function homeChangeDogImage(src, expression) {
   };
 }
 
-function homeSetSpeechText(text) {
+function homeSetSpeechText(text, onDone) {
   const bubble = document.getElementById('homeSpeechBubble');
   const textEl = document.getElementById('homeSpeechText');
   if (bubble && textEl) {
@@ -169,6 +169,7 @@ function homeSetSpeechText(text) {
     setTimeout(() => {
       textEl.innerHTML = text;
       bubble.classList.remove('fade-out');
+      if (onDone) onDone();
     }, AppConfig.TIMING.DOG_FADE);
   }
 }
@@ -188,8 +189,7 @@ function homeDogTapped() {
   const hitokoto = homeHitokotoList[Math.floor(Math.random() * homeHitokotoList.length)];
   homeSetSpeechText(hitokoto);
   setTimeout(() => {
-    homeSetSpeechText(homeSpeechDefaultHtml());
-    updateHomeTodayInfo();
+    homeSetSpeechText(homeSpeechDefaultHtml(), updateHomeTodayInfo);
     homeDogTapBusy = false;
   }, AppConfig.TIMING.MSG_DISPLAY);
 }
