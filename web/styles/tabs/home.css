@@ -1,9 +1,16 @@
-/* ========== ホームタブ用CSS（T16: チロル主役の4ブロック構成） ==========
-   構成: ①ヒーロー(チロル円形写真+吹き出し) ②おさんぽ日和(#walkCard)
-        ③今週のよていサマリーカード ④きょうのだいずカード
+/* ========== ホームタブ用CSS（T16: チロル主役の4ブロック構成 + T22: お知らせティッカー） ==========
+   構成: ⓪お知らせティッカー(#homeTicker, Task22) ①ヒーロー(チロル円形写真+吹き出し)
+        ②おさんぽ日和(#walkCard) ③今週のよていサマリーカード ④きょうのだいずカード
    うらなう/あそぶ/わんなでランキングは削除済み（design doc §7）。 */
 #homeContent.content{padding:16px 12px 28px;background:var(--c-bg)}
 .home-container{display:flex;flex-direction:column;gap:14px;max-width:400px;margin:0 auto}
+
+/* ===== ⓪お知らせティッカー（Task22: 直近3日以内の更新。0件時はdisplay:noneでgapにも乗らず高さ0） ===== */
+.home-ticker{display:flex;align-items:center;gap:8px;width:100%;height:34px;flex-shrink:0;padding:0 14px;background:var(--c-green-soft);border:none;border-radius:17px;font-family:var(--font-body);text-align:left;cursor:pointer;overflow:hidden}
+.home-ticker-icon{flex-shrink:0;font-size:14px;color:var(--c-green)}
+.home-ticker-text{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--c-ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.4s ease}
+.home-ticker-text.fade-out{opacity:0}
+@media (prefers-reduced-motion: reduce){.home-ticker-text{transition:none}}
 
 /* ===== ①ヒーロー：チロルの円形写真＋吹き出し ===== */
 .home-hero{display:flex;flex-direction:column;align-items:center;padding:22px 16px 18px;background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}

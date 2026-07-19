@@ -29,6 +29,12 @@
   <!-- ホームタブ -->
   <div id="homeContent" class="content">
     <div class="home-container">
+      <!-- ⓪お知らせティッカー（Task22: 直近3日以内の更新。0件なら非表示＝高さ0） -->
+      <button type="button" id="homeTicker" class="home-ticker" style="display:none">
+        <i class="ph-bold ph-bell home-ticker-icon"></i>
+        <span id="homeTickerText" class="home-ticker-text"></span>
+      </button>
+
       <!-- ①チロルの円形写真＋吹き出し（日付と担当） -->
       <div class="home-hero reveal">
         <div class="dog-area">

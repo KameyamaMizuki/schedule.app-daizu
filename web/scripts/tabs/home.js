@@ -71,6 +71,7 @@ function initHomeTab() {
   if (typeof renderWalkCard === 'function') renderWalkCard(); // おさんぽ日和(Task17, home.walk.js) — 失敗時は静かに非表示なのでawait不要
   renderHomeScheduleSummary();
   renderHomeDaizuCard();
+  if (typeof renderHomeTicker === 'function') renderHomeTicker(); // お知らせティッカー(Task22, home.ticker.js) — 失敗時は静かに非表示なのでawait不要
   // 一言・犬画像は初期表示に不要なので遅延読み込み（Lambdaコールドスタートの競合を避ける）
   setTimeout(function() {
     loadHitokotoFromDB();
