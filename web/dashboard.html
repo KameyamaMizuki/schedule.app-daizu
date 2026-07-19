@@ -39,8 +39,8 @@
         </div>
       </div>
 
-      <!-- ②おさんぽ日和カード（Task 17で実装。位置だけ確保） -->
-      <div id="walkCard" class="walk-card" style="display:none"></div>
+      <!-- ②おさんぽ日和カード（Task 17: カード本体 / Task 21: タップで時間帯別グラフ） -->
+      <button type="button" id="walkCard" class="walk-card" style="display:none"></button>
 
       <!-- ③今週のよていサマリーカード -->
       <button type="button" id="homeScheduleSummaryCard" class="home-summary-card reveal" onclick="switchTab('schedule')">
@@ -233,6 +233,11 @@
       <button class="wansta-hitokoto-submit" id="wanstaHitokotoSubmitBtn" onclick="wanstaSubmitHitokoto()">追加する</button>
       <button class="back-btn" onclick="wanstaCloseHitokotoModal()" style="margin-top:8px">キャンセル</button>
     </div>
+  </div>
+
+  <!-- おさんぽ日和 詳細グラフモーダル（Task21） -->
+  <div id="walkDetailModal" class="walk-detail-modal" onclick="if(event.target===this) closeWalkDetailModal()">
+    <div class="walk-detail-content"></div>
   </div>
 
   <!-- 週選択モーダル -->

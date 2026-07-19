@@ -56,10 +56,83 @@
         '<div class="walk-icon"><i class="ph-bold ph-sun"></i></div>' +
         '<div class="walk-body"><div class="walk-label">おさんぽ日和</div>' +
         '<div class="walk-title">' + escapeHtml(plan.title) + '</div>' +
-        '<div class="walk-sub">' + escapeHtml(plan.sub) + '</div></div>';
+        '<div class="walk-sub">' + escapeHtml(plan.sub) + '</div></div>' +
+        '<div class="walk-arrow"><i class="ph-bold ph-caret-right"></i></div>';
       el.style.display = 'flex';
+      el.onclick = openWalkDetailModal; // データ取得済みの時だけタップ可能にする(Task21)
     } catch (e) {
       el.style.display = 'none'; // 失敗時は静かに非表示(スペック8章)
+      el.onclick = null;
     }
+  };
+
+  // ========== Task21: タップで時間帯別(6〜23時)気温・降水グラフのモーダル表示 ==========
+  var TICK_HOURS = [6, 9, 12, 15, 18, 21];
+  var BAR_FLOOR = 24, BAR_MAX = 140;
+
+  /** 当日6-23時の時間帯別データから、気温バーの色クラス・高さを計算してグラフHTMLを組み立てる */
+  function buildWalkChartHtml(data, plan) {
+    var w = AppConfig.WALK;
+    var times = data.hourly.time, temps = data.hourly.temperature_2m, rains = data.hourly.precipitation_probability;
+    var hours = [];
+    for (var i = 0; i < times.length; i++) {
+      var hr = parseInt(times[i].slice(11, 13), 10);
+      if (hr >= 6 && hr <= 23) hours.push({ hour: hr, temp: temps[i], rain: rains[i] || 0 });
+    }
+    hours.sort(function(a, b) { return a.hour - b.hour; });
+    var nowHour = plan.now ? plan.now.hour : -1;
+    var tempVals = hours.map(function(h) { return h.temp; });
+    var minT = Math.min.apply(null, tempVals), maxT = Math.max.apply(null, tempVals);
+    var range = maxT - minT;
+
+    var cols = hours.map(function(h) {
+      var isWindow = (h.hour >= 6 && h.hour <= 9) || (h.hour >= 16 && h.hour <= 21);
+      var cls = 'wm-off';
+      if (h.temp >= w.HOT_LIMIT) cls = 'wm-hot';
+      else if (isWindow && h.rain < w.RAIN_LIMIT) cls = 'wm-good';
+      var barH = range > 0
+        ? Math.round(BAR_FLOOR + (h.temp - minT) / range * (BAR_MAX - BAR_FLOOR))
+        : Math.round((BAR_FLOOR + BAR_MAX) / 2);
+      var isNow = h.hour === nowHour;
+      var isTick = TICK_HOURS.indexOf(h.hour) !== -1;
+      return '<div class="wm-col' + (isNow ? ' wm-now' : '') + '">'
+        + '<div class="wm-now-tag">' + (isNow ? 'いま' : '') + '</div>'
+        + '<div class="wm-bar-track"><div class="wm-bar ' + cls + '" style="height:' + barH + 'px" title="' + h.hour + '時 ' + Math.round(h.temp) + '°C・降水' + Math.round(h.rain) + '%"></div></div>'
+        + '<div class="wm-rain">' + (h.rain > 0 ? Math.round(h.rain) : '') + '</div>'
+        + '<div class="wm-hour">' + (isTick ? h.hour : '') + '</div>'
+        + '</div>';
+    }).join('');
+
+    return '<div class="wm-axis-caption">気温目安(°C): ' + Math.round(minT) + '〜' + Math.round(maxT) + '</div>'
+      + '<div class="wm-cols">' + cols + '</div>'
+      + '<div class="wm-legend">'
+      + '<span class="wm-legend-item"><i class="wm-swatch wm-swatch-good"></i>おすすめ</span>'
+      + '<span class="wm-legend-item"><i class="wm-swatch wm-swatch-hot"></i>暑い(' + w.HOT_LIMIT + '°C〜)</span>'
+      + '<span class="wm-legend-item"><i class="wm-swatch wm-swatch-off"></i>対象外</span>'
+      + '<span class="wm-legend-item"><i class="wm-swatch wm-swatch-rain"></i>降水確率(%)</span>'
+      + '</div>';
+  }
+
+  window.openWalkDetailModal = async function() {
+    var modal = document.getElementById('walkDetailModal');
+    if (!modal) return;
+    try {
+      var data = await fetchWeather();
+      if (!data || !data.hourly || !data.hourly.time || !data.hourly.time.length) throw new Error('no weather data');
+      var plan = computeWalkPlan(data);
+      var content = modal.querySelector('.walk-detail-content');
+      content.innerHTML =
+        '<button type="button" class="wm-close" onclick="closeWalkDetailModal()" aria-label="閉じる"><i class="ph-bold ph-x"></i></button>' +
+        '<h3 class="wm-title">きょうのおさんぽ予報</h3>' +
+        buildWalkChartHtml(data, plan);
+      modal.classList.add('active');
+    } catch (e) {
+      showToast('天気データを取得できませんでした');
+    }
+  };
+
+  window.closeWalkDetailModal = function() {
+    var modal = document.getElementById('walkDetailModal');
+    if (modal) modal.classList.remove('active');
   };
 })();

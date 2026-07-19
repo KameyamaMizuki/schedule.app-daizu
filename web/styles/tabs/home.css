@@ -20,13 +20,41 @@
 .speech-bubble.fade-out{opacity:0}
 
 /* ===== ②おさんぽ日和カード（Task17実装。モック: .superpowers/brainstorm/1619-1783078352/content/home-final.html） ===== */
-.walk-card{display:flex;align-items:center;gap:14px;padding:16px;background:linear-gradient(135deg,var(--c-accent-soft),var(--c-surface));border-radius:var(--radius-card);box-shadow:var(--shadow-card);min-height:44px}
+/* Task21: <div>→<button>化（タップでモーダル）。フォント/枠線などボタンの既定装飾をリセット */
+.walk-card{display:flex;align-items:center;gap:14px;width:100%;padding:16px;background:linear-gradient(135deg,var(--c-accent-soft),var(--c-surface));border:none;border-radius:var(--radius-card);box-shadow:var(--shadow-card);min-height:44px;font-family:var(--font-body);text-align:left;cursor:pointer}
 .walk-icon{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:var(--c-surface);display:flex;align-items:center;justify-content:center}
 .walk-icon i{font-size:24px;color:var(--c-accent)}
 .walk-body{flex:1;min-width:0}
 .walk-label{font-size:11.5px;font-weight:700;color:var(--c-accent);letter-spacing:0.04em}
 .walk-title{font-size:15.5px;font-weight:700;color:var(--c-ink);margin-top:2px}
 .walk-sub{font-size:12.5px;color:var(--c-ink-soft);margin-top:2px}
+.walk-arrow{flex-shrink:0;color:var(--c-ink-faint);font-size:16px}
+
+/* ===== ②-a おさんぽ日和 詳細グラフモーダル（Task21） ===== */
+.walk-detail-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2500;justify-content:center;align-items:center;padding:20px}
+.walk-detail-modal.active{display:flex}
+.walk-detail-content{position:relative;background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-modal);padding:20px 14px 16px;width:100%;max-width:380px;max-height:86vh;overflow-y:auto}
+.wm-close{position:absolute;top:6px;right:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--c-ink-soft);font-size:19px;cursor:pointer}
+.wm-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--c-ink);margin:0 40px 12px 4px}
+.wm-axis-caption{font-size:11px;color:var(--c-ink-soft);margin:0 4px 10px}
+.wm-cols{display:flex;align-items:flex-end;gap:2px;padding:0 2px}
+.wm-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
+.wm-col.wm-now{background:var(--c-green-soft);border-radius:6px}
+.wm-now-tag{font-size:8.5px;font-weight:700;color:var(--c-green-deep);height:11px;line-height:11px;white-space:nowrap}
+.wm-bar-track{width:100%;height:140px;display:flex;align-items:flex-end;justify-content:center}
+.wm-bar{width:100%;max-width:16px;border-radius:3px 3px 1px 1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.wm-bar.wm-good{background:var(--c-green)}
+.wm-bar.wm-off{background:var(--c-cell-off)}
+.wm-bar.wm-hot{background:var(--c-danger-soft)}
+.wm-rain{font-size:9px;color:var(--c-sat);font-weight:700;height:13px;line-height:13px;white-space:nowrap}
+.wm-hour{font-size:10px;color:var(--c-ink-soft);height:14px;line-height:14px;white-space:nowrap}
+.wm-legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin:12px 4px 0;font-size:10.5px;color:var(--c-ink-soft)}
+.wm-legend-item{display:inline-flex;align-items:center;gap:4px}
+.wm-swatch{display:inline-block;width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.wm-swatch-good{background:var(--c-green)}
+.wm-swatch-off{background:var(--c-cell-off);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.wm-swatch-hot{background:var(--c-danger-soft)}
+.wm-swatch-rain{background:var(--c-sat)}
 
 /* ===== ③今週のよてい／④きょうのだいず：共通カードボタン ===== */
 .home-summary-card,.home-daizu-card{display:block;width:100%;text-align:left;background:var(--c-surface);border:none;border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px 16px;cursor:pointer;font-family:var(--font-body);min-height:44px;transition:transform 0.15s ease}
