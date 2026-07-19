@@ -174,7 +174,7 @@ async function savePin() {
 }
 
 function shareAppLink() {
-  var url = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com/home.html';
+  var url = 'https://family-schedule-web-kame-982312822872.s3.ap-northeast-1.amazonaws.com/dashboard.html';
   if (navigator.share) {
     navigator.share({ title: 'スケジュールアプリ', url: url });
   } else {

@@ -46,7 +46,7 @@ async function sendNotify(ev: NotifyEvent): Promise<void> {
           FLEX_COLORS.DIARY,
           `${displayName}さんが日記を書きました`,
           preview,
-          [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=diary` }]
+          [{ label: '詳細をアプリで確認', uri: getDashboardUrl({ tab: 'diary' }) }]
         );
         const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
         await pushFlexMessage(config.groupId, 'ダイ日記が投稿されました', flex, credentials.channelAccessToken, quickReply);
@@ -68,7 +68,7 @@ async function sendNotify(ev: NotifyEvent): Promise<void> {
           FLEX_COLORS.DAIZU,
           `${displayName}さんが様子を記録しました`,
           preview,
-          [{ label: '詳細をアプリで確認', uri: `${getDashboardUrl()}?tab=yousu` }]
+          [{ label: '詳細をアプリで確認', uri: getDashboardUrl({ tab: 'yousu' }) }]
         );
         const quickReply = getCommonQuickReply(getDashboardUrl(), getHomeUrl(), credentials.liffUrl);
         await pushFlexMessage(config.groupId, '様子が更新されました', flex, credentials.channelAccessToken, quickReply);

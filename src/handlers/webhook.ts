@@ -148,7 +148,7 @@ async function handleEvent(
       await replyFlexMessage(
         webhookEvent.replyToken,
         'メニュー',
-        buildMenuFlexBubble(getHomeUrl(), dashboardUrl, credentials.liffUrl),
+        buildMenuFlexBubble(getHomeUrl(), getDashboardUrl({ tab: 'diary', action: 'new' }), credentials.liffUrl),
         credentials.channelAccessToken,
         quickReply
       );

@@ -285,8 +285,11 @@ export function buildReminderFlexBubble(
   };
 }
 
-/** メニュー用 Flex Bubble（リッチメニュー代わり）。ボタン構成は維持しつつ視覚階層を整理 */
-export function buildMenuFlexBubble(homeUrl: string, dashboardUrl: string, liffUrl: string): Record<string, unknown> {
+/**
+ * メニュー用 Flex Bubble（リッチメニュー代わり）。ボタン構成は維持しつつ視覚階層を整理。
+ * URLは呼び出し側で完成させて渡すこと（ここでは文字列連結で "?" を追加しない）。
+ */
+export function buildMenuFlexBubble(homeUrl: string, diaryUrl: string, liffUrl: string): Record<string, unknown> {
   return {
     type: 'bubble',
     header: buildHeaderBox('📋 メニュー', FLEX_COLORS.SCHEDULE),
@@ -309,7 +312,7 @@ export function buildMenuFlexBubble(homeUrl: string, dashboardUrl: string, liffU
         },
         {
           type: 'button',
-          action: { type: 'uri', label: '📝 日記を入力', uri: `${dashboardUrl}?tab=diary&action=new` },
+          action: { type: 'uri', label: '📝 日記を入力', uri: diaryUrl },
           style: 'secondary',
           height: 'sm'
         },

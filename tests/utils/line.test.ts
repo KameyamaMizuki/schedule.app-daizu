@@ -249,22 +249,23 @@ describe('buildReminderFlexBubble', () => {
 // ---- buildMenuFlexBubble -----------------------------------------------------
 
 describe('buildMenuFlexBubble', () => {
-  const homeUrl = 'https://example.com/home.html';
-  const dashboardUrl = 'https://example.com/dashboard.html';
+  // 呼び出し側で完成させたURLを渡す想定（appv等のクエリを含む現実的な値で検証）。
+  const homeUrl = 'https://example.com/dashboard.html?appv=abc123';
+  const diaryUrl = 'https://example.com/dashboard.html?tab=diary&action=new&appv=abc123';
   const liffUrl = 'https://liff.line.me/xxx';
 
-  it('既存のボタンアクションが維持される', () => {
-    const bubble: any = buildMenuFlexBubble(homeUrl, dashboardUrl, liffUrl);
+  it('既存のボタンアクションが維持される（渡されたURLをそのまま使い、連結しない）', () => {
+    const bubble: any = buildMenuFlexBubble(homeUrl, diaryUrl, liffUrl);
     const btns = buttonsOf(bubble.body);
     expect(btns).toHaveLength(4);
     expect(btns[0].action).toEqual({ type: 'message', label: '📅 今日の予定', text: '今日' });
     expect(btns[1].action).toEqual({ type: 'uri', label: '🐕 だいずの様子', uri: `${liffUrl}?mode=daizu` });
-    expect(btns[2].action).toEqual({ type: 'uri', label: '📝 日記を入力', uri: `${dashboardUrl}?tab=diary&action=new` });
+    expect(btns[2].action).toEqual({ type: 'uri', label: '📝 日記を入力', uri: diaryUrl });
     expect(btns[3].action).toEqual({ type: 'uri', label: '🏠 サイトを開く', uri: homeUrl });
   });
 
   it('サイトを開くボタンの手前に区切り線が入り視覚的に分離される', () => {
-    const bubble: any = buildMenuFlexBubble(homeUrl, dashboardUrl, liffUrl);
+    const bubble: any = buildMenuFlexBubble(homeUrl, diaryUrl, liffUrl);
     const contents = bubble.body.contents;
     const separatorIdx = contents.findIndex((c: any) => c.type === 'separator');
     const siteButtonIdx = contents.findIndex((c: any) => c.action?.uri === homeUrl);
@@ -273,14 +274,63 @@ describe('buildMenuFlexBubble', () => {
   });
 
   it('サイトを開くボタンは SITE_BUTTON 色の primary スタイル', () => {
-    const bubble: any = buildMenuFlexBubble(homeUrl, dashboardUrl, liffUrl);
+    const bubble: any = buildMenuFlexBubble(homeUrl, diaryUrl, liffUrl);
     const siteBtn = buttonsOf(bubble.body).find((b: any) => b.action.uri === homeUrl);
     expect(siteBtn.style).toBe('primary');
     expect(siteBtn.color).toBe(FLEX_COLORS.SITE_BUTTON);
   });
 
   it('ヘッダーが新パレット(SCHEDULE)を使う', () => {
-    const bubble: any = buildMenuFlexBubble(homeUrl, dashboardUrl, liffUrl);
+    const bubble: any = buildMenuFlexBubble(homeUrl, diaryUrl, liffUrl);
     expect(bubble.header.backgroundColor).toBe(FLEX_COLORS.SCHEDULE);
+  });
+});
+
+// ---- リグレッションガード: 二重"?"連結の再発防止 ----------------------------
+
+describe('URI二重クエリガード（getDashboardUrl().appv連結バグの再発防止）', () => {
+  /** メッセージオブジェクトを再帰的に走査し、type:'uri' の action.uri / FlexButton.uri を全て集める */
+  function collectUris(node: unknown, out: string[]): void {
+    if (Array.isArray(node)) {
+      node.forEach(n => collectUris(n, out));
+      return;
+    }
+    if (node && typeof node === 'object') {
+      const obj = node as Record<string, unknown>;
+      if (typeof obj.uri === 'string') out.push(obj.uri);
+      for (const v of Object.values(obj)) collectUris(v, out);
+    }
+  }
+
+  it('メニューバブル + 通知バブル群の全uriに"?"が2つ以上含まれない', () => {
+    // 実際の getDashboardUrl(...) が返す形（appv付き）を模した現実的なURL
+    const appv = 'deadbeef';
+    const dashboardUrl = (params: Record<string, string> = {}) => {
+      const q = new URLSearchParams({ ...params, appv });
+      return `https://example.com/dashboard.html?${q.toString()}`;
+    };
+    const liffUrl = 'https://liff.line.me/xxx';
+
+    const menuBubble = buildMenuFlexBubble(
+      dashboardUrl(),
+      dashboardUrl({ tab: 'diary', action: 'new' }),
+      liffUrl
+    );
+    const diaryNotifyBubble = buildNotifyFlexBubble(
+      '📔 ダイ日記が投稿されました', FLEX_COLORS.DIARY, '見出し', 'プレビュー',
+      [{ label: '詳細をアプリで確認', uri: dashboardUrl({ tab: 'diary' }) }]
+    );
+    const yousuNotifyBubble = buildNotifyFlexBubble(
+      '🐕 だいずの様子が更新されました', FLEX_COLORS.DAIZU, '見出し', 'プレビュー',
+      [{ label: '詳細をアプリで確認', uri: dashboardUrl({ tab: 'yousu' }) }]
+    );
+
+    const uris: string[] = [];
+    collectUris([menuBubble, diaryNotifyBubble, yousuNotifyBubble], uris);
+
+    expect(uris.length).toBeGreaterThan(0);
+    for (const uri of uris) {
+      expect(uri).not.toMatch(/\?[^#]*\?/);
+    }
   });
 });

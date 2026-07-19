@@ -2,7 +2,7 @@
   "name": "家族スケジュール",
   "short_name": "スケジュール",
   "description": "家族でスケジュールを共有するアプリ",
-  "start_url": "/home.html",
+  "start_url": "/dashboard.html",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#3F6E5B",

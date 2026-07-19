@@ -30,6 +30,8 @@ export interface DashboardLinkParams {
   tab?: 'schedule' | 'yousu' | 'diary' | 'wansta';
   subTab?: string;
   token?: string;
+  /** タブ内での初期アクション（例: 'new' で日記タブの新規投稿画面を自動表示） */
+  action?: string;
 }
 
 /**
@@ -54,15 +56,18 @@ export function getDashboardUrl(params: DashboardLinkParams = {}): string {
     weekId: params.weekId,
     tab: params.tab,
     subTab: params.subTab,
-    token: params.token
+    token: params.token,
+    action: params.action
   })}`;
 }
 
 /**
- * ホームURL生成
+ * ホームURL生成。
+ * home.html はリダイレクトスタブ化したため、直接 dashboard.html（デフォルトタブ=ホーム）に誘導する。
+ * getDashboardUrl() とパラメータなしで同一。互換のため関数は残す。
  */
 export function getHomeUrl(): string {
-  return `${S3_BASE_URL}/home.html?${buildQuery({})}`;
+  return getDashboardUrl();
 }
 
 // ========== DynamoDB キー ==========
