@@ -180,12 +180,15 @@ function homeSpeechDefaultHtml() {
 }
 
 // 犬の画像タップで一言表示 → 3秒後に日付+担当表示へ戻る
+// T16刷新でここから homeSetRandomDogImage() 呼び出しが漏れ、吹き出しは変わるが写真が変わらない回帰が発生していた（Task20で復元）
 function homeDogTapped() {
   if (homeDogTapBusy) return;
   homeDogTapBusy = true;
   const hitokoto = homeHitokotoList[Math.floor(Math.random() * homeHitokotoList.length)];
+  homeSetRandomDogImage('normal');
   homeSetSpeechText(hitokoto);
   setTimeout(() => {
+    homeSetRandomDogImage('normal');
     homeSetSpeechText(homeSpeechDefaultHtml(), updateHomeTodayInfo);
     homeDogTapBusy = false;
   }, AppConfig.TIMING.MSG_DISPLAY);
