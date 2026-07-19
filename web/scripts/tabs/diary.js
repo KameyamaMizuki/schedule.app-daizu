@@ -176,9 +176,10 @@ function diaryRenderBlocks() {
   var html = diaryBlocks.map(function(block) {
     if (block.type === 'photo') {
       var isThumb = !!(thumb && thumb.id === block.id);
+      var blockImgSrc = safeImageSrc(block.data);
       return '<div class="dbe-block dbe-block-photo" data-id="' + block.id + '">'
         + '<div class="dbe-photo-wrap">'
-        + '<img class="dbe-photo-img" src="' + escapeHtml(block.data) + '" alt="">'
+        + (blockImgSrc ? '<img class="dbe-photo-img" src="' + blockImgSrc + '" alt="">' : '')
         + (isThumb ? '<span class="dbe-photo-thumb-badge">サムネ</span>' : '')
         + '<div class="dbe-photo-controls">'
         + '<button type="button" class="dbe-photo-btn" onclick="diaryMoveBlock(\'' + block.id + '\',-1)" aria-label="上へ"><i class="ph-bold ph-arrow-up"></i></button>'
@@ -357,7 +358,8 @@ function diaryOpenThumbPicker() {
   if (grid) {
     grid.innerHTML = photos.length
       ? photos.map(function(b) {
-          return '<button type="button" class="dbe-thumb-picker-item" onclick="diarySelectThumb(\'' + b.id + '\')"><img src="' + escapeHtml(b.data) + '" alt=""></button>';
+          var picImgSrc = safeImageSrc(b.data);
+          return '<button type="button" class="dbe-thumb-picker-item" onclick="diarySelectThumb(\'' + b.id + '\')">' + (picImgSrc ? '<img src="' + picImgSrc + '" alt="">' : '') + '</button>';
         }).join('')
       : '<div class="dbe-thumb-picker-empty">写真ブロックがありません</div>';
   }
@@ -583,7 +585,8 @@ function diaryHtmlToBlocks(html) {
 function diaryBlocksToHtml(blocks) {
   return (blocks || []).map(function(block) {
     if (block.type === 'photo') {
-      return block.data ? '<img src="' + escapeHtml(block.data) + '">' : '';
+      var imgSrc = safeImageSrc(block.data);
+      return imgSrc ? '<img src="' + imgSrc + '">' : '';
     }
     var body = escapeHtml(block.text || '').replace(/\n/g, '<br>');
     if (block.bold) body = '<b>' + body + '</b>';
@@ -680,7 +683,7 @@ function diaryDisplayTitle(parsed, excerptLen) {
 
 // ヒーローカード（最新1件）
 function diaryBuildHeroHtml(post, parsed, displayName) {
-  var thumb = diaryExtractThumb(parsed);
+  var thumb = safeImageSrc(diaryExtractThumb(parsed));
   var titleHtml = diaryDisplayTitle(parsed, 40);
   var metaHtml = '<div class="dj-hero-meta">'
     + '<span class="dj-hero-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrShort + '</span>'
@@ -704,7 +707,7 @@ function diaryBuildHeroHtml(post, parsed, displayName) {
 
 // 2列グリッドの小カード
 function diaryBuildCardHtml(post, parsed) {
-  var thumb = diaryExtractThumb(parsed);
+  var thumb = safeImageSrc(diaryExtractThumb(parsed));
   var hasTitle = !!parsed.title;
 
   if (thumb) {

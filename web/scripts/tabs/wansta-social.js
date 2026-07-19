@@ -8,7 +8,7 @@ function loadWanstaInteractions() {
 
 // ========== 写真ビューア ==========
 
-function wanstaOpenViewer(id, url, isStatic) {
+function wanstaOpenViewer(id, isStatic) {
   if (isStatic === undefined) isStatic = false;
   // 実際の写真オブジェクト（likes/comments付き）を配列から取得
   var photos = wanstaPhotos[wanstaCurrentAccount] || [];
@@ -16,6 +16,7 @@ function wanstaOpenViewer(id, url, isStatic) {
   for (var i = 0; i < photos.length; i++) {
     if (photos[i].id === id) { photo = photos[i]; break; }
   }
+  var url = photo ? photo.url : '';
   wanstaSelectedPhoto = photo || { id: id, url: url, isStatic: isStatic, likes: [], comments: [] };
 
   document.getElementById('wanstaViewerImg').src = url;
@@ -177,7 +178,7 @@ function wanstaRenderComments() {
   for (var i = 0; i < comments.length; i++) {
     var c = comments[i];
     var cMember = familyMembers.find(function(m) { return m.userId === c.userId; });
-    var cPhoto = cMember ? getAvatarPhoto(cMember.displayName) : null;
+    var cPhoto = safeImageSrc(cMember ? getAvatarPhoto(cMember.displayName) : null);
     var cEmoji = cMember ? getAvatarEmoji(cMember.displayName) : getAvatarEmoji(c.userName);
     var avatarHtml = cPhoto
       ? '<img src="' + cPhoto + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover">'

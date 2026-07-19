@@ -96,6 +96,18 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+/** 属性値用エスケープ(escapeHtmlは引用符を処理しないためsrc等の属性には必ずこちら) */
+function escapeAttr(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** 画像src用サニタイズ: http(s)/data:image/ のみ許可、それ以外は空文字(imgは非表示側の処理に任せる) */
+function safeImageSrc(url) {
+  var s = String(url || '');
+  if (/^https?:\/\//i.test(s) || /^data:image\//i.test(s)) return escapeAttr(s);
+  return '';
+}
+
 function showError(containerId, message) {
   document.getElementById(containerId).innerHTML = `<div class="error">${message}</div>`;
 }

@@ -26,8 +26,9 @@ function diaryShowDetail(postId) {
     }).join('');
   }
 
+  var catchImgSrc = safeImageSrc(parsed.catchImgData);
   document.getElementById('diaryDetailContent').innerHTML =
-    (parsed.catchImgData ? '<img class="diary-detail-catch" src="' + parsed.catchImgData + '" alt="">' : '')
+    (catchImgSrc ? '<img class="diary-detail-catch" src="' + catchImgSrc + '" alt="">' : '')
     + '<div class="diary-detail-title">' + diaryDisplayTitle(parsed, 60) + '</div>'
     + '<div class="diary-detail-meta">'
     + '<span class="diary-detail-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrLong + '</span>'

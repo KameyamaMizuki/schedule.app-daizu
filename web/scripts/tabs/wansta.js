@@ -130,8 +130,13 @@ function renderWanstaPhotos(photos) {
   for (var i = 0; i < photos.length; i++) {
     var photo = photos[i];
     var isStatic = photo.isStatic ? 'true' : 'false';
-    html += '<div class="wansta-photo-item" onclick="wanstaOpenViewer(\'' + photo.id + '\', \'' + photo.url + '\', ' + isStatic + ')">'
-      + '<img src="' + photo.url + '" alt="写真" loading="lazy" decoding="async" onerror="this.parentElement.style.display=\'none\'">'
+    var photoImgSrc = safeImageSrc(photo.url);
+    if (!photoImgSrc) continue; // 不正な形式のsrcは表示しない（属性インジェクション対策）
+    // photo.url は onclick 内のJS文字列へ直接連結しない（HTML実体参照はonclick等の
+    // イベントハンドラ属性ではJSパース前にデコードされるため引用符エスケープが無意味になる。
+    // wanstaOpenViewer 側で id から photo を再取得する）
+    html += '<div class="wansta-photo-item" onclick="wanstaOpenViewer(\'' + photo.id + '\', ' + isStatic + ')">'
+      + '<img src="' + photoImgSrc + '" alt="写真" loading="lazy" decoding="async" onerror="this.parentElement.style.display=\'none\'">'
       + '</div>';
   }
 

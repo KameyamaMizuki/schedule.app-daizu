@@ -259,8 +259,9 @@ async function renderHomeDaizuCard() {
     const post = posts[0];
     const postDate = post.createdAt ? new Date(post.createdAt) : null;
     const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
-    const thumbHtml = post.imageUrl
-      ? '<img class="home-daizu-thumb" src="' + escapeHtml(post.imageUrl) + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
+    const imgSrc = safeImageSrc(post.imageUrl);
+    const thumbHtml = imgSrc
+      ? '<img class="home-daizu-thumb" src="' + imgSrc + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
       : '';
     body.innerHTML =
       '<div class="home-daizu-entry">' + thumbHtml +
