@@ -365,15 +365,18 @@ async function submitDiary() {
       displayName: getDisplayName(currentUser),
       body: bodyHtml,
       title: title,
-      date: selectedDate,
-      catchImageUrl: finalCatchImageUrl || ''
+      date: selectedDate
     };
 
     if (diaryEditingPostId) {
-      // 編集モード: PUT
+      // 編集モード: PUT — catchImageUrl: '' で画像をクリアできるよう常に送信
+      payload.catchImageUrl = finalCatchImageUrl || '';
       await Api.updatePost(diaryEditingPostId, Object.assign({ sk: editPost ? editPost.SK : '' }, payload));
     } else {
-      // 新規作成: POST
+      // 新規作成: POST — catchImageUrl が空の場合は送信しない（Invalid url エラーを回避）
+      if (finalCatchImageUrl) {
+        payload.catchImageUrl = finalCatchImageUrl;
+      }
       await Api.createPost(Object.assign({ userId: currentUser.userId }, payload));
     }
 

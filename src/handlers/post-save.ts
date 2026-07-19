@@ -95,8 +95,8 @@ const CreateSchema = z.object({
   body: z.string().max(TEXT_LIMITS.DIARY).optional(),
   title: z.string().max(200).optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  catchImageUrl: z.string().url().optional(),
-  imageUrl: z.string().url().optional()
+  catchImageUrl: z.string().url().optional().or(z.literal('')),
+  imageUrl: z.string().url().optional().or(z.literal(''))
 }).superRefine((data, ctx) => {
   const isDiary = data.type === 'DIARY';
   const hasContent = (data.text && data.text.length > 0) || (data.body && data.body.length > 0);
