@@ -168,7 +168,7 @@ function renderDiaryPosts() {
     var sk = encodeURIComponent(post.SK || '');
 
     html += '<div class="diary-entry" data-post-id="' + post.postId + '" onclick="diaryShowDetail(\'' + post.postId + '\')">'
-      + (parsed.catchImgData ? '<img class="diary-entry-catch" src="' + parsed.catchImgData + '" alt="">' : '')
+      + (parsed.catchImgData ? '<img class="diary-entry-catch" src="' + parsed.catchImgData + '" alt="" loading="lazy" decoding="async">' : '')
       + '<div class="diary-entry-body">'
       + '<div class="diary-entry-header">'
       + '<span class="diary-entry-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrShort + '</span>'

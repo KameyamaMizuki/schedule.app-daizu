@@ -131,7 +131,7 @@ function renderWanstaPhotos(photos) {
     var photo = photos[i];
     var isStatic = photo.isStatic ? 'true' : 'false';
     html += '<div class="wansta-photo-item" onclick="wanstaOpenViewer(\'' + photo.id + '\', \'' + photo.url + '\', ' + isStatic + ')">'
-      + '<img src="' + photo.url + '" alt="写真" loading="lazy" onerror="this.parentElement.style.display=\'none\'">'
+      + '<img src="' + photo.url + '" alt="写真" loading="lazy" decoding="async" onerror="this.parentElement.style.display=\'none\'">'
       + '</div>';
   }
 

@@ -259,7 +259,7 @@ async function renderHomeDaizuCard() {
     const postDate = post.createdAt ? new Date(post.createdAt) : null;
     const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
     const thumbHtml = post.imageUrl
-      ? '<img class="home-daizu-thumb" src="' + escapeHtml(post.imageUrl) + '" alt="だいず" onerror="this.style.display=\'none\'">'
+      ? '<img class="home-daizu-thumb" src="' + escapeHtml(post.imageUrl) + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
       : '';
     body.innerHTML =
       '<div class="home-daizu-entry">' + thumbHtml +

@@ -73,7 +73,7 @@ function renderYousuTab() {
 
   // ヘッダーバナー
   html += '<div class="yousu-banner">';
-  html += '<img class="yousu-banner-img" src="' + randomImg + '" alt="だいず" onerror="this.style.display=\'none\'">';
+  html += '<img class="yousu-banner-img" src="' + randomImg + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">';
   html += '<div>';
   html += '<div class="yousu-banner-text"><i class="ph-bold ph-paw-print"></i> だいずの様子</div>';
   html += '<div class="yousu-banner-sub">毎日の記録</div>';
