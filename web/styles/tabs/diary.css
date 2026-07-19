@@ -1,21 +1,7 @@
 /* ダイ日記タブ - 記事風デザイン */
 .diary-container{min-height:calc(100vh - 180px);padding:16px;padding-bottom:120px;background:var(--c-bg)}
-.diary-posts{display:flex;flex-direction:column;gap:20px}
-.diary-entry{background:var(--c-surface);border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-card)}
-.diary-entry-photo{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
-.diary-entry-title{font-size:18px;font-weight:700;color:var(--c-ink);margin-bottom:8px}
-.diary-entry-body{padding:16px}
-.diary-entry-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--c-line)}
-.diary-entry-date{font-weight:700;font-size:15px;color:var(--c-green)}
-.diary-entry-author{font-size:13px;color:var(--c-ink-soft);background:var(--c-green-soft);padding:4px 10px;border-radius:12px}
-.diary-entry-text{font-size:15px;color:var(--c-ink);line-height:1.7}
-.diary-text-wrapper{position:relative}
-.diary-text-wrapper.collapsed{max-height:120px;overflow:hidden;cursor:pointer}
-.diary-text-fade{position:absolute;bottom:0;left:0;right:0;height:72px;background:linear-gradient(to bottom,transparent 0%,var(--c-surface) 100%);display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;pointer-events:none}
-.diary-expand-label{font-size:12px;color:var(--c-green);opacity:.85;font-weight:600;letter-spacing:.5px}
-.diary-collapse-btn{width:100%;min-height:44px;background:none;border:none;color:var(--c-green);font-size:12px;padding:4px 0 2px;cursor:pointer;text-align:center;font-weight:600;opacity:.85;letter-spacing:.5px;font-family:inherit;-webkit-appearance:none;appearance:none}
-.diary-collapse-btn:active{opacity:.4}
-.diary-entry-actions{display:flex;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft)}
+.diary-posts{display:flex;flex-direction:column;gap:14px}
+/* .diary-entry-action は詳細画面の編集/削除行(diary-detail.js)で使用中のため維持 */
 .diary-entry-action{cursor:pointer;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:16px;background:var(--c-cell-off);color:var(--c-ink-soft);transition:background 0.2s}
 .diary-entry-action:hover{background:var(--c-line)}
 .diary-entry-action.liked{color:var(--c-danger)}
@@ -59,9 +45,6 @@
 .diary-position-btn:hover{border-color:var(--c-green)}
 .diary-position-btn.selected{background:var(--c-green);color:#fff;border-color:var(--c-green)}
 .diary-position-btn .icon{display:block;font-size:20px;margin-bottom:4px}
-.diary-entry-text img{max-width:100%;border-radius:8px;margin:8px 0}
-.diary-entry{cursor:pointer;transition:box-shadow 0.15s}
-.diary-entry:active{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
 
 /* 詳細表示モーダル - フルスクリーン（iOS対応） */
 .diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:var(--c-surface);z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -71,11 +54,12 @@
 .diary-detail-content{padding:20px 16px;flex:1;overflow-y:auto}
 /* body scroll lock for iOS */
 body.modal-open{position:fixed;width:100%;overflow:hidden}
-.diary-detail-date{font-weight:700;font-size:15px;color:var(--c-green);margin-bottom:8px}
-.diary-detail-title{font-size:20px;font-weight:700;color:var(--c-ink);margin-bottom:10px;line-height:1.4}
-.diary-detail-author{font-size:13px;color:var(--c-ink-soft);background:var(--c-green-soft);padding:4px 10px;border-radius:12px;display:inline-block;margin-bottom:16px}
-.diary-detail-text{font-size:15px;color:var(--c-ink);line-height:1.8;white-space:pre-wrap}
-.diary-detail-text img{max-width:100%;border-radius:8px;margin:12px 0;display:block}
+.diary-detail-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--c-ink);margin-bottom:12px;line-height:1.45}
+.diary-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.diary-detail-date{font-weight:700;font-size:13px;color:var(--c-green)}
+.diary-detail-author{font-size:13px;color:var(--c-ink-soft);background:var(--c-green-soft);padding:4px 10px;border-radius:12px;display:inline-block}
+.diary-detail-text{font-size:15px;color:var(--c-ink);line-height:1.9;white-space:pre-wrap}
+.diary-detail-text img{max-width:100%;border-radius:10px;margin:12px 0;display:block}
 .diary-detail-actions{display:flex;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft)}
 
 /* キャッチ画像（入力フォーム） */
@@ -85,11 +69,8 @@ body.modal-open{position:fixed;width:100%;overflow:hidden}
 .diary-catch-preview{position:relative;margin-top:8px}
 .diary-catch-preview img{width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block}
 
-/* キャッチ画像（一覧カード）— 常に 4:3 固定 */
-.diary-entry-catch{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;border-radius:var(--radius-card) var(--radius-card) 0 0}
-
-/* キャッチ画像（詳細モーダル）— クロップした比率をそのまま表示 */
-.diary-detail-catch{width:100%;display:block;border-radius:0;margin-bottom:20px}
+/* キャッチ画像（詳細モーダル）— .diary-detail-content の左右上パディングを打ち消して全幅ブリード表示 */
+.diary-detail-catch{width:calc(100% + 32px);max-width:none;display:block;border-radius:0;margin:-20px -16px 20px}
 
 /* いいね/コメント */
 .diary-detail-like-section{display:flex;gap:12px;margin-top:16px;padding:12px 0;border-top:1px solid var(--c-line)}
@@ -107,3 +88,57 @@ body.modal-open{position:fixed;width:100%;overflow:hidden}
 /* もっと見るボタン */
 .diary-loadmore-wrap{text-align:center;padding:16px}
 .diary-loadmore-btn{background:var(--c-green);color:#fff;border:none;padding:10px 24px;border-radius:20px;font-size:14px;cursor:pointer;min-height:44px}
+
+/* ========== Task24: マガジン型一覧 ========== */
+
+/* 年月ジャンプ導線 */
+.dj-toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.dj-archive-btn{width:44px;height:44px;border:none;border-radius:50%;background:var(--c-cell-off);color:var(--c-ink-soft);font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.dj-archive-btn:active{background:var(--c-green-soft);color:var(--c-green)}
+
+/* 「1年前のきょう」バナー */
+.dj-anniversary{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--c-accent-soft),var(--c-surface));color:var(--c-accent);font-size:12.5px;font-weight:700;cursor:pointer;text-align:left;font-family:inherit;box-shadow:var(--shadow-card)}
+.dj-anniversary i:first-child{font-size:16px;flex-shrink:0}
+.dj-anniversary-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dj-anniversary i:last-child{flex-shrink:0;opacity:.7}
+
+/* ヒーローカード（最新1件） */
+.dj-hero{position:relative;display:block;width:100%;border:none;padding:0;margin:0;text-align:left;border-radius:var(--radius-card);overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer;background:var(--c-cell-off);font-family:inherit;-webkit-appearance:none;appearance:none}
+.dj-hero-img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.dj-hero-overlay{position:absolute;left:0;right:0;bottom:0;padding:36px 16px 14px;background:linear-gradient(to top,rgba(18,24,20,.85) 0%,rgba(18,24,20,.45) 60%,transparent 100%)}
+.dj-hero-title{font-family:var(--font-display);font-size:21px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:8px}
+.dj-hero-meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:rgba(255,255,255,.92)}
+.dj-hero-author{background:rgba(255,255,255,.22);padding:3px 10px;border-radius:12px;font-weight:600}
+.dj-hero-token{aspect-ratio:16/9;display:flex;flex-direction:column;justify-content:flex-end;padding:20px 18px;background:linear-gradient(135deg,var(--c-green) 0%,var(--c-green-deep) 100%)}
+.dj-hero-token .dj-hero-title{color:#fff}
+.dj-hero-token .dj-hero-meta{color:rgba(255,255,255,.9)}
+
+/* 月見出し */
+.dj-month-heading{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--c-ink-soft);text-align:center;margin-top:10px;cursor:pointer;scroll-margin-top:76px;min-height:24px;line-height:24px}
+.dj-month-heading:first-of-type{margin-top:0}
+
+/* 2列グリッド */
+.dj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dj-card{display:block;width:100%;min-width:0;border:none;padding:0;margin:0;text-align:left;background:var(--c-surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none}
+.dj-card-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.dj-card-body{padding:8px 10px 10px}
+.dj-card-photo .dj-card-title{font-size:12.5px;font-weight:700;color:var(--c-ink);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dj-card-photo .dj-card-date{font-size:10.5px;color:var(--c-ink-faint);margin-top:4px}
+.dj-card-text{padding:12px 10px}
+.dj-card-text .dj-card-title{font-family:var(--font-display);font-size:13.5px;font-weight:700;color:var(--c-ink);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dj-card-text .dj-card-date{font-size:10.5px;color:var(--c-ink-faint);margin-top:4px}
+.dj-card-text .dj-card-excerpt{font-size:11.5px;color:var(--c-ink-soft);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 年月ジャンプ（アーカイブ）モーダル */
+.diary-archive-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:2500;justify-content:center;align-items:center;padding:20px}
+.diary-archive-modal.active{display:flex}
+.diary-archive-content{position:relative;background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-modal);padding:16px 16px 18px;width:100%;max-width:340px;max-height:78vh;overflow-y:auto}
+.diary-archive-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.diary-archive-header h3{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--c-ink);display:flex;align-items:center;gap:6px;margin:0}
+.diary-archive-close,.diary-archive-header .diary-archive-close{background:none;border:none;font-size:20px;color:var(--c-ink-faint);cursor:pointer;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+.diary-archive-list{display:flex;flex-direction:column;gap:8px}
+.diary-archive-item{width:100%;padding:12px 14px;min-height:44px;border:none;border-radius:10px;background:var(--c-cell-off);color:var(--c-ink);font-size:14px;font-weight:600;text-align:left;cursor:pointer;font-family:inherit}
+.diary-archive-item:active{background:var(--c-green-soft)}
+.diary-archive-empty{padding:20px;text-align:center;color:var(--c-ink-faint);font-size:13px}
+.diary-archive-loadmore{width:100%;margin-top:10px;padding:11px;min-height:44px;border:none;border-radius:10px;background:var(--c-green);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.diary-archive-loadmore:disabled{background:var(--c-cell-off);color:var(--c-ink-faint)}

@@ -97,6 +97,12 @@
   <!-- ダイ日記タブ -->
   <div id="diaryContent" class="content">
     <div class="diary-container reveal">
+      <!-- 年月ジャンプ導線（Task24） -->
+      <div class="dj-toolbar">
+        <button type="button" class="dj-archive-btn" onclick="openDiaryArchivePicker()" aria-label="年月から探す">
+          <i class="ph-bold ph-archive"></i>
+        </button>
+      </div>
       <div id="diaryPosts" class="diary-posts">
         <div class="loading">読み込み中...</div>
       </div>
@@ -395,6 +401,18 @@
       <button class="diary-detail-close" onclick="closeDiaryDetail()">← 戻る</button>
     </div>
     <div id="diaryDetailContent" class="diary-detail-content"></div>
+  </div>
+
+  <!-- 日記 年月ジャンプ（アーカイブ）モーダル（Task24） -->
+  <div id="diaryArchiveModal" class="diary-archive-modal" onclick="if(event.target===this) closeDiaryArchiveModal()">
+    <div class="diary-archive-content">
+      <div class="diary-archive-header">
+        <h3><i class="ph-bold ph-archive"></i> 年月から探す</h3>
+        <button class="diary-archive-close" onclick="closeDiaryArchiveModal()"><i class="ph-bold ph-x"></i></button>
+      </div>
+      <div id="diaryArchiveList" class="diary-archive-list"></div>
+      <button type="button" id="diaryArchiveLoadMoreBtn" class="diary-archive-loadmore" onclick="diaryArchiveLoadOlder()" style="display:none">さらに過去を読み込む</button>
+    </div>
   </div>
 
   <!-- チロル誕生日オーバーレイ（毎年7/3から1週間、birthday.jsが表示制御） -->

@@ -27,10 +27,12 @@ function diaryShowDetail(postId) {
   }
 
   document.getElementById('diaryDetailContent').innerHTML =
-    '<div class="diary-detail-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrLong + '</div>'
-    + (parsed.title ? '<div class="diary-detail-title">' + escapeHtml(parsed.title) + '</div>' : '')
-    + '<div class="diary-detail-author">' + escapeHtml(displayName) + '</div>'
-    + (parsed.catchImgData ? '<img class="diary-detail-catch" src="' + parsed.catchImgData + '" alt="">' : '')
+    (parsed.catchImgData ? '<img class="diary-detail-catch" src="' + parsed.catchImgData + '" alt="">' : '')
+    + '<div class="diary-detail-title">' + diaryDisplayTitle(parsed, 60) + '</div>'
+    + '<div class="diary-detail-meta">'
+    + '<span class="diary-detail-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrLong + '</span>'
+    + '<span class="diary-detail-author">' + escapeHtml(displayName) + '</span>'
+    + '</div>'
     + '<div class="diary-detail-text">' + sanitizedText + '</div>'
     + '<div class="diary-detail-like-section">'
     + '<span class="diary-detail-like-btn ' + (isLiked ? 'liked' : '') + '" onclick="toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'

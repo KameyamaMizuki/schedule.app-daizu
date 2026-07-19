@@ -75,7 +75,8 @@ function parseDiaryPost(post) {
       dateStrShort: (dNew.getMonth() + 1) + '/' + dNew.getDate() + '(' + dayNames[dNew.getDay()] + ')',
       dateStrLong: dNew.getFullYear() + '年' + (dNew.getMonth() + 1) + '月' + dNew.getDate() + '日(' + dayNames[dNew.getDay()] + ')',
       textContent: post.body || '',
-      catchImgData: post.catchImageUrl || null  // S3 URL または null
+      catchImgData: post.catchImageUrl || null,  // S3 URL または null
+      dateObj: dNew  // 年月ジャンプ・1年前バナー用の生Date
     };
   }
 
@@ -84,6 +85,7 @@ function parseDiaryPost(post) {
   var title = '';
   var dateStrShort, dateStrLong;
   var catchImgData = null;
+  var dateObj;
 
   var dateMatch = textContent.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
   if (dateMatch) {
@@ -91,10 +93,12 @@ function parseDiaryPost(post) {
     dateStrShort = (customDate.getMonth() + 1) + '/' + customDate.getDate() + '(' + dayNames[customDate.getDay()] + ')';
     dateStrLong = customDate.getFullYear() + '年' + (customDate.getMonth() + 1) + '月' + customDate.getDate() + '日(' + dayNames[customDate.getDay()] + ')';
     textContent = textContent.replace(dateMatch[0], '');
+    dateObj = customDate;
   } else {
     var d = new Date(post.createdAt);
     dateStrShort = (d.getMonth() + 1) + '/' + d.getDate() + '(' + dayNames[d.getDay()] + ')';
     dateStrLong = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日(' + dayNames[d.getDay()] + ')';
+    dateObj = d;
   }
 
   var titleMatch = textContent.match(/^\[TITLE:([^\]]+)\]/);
@@ -112,7 +116,105 @@ function parseDiaryPost(post) {
     textContent = textContent.replace(catchImgMatch[0], '');
   }
 
-  return { title: title, dateStrShort: dateStrShort, dateStrLong: dateStrLong, textContent: textContent, catchImgData: catchImgData };
+  return { title: title, dateStrShort: dateStrShort, dateStrLong: dateStrLong, textContent: textContent, catchImgData: catchImgData, dateObj: dateObj };
+}
+
+// ========== 一覧描画ヘルパー（Task24: マガジン型） ==========
+
+// サムネイル抽出: catchImgData優先、なければ本文HTML先頭の<img>にフォールバック（新旧形式共通）
+function diaryExtractThumb(parsed) {
+  if (parsed.catchImgData) return parsed.catchImgData;
+  if (!parsed.textContent) return null;
+  var tempDiv = document.createElement('div');
+  tempDiv.innerHTML = parsed.textContent;
+  var img = tempDiv.querySelector('img');
+  return img ? img.getAttribute('src') : null;
+}
+
+// 抜粋: HTMLタグ除去後の先頭maxLen字
+function diaryExtractExcerpt(html, maxLen) {
+  if (!html) return '';
+  var tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  var text = (tempDiv.textContent || '').replace(/\s+/g, ' ').trim();
+  return text.length > maxLen ? text.substring(0, maxLen) : text;
+}
+
+// 表示用タイトル: タイトルがあればそれ、なければ本文抜粋、それも空なら「無題の日記」（escapeHtml済みで返す）
+function diaryDisplayTitle(parsed, excerptLen) {
+  if (parsed.title) return escapeHtml(parsed.title);
+  var excerpt = diaryExtractExcerpt(parsed.textContent, excerptLen || 40);
+  return excerpt ? escapeHtml(excerpt) : '無題の日記';
+}
+
+// ヒーローカード（最新1件）
+function diaryBuildHeroHtml(post, parsed, displayName) {
+  var thumb = diaryExtractThumb(parsed);
+  var titleHtml = diaryDisplayTitle(parsed, 40);
+  var metaHtml = '<div class="dj-hero-meta">'
+    + '<span class="dj-hero-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrShort + '</span>'
+    + '<span class="dj-hero-author">' + escapeHtml(displayName) + '</span>'
+    + '</div>';
+
+  if (thumb) {
+    return '<button type="button" class="dj-hero" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+      + '<img class="dj-hero-img" src="' + thumb + '" alt="" loading="lazy" decoding="async">'
+      + '<div class="dj-hero-overlay">'
+      + '<div class="dj-hero-title">' + titleHtml + '</div>'
+      + metaHtml
+      + '</div>'
+      + '</button>';
+  }
+  return '<button type="button" class="dj-hero dj-hero-token" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+    + '<div class="dj-hero-title">' + titleHtml + '</div>'
+    + metaHtml
+    + '</button>';
+}
+
+// 2列グリッドの小カード
+function diaryBuildCardHtml(post, parsed) {
+  var thumb = diaryExtractThumb(parsed);
+  var hasTitle = !!parsed.title;
+
+  if (thumb) {
+    var photoTitle = hasTitle ? escapeHtml(parsed.title) : diaryDisplayTitle(parsed, 24);
+    return '<button type="button" class="dj-card dj-card-photo" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+      + '<img class="dj-card-img" src="' + thumb + '" alt="" loading="lazy" decoding="async">'
+      + '<div class="dj-card-body">'
+      + '<div class="dj-card-title">' + photoTitle + '</div>'
+      + '<div class="dj-card-date">' + parsed.dateStrShort + '</div>'
+      + '</div>'
+      + '</button>';
+  }
+
+  var excerpt = diaryExtractExcerpt(parsed.textContent, 50);
+  var textTitle = hasTitle ? escapeHtml(parsed.title) : (excerpt ? escapeHtml(excerpt) : '無題の日記');
+  return '<button type="button" class="dj-card dj-card-text" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+    + '<div class="dj-card-title">' + textTitle + '</div>'
+    + '<div class="dj-card-date">' + parsed.dateStrShort + '</div>'
+    + (hasTitle && excerpt ? '<div class="dj-card-excerpt">' + escapeHtml(excerpt) + '</div>' : '')
+    + '</button>';
+}
+
+// 「1年前のきょう」候補: 読み込み済みデータから target(今日-1年) ±3日以内で最も近い記事を探す
+function diaryFindAnniversaryPost() {
+  var today = new Date();
+  var target = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+  var msPerDay = 24 * 60 * 60 * 1000;
+  var best = null;
+  var bestDiff = Infinity;
+
+  diaryPosts.forEach(function(post) {
+    var parsed = parseDiaryPost(post);
+    if (!parsed.dateObj || isNaN(parsed.dateObj.getTime())) return;
+    var postDay = new Date(parsed.dateObj.getFullYear(), parsed.dateObj.getMonth(), parsed.dateObj.getDate());
+    var diff = Math.abs(postDay.getTime() - target.getTime());
+    if (diff <= 3 * msPerDay && diff < bestDiff) {
+      bestDiff = diff;
+      best = { post: post, parsed: parsed };
+    }
+  });
+  return best;
 }
 
 async function loadDiaryPosts(append, force) {
@@ -154,43 +256,48 @@ function renderDiaryPosts() {
   var container = document.getElementById('diaryPosts');
   var html = '';
 
-  diaryPosts.forEach(function(post) {
+  // 「1年前のきょう」バナー（読み込み済みデータに該当記事があれば最上部）
+  var anniversary = diaryFindAnniversaryPost();
+  if (anniversary) {
+    html += '<button type="button" class="dj-anniversary" onclick="diaryShowDetail(\'' + anniversary.post.postId + '\')">'
+      + '<i class="ph-bold ph-clock-counter-clockwise"></i>'
+      + '<span class="dj-anniversary-text">1年前のきょう: ' + diaryDisplayTitle(anniversary.parsed, 30) + '</span>'
+      + '<i class="ph-bold ph-caret-right"></i>'
+      + '</button>';
+  }
+
+  // ヒーローカード（最新1件）
+  var heroPost = diaryPosts[0];
+  var heroParsed = parseDiaryPost(heroPost);
+  var heroMember = familyMembers.find(function(m) { return m.userId === heroPost.userId; });
+  var heroName = heroMember ? getDisplayName(heroMember) : heroPost.displayName;
+  html += diaryBuildHeroHtml(heroPost, heroParsed, heroName);
+
+  // 以降: 月見出し + 2列グリッド（年月が変わるたびに見出しを新設）
+  var lastYear = (heroParsed.dateObj && !isNaN(heroParsed.dateObj.getTime())) ? heroParsed.dateObj.getFullYear() : null;
+  var currentKey = null;
+  var gridOpen = false;
+
+  diaryPosts.slice(1).forEach(function(post) {
     var parsed = parseDiaryPost(post);
-    var isOwner = currentUser && post.userId === currentUser.userId;
-    var sanitizedText = sanitizeDiaryHtml(parsed.textContent);
+    var hasDate = parsed.dateObj && !isNaN(parsed.dateObj.getTime());
+    var y = hasDate ? parsed.dateObj.getFullYear() : 0;
+    var m = hasDate ? (parsed.dateObj.getMonth() + 1) : 0;
+    var key = y + '-' + m;
 
-    var member = familyMembers.find(function(m) { return m.userId === post.userId; });
-    var displayName = member ? getDisplayName(member) : post.displayName;
+    if (key !== currentKey) {
+      if (gridOpen) html += '</div>';
+      var label = (y !== lastYear) ? (y + '年' + m + '月') : (m + '月');
+      html += '<div class="dj-month-heading" id="diary-month-' + key + '" onclick="openDiaryArchivePicker()">— ' + escapeHtml(label) + ' —</div>';
+      html += '<div class="dj-grid">';
+      gridOpen = true;
+      currentKey = key;
+      lastYear = y;
+    }
 
-    var likeCount = (post.reactions && post.reactions.like) ? post.reactions.like.length : 0;
-    var commentCount = post.comments ? post.comments.length : 0;
-    var isLiked = currentUser && post.reactions && post.reactions.like && post.reactions.like.includes(currentUser.userId);
-    var sk = encodeURIComponent(post.SK || '');
-
-    html += '<div class="diary-entry" data-post-id="' + post.postId + '" onclick="diaryShowDetail(\'' + post.postId + '\')">'
-      + (parsed.catchImgData ? '<img class="diary-entry-catch" src="' + parsed.catchImgData + '" alt="" loading="lazy" decoding="async">' : '')
-      + '<div class="diary-entry-body">'
-      + '<div class="diary-entry-header">'
-      + '<span class="diary-entry-date"><i class="ph-bold ph-calendar"></i> ' + parsed.dateStrShort + '</span>'
-      + '<span class="diary-entry-author">' + escapeHtml(displayName) + '</span>'
-      + '</div>'
-      + (parsed.title ? '<div class="diary-entry-title">' + escapeHtml(parsed.title) + '</div>' : '')
-      + '<div class="diary-text-wrapper collapsed" id="diary-text-wrap-' + post.postId + '" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">'
-      + '<div class="diary-entry-text">' + sanitizedText + '</div>'
-      + '<div class="diary-text-fade" id="diary-text-fade-' + post.postId + '"><span class="diary-expand-label">もっと見る ▼</span></div>'
-      + '</div>'
-      + '<div class="diary-collapse-btn" id="diary-close-' + post.postId + '" style="display:none" onclick="event.stopPropagation();toggleDiaryExpand(\'' + post.postId + '\')">折りたたむ ▲</div>'
-      + '<div class="diary-entry-actions">'
-      + '<span class="diary-entry-action ' + (isLiked ? 'liked' : '') + '" id="diary-like-' + post.postId + '" onclick="event.stopPropagation();toggleDiaryLike(\'' + post.postId + '\',\'' + sk + '\')">'
-      + '❤️ ' + (likeCount > 0 ? likeCount : '')
-      + '</span>'
-      + '<span class="diary-entry-action" onclick="event.stopPropagation();diaryShowDetail(\'' + post.postId + '\')">'
-      + '<i class="ph-bold ph-chat-circle-text"></i> ' + (commentCount > 0 ? commentCount : '')
-      + '</span>'
-      + '</div>'
-      + '</div>'
-      + '</div>';
+    html += diaryBuildCardHtml(post, parsed);
   });
+  if (gridOpen) html += '</div>';
 
   // 「もっと見る」ボタン（次ページがある場合のみ）
   if (diaryLastKey) {
@@ -200,27 +307,6 @@ function renderDiaryPosts() {
   }
 
   container.innerHTML = html;
-
-  // 折りたたみ中のエントリ内の画像を非表示
-  container.querySelectorAll('.diary-text-wrapper.collapsed .diary-entry-text img').forEach(function(img) {
-    img.style.display = 'none';
-  });
-
-  // コンテナが visible なら: はみ出していない投稿の collapsed を解除
-  requestAnimationFrame(function() {
-    diaryPosts.forEach(function(post) {
-      var wrapper = document.getElementById('diary-text-wrap-' + post.postId);
-      if (!wrapper || wrapper.scrollHeight === 0) return; // 非表示なら skip
-      var fadeEl = document.getElementById('diary-text-fade-' + post.postId);
-      if (wrapper.scrollHeight <= 122) {
-        // コンテンツが収まっている → 折りたたみ不要
-        wrapper.classList.remove('collapsed');
-        wrapper.removeAttribute('onclick');
-        if (fadeEl) fadeEl.style.display = 'none';
-        wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'block'; });
-      }
-    });
-  });
 }
 
 // 一覧のいいねボタンだけを部分更新（全体再描画で「もっと見る」の展開状態を失わないため）
@@ -236,52 +322,103 @@ function updateDiaryLikeUI(postId) {
   }
 }
 
-function toggleDiaryExpand(postId) {
-  var wrapper = document.getElementById('diary-text-wrap-' + postId);
-  var fadeEl = document.getElementById('diary-text-fade-' + postId);
-  var closeBtn = document.getElementById('diary-close-' + postId);
-  if (!wrapper) return;
-
-  var isCollapsed = wrapper.classList.contains('collapsed');
-  if (isCollapsed) {
-    // 展開
-    wrapper.classList.remove('collapsed');
-    wrapper.removeAttribute('onclick');
-    if (fadeEl) fadeEl.style.display = 'none';
-    if (closeBtn) closeBtn.style.display = 'block';
-    wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'block'; });
-  } else {
-    // 折りたたむ
-    wrapper.classList.add('collapsed');
-    wrapper.setAttribute('onclick', 'event.stopPropagation();toggleDiaryExpand(\'' + postId + '\')');
-    if (fadeEl) fadeEl.style.display = '';
-    if (closeBtn) closeBtn.style.display = 'none';
-    wrapper.querySelectorAll('.diary-entry-text img').forEach(function(img) { img.style.display = 'none'; });
-  }
-}
-
 async function loadMoreDiaryPosts() {
   await loadDiaryPosts(true);
 }
 
+// 記事本文のサニタイズ。インライン画像は編集時のサイズ指定(data-size)によらず
+// 記事画面では常に全幅角丸で表示する（Task24: 読B統一レイアウト）
 function sanitizeDiaryHtml(html) {
   var tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
   var scripts = tempDiv.querySelectorAll('script,style,iframe,object,embed');
   scripts.forEach(function(el) { el.remove(); });
-  var sizeMap = { large: '100%', medium: '60%', small: '40%' };
   var imgs = tempDiv.querySelectorAll('img');
   imgs.forEach(function(img) {
-    // data-size 属性を保持して表示サイズを正しく反映
-    var size = img.dataset.size || 'large';
-    var displayWidth = sizeMap[size] || '100%';
-    img.style.width = displayWidth;
-    img.style.maxWidth = displayWidth;
-    img.style.borderRadius = '8px';
-    img.style.margin = '8px auto';
+    img.style.width = '100%';
+    img.style.maxWidth = '100%';
+    img.style.borderRadius = '10px';
+    img.style.margin = '12px 0';
     img.style.display = 'block';
   });
   return tempDiv.innerHTML;
+}
+
+// ========== 年月ジャンプ（アーカイブピッカー） ==========
+
+// 読み込み済みデータに存在する年月を新しい順・重複なしで列挙
+function diaryArchiveEntries() {
+  var seen = {};
+  var entries = [];
+  diaryPosts.forEach(function(post) {
+    var parsed = parseDiaryPost(post);
+    if (!parsed.dateObj || isNaN(parsed.dateObj.getTime())) return;
+    var y = parsed.dateObj.getFullYear();
+    var m = parsed.dateObj.getMonth() + 1;
+    var key = y + '-' + m;
+    if (seen[key]) return;
+    seen[key] = true;
+    entries.push({ key: key, label: y + '年' + m + '月' });
+  });
+  return entries;
+}
+
+function renderDiaryArchiveList() {
+  var listEl = document.getElementById('diaryArchiveList');
+  if (!listEl) return;
+  var entries = diaryArchiveEntries();
+  listEl.innerHTML = entries.length
+    ? entries.map(function(e) {
+        return '<button type="button" class="diary-archive-item" onclick="diaryJumpToMonth(\'' + e.key + '\')">' + escapeHtml(e.label) + '</button>';
+      }).join('')
+    : '<div class="diary-archive-empty">まだ日記がありません</div>';
+
+  var moreBtn = document.getElementById('diaryArchiveLoadMoreBtn');
+  if (moreBtn) moreBtn.style.display = diaryLastKey ? 'block' : 'none';
+}
+
+function openDiaryArchivePicker() {
+  renderDiaryArchiveList();
+  var modal = document.getElementById('diaryArchiveModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeDiaryArchiveModal() {
+  var modal = document.getElementById('diaryArchiveModal');
+  if (modal) modal.classList.remove('active');
+}
+
+// 「さらに過去を読み込む」— データ末尾(lastKeyなし)まで繰り返し可能
+async function diaryArchiveLoadOlder() {
+  var btn = document.getElementById('diaryArchiveLoadMoreBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '読み込み中...'; }
+  try {
+    await loadMoreDiaryPosts();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'さらに過去を読み込む'; }
+    renderDiaryArchiveList();
+  }
+}
+
+// 該当年月の見出しへスクロール（ヒーロー自身の年月ならトップへ）
+function diaryJumpToMonth(key) {
+  closeDiaryArchiveModal();
+
+  var target = document.getElementById('diary-month-' + key);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  var heroPost = diaryPosts[0];
+  if (!heroPost) return;
+  var heroParsed = parseDiaryPost(heroPost);
+  if (!heroParsed.dateObj || isNaN(heroParsed.dateObj.getTime())) return;
+  var heroKey = heroParsed.dateObj.getFullYear() + '-' + (heroParsed.dateObj.getMonth() + 1);
+  if (heroKey === key) {
+    var container = document.getElementById('diaryPosts');
+    if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function diaryPhotoSelected(event) {
