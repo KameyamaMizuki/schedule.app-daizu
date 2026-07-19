@@ -41,7 +41,6 @@ const DASHBOARD_JS = [
   'scripts/tabs/yousu.js',
   'scripts/tabs/diary.js',
   'scripts/tabs/diary-detail.js',
-  'scripts/ui/crop-free.js',
   'scripts/tabs/wansta.js',
   'scripts/tabs/wansta-social.js',
   'scripts/dashboard.page.js',

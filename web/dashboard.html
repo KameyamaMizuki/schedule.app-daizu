@@ -114,37 +114,52 @@
           <span id="diaryInputTitle"><i class="ph-bold ph-note-pencil"></i> 日記を書く</span>
           <button id="diarySubmitBtn" class="diary-submit-btn diary-submit-top" onclick="submitDiary()">投稿する</button>
         </div>
-        <!-- 日付選択 -->
-        <div class="diary-date-row">
-          <span class="diary-date-label"><i class="ph-bold ph-calendar"></i> 日付</span>
-          <input type="date" id="diaryDateInput" class="diary-date-input">
+        <!-- サムネイル表示（最初の写真ブロックを自動採用・タップで変更） -->
+        <button type="button" id="diaryThumbIndicator" class="dbe-thumb-indicator" style="display:none" onclick="diaryOpenThumbPicker()">
+          <img id="diaryThumbIndicatorImg" src="" alt="">
+          <span id="diaryThumbIndicatorLabel">サムネ: 自動（1枚目）</span>
+          <i class="ph-bold ph-caret-right"></i>
+        </button>
+        <!-- 日付チップ -->
+        <div class="dbe-date-row">
+          <button type="button" class="dbe-date-chip active" data-when="today" onclick="diarySetDateChip('today')"><i class="ph-bold ph-calendar"></i> きょう</button>
+          <button type="button" class="dbe-date-chip" data-when="yesterday" onclick="diarySetDateChip('yesterday')">きのう</button>
+          <button type="button" class="dbe-date-chip" data-when="custom" onclick="diarySetDateChip('custom')">日付…</button>
+          <input type="date" id="diaryDateInput" class="dbe-date-input" style="display:none" onchange="diaryDateInputChanged()">
         </div>
         <!-- タイトル入力 -->
-        <input type="text" id="diaryTitleInput" class="diary-title-input" placeholder="タイトル（任意）" maxlength="50">
-        <!-- キャッチ画像（タイトル下・任意） -->
-        <div class="diary-catch-section">
-          <button id="diaryCatchSelectBtn" class="diary-catch-select-btn" onclick="diaryOpenCatchInput()"><i class="ph-bold ph-camera"></i> キャッチ画像を選ぶ（任意）</button>
-          <div id="diaryCatchPreview" class="diary-catch-preview" style="display:none">
-            <img id="diaryCatchPreviewImg" src="" alt="キャッチ画像">
-            <button class="diary-photo-remove" onclick="diaryCatchRemove()"><i class="ph-bold ph-x"></i></button>
-          </div>
+        <input type="text" id="diaryTitleInput" class="dbe-title-input" placeholder="タイトル（任意）" maxlength="50" oninput="diaryScheduleDraftSave()">
+        <!-- ブロック一覧（文章ブロック / 写真ブロック） -->
+        <div id="diaryBlocksContainer" class="dbe-blocks"></div>
+        <input type="file" id="diaryBlockPhotoInput" accept="image/*" style="display:none" onchange="diaryBlockPhotoFileSelected(event)">
+      </div>
+
+      <!-- ブロック追加チューザー（＋タップで表示） -->
+      <div id="diaryBlockChooser" class="dbe-sheet" onclick="if(event.target===this) diaryCloseBlockChooser()">
+        <div class="dbe-sheet-card">
+          <button type="button" class="dbe-sheet-btn" onclick="diaryAddBlockFromChooser('text')"><i class="ph-bold ph-text-align-left"></i> 文章を追加</button>
+          <button type="button" class="dbe-sheet-btn" onclick="diaryAddBlockFromChooser('photo')"><i class="ph-bold ph-image"></i> 写真を追加</button>
+          <button type="button" class="dbe-sheet-cancel" onclick="diaryCloseBlockChooser()">キャンセル</button>
         </div>
-        <!-- 写真選択 -->
-        <input type="file" id="diaryPhotoInput" accept="image/*" style="display:none" onchange="diaryPhotoSelected(event)">
-        <div id="diaryPhotoPreview" class="diary-photo-preview" style="display:none">
-          <img id="diaryPreviewImg" src="" alt="プレビュー">
-          <button class="diary-photo-remove" onclick="diaryRemovePhoto()"><i class="ph-bold ph-x"></i></button>
+      </div>
+
+      <!-- サムネイル選択シート -->
+      <div id="diaryThumbPicker" class="dbe-sheet" onclick="if(event.target===this) diaryCloseThumbPicker()">
+        <div class="dbe-sheet-card">
+          <div class="dbe-sheet-title">サムネイルを選ぶ</div>
+          <div id="diaryThumbPickerGrid" class="dbe-thumb-picker-grid"></div>
+          <button type="button" class="dbe-sheet-btn" onclick="diarySelectThumb(null)"><i class="ph-bold ph-magic-wand"></i> 自動（1枚目）にする</button>
+          <button type="button" class="dbe-sheet-cancel" onclick="diaryCloseThumbPicker()">キャンセル</button>
         </div>
-        <!-- リッチテキストツールバー -->
-        <div class="diary-editor-toolbar">
-          <button class="diary-toolbar-btn" onclick="diaryFormatText('bold')" title="太字"><b>B</b></button>
-          <button class="diary-toolbar-btn" onclick="diaryFormatText('italic')" title="斜体"><i>I</i></button>
-          <div class="diary-toolbar-sep"></div>
-          <button class="diary-toolbar-btn" onclick="diaryInsertPhoto()" title="写真を挿入"><i class="ph-bold ph-camera"></i> 挿入</button>
-        </div>
-        <!-- リッチテキストエディタ -->
-        <div class="diary-editor-wrapper">
-          <div id="diaryRichEditor" class="diary-rich-editor" contenteditable="true" data-placeholder="今日のだいずの様子..."></div>
+      </div>
+
+      <!-- 下書き復元確認シート -->
+      <div id="diaryDraftPrompt" class="dbe-sheet" onclick="if(event.target===this) diaryDiscardDraft()">
+        <div class="dbe-sheet-card">
+          <div class="dbe-sheet-title">下書きがあります</div>
+          <p class="dbe-sheet-desc">前回書きかけの日記があります。続きから再開しますか？</p>
+          <button type="button" class="dbe-sheet-btn" onclick="diaryRestoreDraft()"><i class="ph-bold ph-arrow-counter-clockwise"></i> 復元する</button>
+          <button type="button" class="dbe-sheet-cancel" onclick="diaryDiscardDraft()">破棄する</button>
         </div>
       </div>
     </div>
@@ -361,37 +376,6 @@
     <div class="crop-footer">
       <button class="crop-btn cancel" onclick="closeCropModal()">キャンセル</button>
       <button class="crop-btn confirm" onclick="confirmCrop()">切り抜く</button>
-    </div>
-  </div>
-
-  <!-- 日記用自由トリミングモーダル -->
-  <div id="diaryCropModal" class="diary-crop-modal">
-    <div class="diary-crop-header">
-      <h3>写真をトリミング</h3>
-      <span class="diary-crop-info">ドラッグで移動、ピンチで拡大縮小</span>
-      <button class="crop-close" onclick="closeDiaryCropModal()"><i class="ph-bold ph-x"></i></button>
-    </div>
-    <div class="diary-crop-ratio">
-      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('free')" data-ratio="free">自由</button>
-      <button class="diary-ratio-btn active" onclick="setDiaryCropRatio('16:9')" data-ratio="16:9">16:9</button>
-      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('4:3')" data-ratio="4:3">4:3</button>
-      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('1:1')" data-ratio="1:1">1:1</button>
-      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('9:16')" data-ratio="9:16">縦9:16</button>
-      <button class="diary-ratio-btn" onclick="setDiaryCropRatio('3:4')" data-ratio="3:4">縦3:4</button>
-    </div>
-    <!-- 挿入サイズ選択（エディタ挿入時のみ表示） -->
-    <div class="diary-size-row" id="diarySizeRow">
-      <span class="diary-size-label">表示サイズ</span>
-      <button class="diary-size-btn active" data-size="large" onclick="setDiaryCropSize('large')">大</button>
-      <button class="diary-size-btn" data-size="medium" onclick="setDiaryCropSize('medium')">中</button>
-      <button class="diary-size-btn" data-size="small" onclick="setDiaryCropSize('small')">小</button>
-    </div>
-    <div class="diary-crop-container">
-      <canvas id="diaryCropCanvas" class="diary-crop-canvas"></canvas>
-    </div>
-    <div class="diary-crop-footer">
-      <button class="crop-btn cancel" onclick="closeDiaryCropModal()">キャンセル</button>
-      <button class="crop-btn confirm" onclick="confirmDiaryCrop()">挿入する</button>
     </div>
   </div>
 

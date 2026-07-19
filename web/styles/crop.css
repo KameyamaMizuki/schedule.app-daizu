@@ -13,20 +13,3 @@
 .crop-btn{padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none}
 .crop-btn.cancel{background:#666;color:#fff}
 .crop-btn.confirm{background:#8d6e63;color:#fff}
-
-/* 日記用自由トリミングモーダル */
-.diary-crop-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:10001;flex-direction:column}
-.diary-crop-modal.active{display:flex}
-.diary-crop-header{padding:12px 16px;color:#fff;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.5)}
-.diary-crop-header h3{margin:0;font-size:15px}
-.diary-crop-info{font-size:12px;color:#aaa}
-.diary-crop-container{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;touch-action:none}
-.diary-crop-canvas{max-width:100%;max-height:100%}
-.diary-crop-footer{padding:12px 16px;display:flex;gap:12px;justify-content:center;background:rgba(0,0,0,0.5)}
-.diary-crop-ratio{display:flex;gap:8px;padding:8px 16px;background:rgba(0,0,0,0.5);justify-content:center}
-.diary-ratio-btn{padding:8px 16px;border:1px solid #666;border-radius:20px;background:transparent;color:#fff;font-size:13px;cursor:pointer}
-.diary-ratio-btn.active{background:#8d6e63;border-color:#8d6e63}
-.diary-size-row{display:flex;gap:8px;padding:6px 16px;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;flex-wrap:wrap}
-.diary-size-label{color:#aaa;font-size:12px;white-space:nowrap}
-.diary-size-btn{padding:6px 20px;border:1px solid #666;border-radius:20px;background:transparent;color:#fff;font-size:13px;cursor:pointer}
-.diary-size-btn.active{background:#8d6e63;border-color:#8d6e63}

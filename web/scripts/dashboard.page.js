@@ -36,9 +36,7 @@ async function init() {
 async function switchTab(tab) {
   // 開いているモーダルを閉じる
   const cropModal = document.getElementById('cropModal');
-  const diaryCropModal = document.getElementById('diaryCropModal');
   if (cropModal) cropModal.classList.remove('active');
-  if (diaryCropModal) diaryCropModal.classList.remove('active');
 
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
 

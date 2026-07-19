@@ -2,63 +2,594 @@
 // 依存: core/config.js, core/state.js, core/utils.js, ui/user-select.js
 var diaryPosts = [];
 var diaryLastKey = null; // ページネーション用
-var diaryPhotoData = null;
-var diaryPhotoPosition = 'top';
-var diaryCatchImageData = null;
-var diaryCropTarget = 'editor'; // 'editor' or 'catch' — crop-free.js から参照
 var diaryEditingPostId = null; // 編集中の投稿ID（nullなら新規作成）
+
+// ── ブロックエディタ状態（Task25） ──
+var diaryBlocks = [];            // [{id,type:'text',text,bold,italic} | {id,type:'photo',data}]
+var diaryBlockIdSeq = 0;
+var diaryThumbBlockId = null;    // null = 自動(先頭の写真ブロック) / 明示選択時はブロックid
+var diaryDateMode = 'today';     // 'today' | 'yesterday' | 'custom'
+var diaryChooserAfterId = null;  // ＋タップ位置（このidの直後に挿入）
+var diaryPendingPhotoAfterId = null;
+var diaryPendingDraft = null;
+var diaryDraftDebounceTimer = null;
 
 async function initDiaryTab() {
   await loadDiaryPosts();
 }
+
+// ========== 投稿フォーム 開閉 ==========
 
 function toggleDiaryInput() {
   var inputArea = document.getElementById('diaryInputArea');
   var isVisible = inputArea.style.display !== 'none';
 
   if (isVisible) {
-    // 閉じる：状態をリセット
-    inputArea.style.display = 'none';
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    diaryEditingPostId = null;
-  } else {
-    // 開く：新規作成モードで初期化
-    document.getElementById('diaryRichEditor').innerHTML = '';
-    document.getElementById('diaryTitleInput').value = '';
-    var today = new Date().toISOString().split('T')[0];
-    document.getElementById('diaryDateInput').value = today;
-    diaryPhotoData = null;
-    document.getElementById('diaryPhotoPreview').style.display = 'none';
-    diaryCatchImageData = null;
-    var catchPreview = document.getElementById('diaryCatchPreview');
-    if (catchPreview) catchPreview.style.display = 'none';
-    var catchPreviewImg = document.getElementById('diaryCatchPreviewImg');
-    if (catchPreviewImg) catchPreviewImg.src = '';
-    var catchSelectBtn = document.getElementById('diaryCatchSelectBtn');
-    if (catchSelectBtn) catchSelectBtn.style.display = 'block';
-    // ヘッダー・ボタンを新規作成表示に
-    var titleEl = document.getElementById('diaryInputTitle');
-    if (titleEl) titleEl.innerHTML = '<i class="ph-bold ph-note-pencil"></i> 日記を書く';
-    var btn = document.getElementById('diarySubmitBtn');
-    if (btn) btn.textContent = '投稿する';
+    diaryCloseCompose();
+    return;
+  }
 
-    inputArea.style.display = 'flex';
-    document.body.classList.add('modal-open');
-    document.body.style.overflow = 'hidden';
+  // 開く：新規作成モードで初期化
+  diaryEditingPostId = null;
+  diaryResetComposeState();
+
+  var titleEl = document.getElementById('diaryInputTitle');
+  if (titleEl) titleEl.innerHTML = '<i class="ph-bold ph-note-pencil"></i> 日記を書く';
+  var btn = document.getElementById('diarySubmitBtn');
+  if (btn) btn.textContent = '投稿する';
+
+  inputArea.style.display = 'flex';
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = 'hidden';
+
+  // 下書きがあれば復元確認（新規作成時のみ・編集時は対象外）
+  var draft = diaryLoadDraftRaw();
+  if (draft) diaryOpenDraftPrompt(draft);
+}
+
+function diaryCloseCompose() {
+  var inputArea = document.getElementById('diaryInputArea');
+  inputArea.style.display = 'none';
+  document.body.classList.remove('modal-open');
+  document.body.style.overflow = '';
+  diaryEditingPostId = null;
+}
+
+function diaryDateStrFor(mode) {
+  var d = new Date();
+  if (mode === 'yesterday') d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+}
+
+function diaryResetComposeState() {
+  diaryBlocks = [diaryMakeTextBlock('', false, false)];
+  diaryThumbBlockId = null;
+  diaryDateMode = 'today';
+
+  var titleInput = document.getElementById('diaryTitleInput');
+  if (titleInput) titleInput.value = '';
+
+  var dateInput = document.getElementById('diaryDateInput');
+  if (dateInput) {
+    dateInput.value = diaryDateStrFor('today');
+    dateInput.style.display = 'none';
+  }
+  document.querySelectorAll('.dbe-date-chip').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.when === 'today');
+  });
+
+  diaryRenderBlocks();
+}
+
+// ========== 日付チップ ==========
+
+function diarySetDateChip(mode) {
+  diaryDateMode = mode;
+  document.querySelectorAll('.dbe-date-chip').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.when === mode);
+  });
+  var dateInput = document.getElementById('diaryDateInput');
+  if (!dateInput) return;
+  if (mode === 'custom') {
+    dateInput.style.display = 'block';
+    if (!dateInput.value) dateInput.value = diaryDateStrFor('today');
+    dateInput.focus();
+  } else {
+    dateInput.style.display = 'none';
+    dateInput.value = diaryDateStrFor(mode);
+  }
+  diaryScheduleDraftSave();
+}
+
+function diaryDateInputChanged() {
+  diaryScheduleDraftSave();
+}
+
+// ========== ブロックモデル ==========
+
+function diaryMakeTextBlock(text, bold, italic) {
+  diaryBlockIdSeq++;
+  return { id: 'b' + diaryBlockIdSeq, type: 'text', text: text || '', bold: !!bold, italic: !!italic };
+}
+
+function diaryMakePhotoBlock(data) {
+  diaryBlockIdSeq++;
+  return { id: 'b' + diaryBlockIdSeq, type: 'photo', data: data || '' };
+}
+
+function diaryInsertBlock(afterId, block) {
+  var idx = diaryBlocks.findIndex(function(b) { return b.id === afterId; });
+  if (idx === -1) diaryBlocks.push(block);
+  else diaryBlocks.splice(idx + 1, 0, block);
+  return block;
+}
+
+function diaryPhotoBlocks() {
+  return diaryBlocks.filter(function(b) { return b.type === 'photo'; });
+}
+
+// サムネイル = 明示選択があればそれ、なければ先頭の写真ブロック（自動）
+function diaryCurrentThumbBlock() {
+  if (diaryThumbBlockId) {
+    var chosen = diaryBlocks.find(function(b) { return b.id === diaryThumbBlockId && b.type === 'photo'; });
+    if (chosen) return chosen;
+  }
+  return diaryPhotoBlocks()[0] || null;
+}
+
+// ========== ブロック描画 ==========
+
+function diaryAutosizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function diaryFocusBlock(id) {
+  if (!id) return;
+  var el = document.querySelector('.dbe-textarea[data-id="' + id + '"]');
+  if (!el) return;
+  el.focus();
+  var len = el.value.length;
+  if (el.setSelectionRange) el.setSelectionRange(len, len);
+}
+
+function diaryUpdateThumbIndicator() {
+  var indicator = document.getElementById('diaryThumbIndicator');
+  var img = document.getElementById('diaryThumbIndicatorImg');
+  var label = document.getElementById('diaryThumbIndicatorLabel');
+  if (!indicator) return;
+  var thumb = diaryCurrentThumbBlock();
+  if (!thumb) {
+    indicator.style.display = 'none';
+    return;
+  }
+  indicator.style.display = 'flex';
+  if (img) img.src = thumb.data;
+  if (label) label.textContent = diaryThumbBlockId ? 'サムネ: 選択中（タップで変更）' : 'サムネ: 自動（1枚目）';
+}
+
+function diaryRenderBlocks() {
+  var container = document.getElementById('diaryBlocksContainer');
+  if (!container) return;
+  var thumb = diaryCurrentThumbBlock();
+
+  var html = diaryBlocks.map(function(block) {
+    if (block.type === 'photo') {
+      var isThumb = !!(thumb && thumb.id === block.id);
+      return '<div class="dbe-block dbe-block-photo" data-id="' + block.id + '">'
+        + '<div class="dbe-photo-wrap">'
+        + '<img class="dbe-photo-img" src="' + escapeHtml(block.data) + '" alt="">'
+        + (isThumb ? '<span class="dbe-photo-thumb-badge">サムネ</span>' : '')
+        + '<div class="dbe-photo-controls">'
+        + '<button type="button" class="dbe-photo-btn" onclick="diaryMoveBlock(\'' + block.id + '\',-1)" aria-label="上へ"><i class="ph-bold ph-arrow-up"></i></button>'
+        + '<button type="button" class="dbe-photo-btn" onclick="diaryMoveBlock(\'' + block.id + '\',1)" aria-label="下へ"><i class="ph-bold ph-arrow-down"></i></button>'
+        + '<button type="button" class="dbe-photo-btn dbe-photo-del" onclick="diaryDeleteBlock(\'' + block.id + '\')" aria-label="削除"><i class="ph-bold ph-x"></i></button>'
+        + '</div>'
+        + '</div>'
+        + '<div class="dbe-add-row"><button type="button" class="dbe-add-btn" onclick="diaryOpenBlockChooser(\'' + block.id + '\')"><i class="ph-bold ph-plus"></i></button></div>'
+        + '</div>';
+    }
+    return '<div class="dbe-block dbe-block-text" data-id="' + block.id + '">'
+      + '<div class="dbe-text-wrap">'
+      + '<textarea class="dbe-textarea" data-id="' + block.id + '" rows="1" placeholder="今日のだいずの様子…"'
+      + ' style="font-weight:' + (block.bold ? '700' : '400') + ';font-style:' + (block.italic ? 'italic' : 'normal') + '"'
+      + ' oninput="diaryTextBlockInput(this)" onkeydown="diaryTextBlockKeydown(event,this)"></textarea>'
+      + '<div class="dbe-mini-toolbar">'
+      + '<button type="button" class="dbe-mini-btn' + (block.bold ? ' active' : '') + '" data-fmt="bold" onclick="diaryToggleBlockFormat(\'' + block.id + '\',\'bold\')" aria-label="太字"><b>B</b></button>'
+      + '<button type="button" class="dbe-mini-btn' + (block.italic ? ' active' : '') + '" data-fmt="italic" onclick="diaryToggleBlockFormat(\'' + block.id + '\',\'italic\')" aria-label="斜体"><i>I</i></button>'
+      + '<button type="button" class="dbe-mini-btn dbe-mini-del" onclick="diaryDeleteBlock(\'' + block.id + '\')" aria-label="削除"><i class="ph-bold ph-trash"></i></button>'
+      + '</div>'
+      + '</div>'
+      + '<div class="dbe-add-row"><button type="button" class="dbe-add-btn" onclick="diaryOpenBlockChooser(\'' + block.id + '\')"><i class="ph-bold ph-plus"></i></button></div>'
+      + '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+
+  // textarea の値は属性ではなく JS で設定（改行・特殊文字を安全に扱うため）+ 自動伸長
+  diaryBlocks.forEach(function(block) {
+    if (block.type !== 'text') return;
+    var ta = container.querySelector('.dbe-textarea[data-id="' + block.id + '"]');
+    if (ta) {
+      ta.value = block.text || '';
+      diaryAutosizeTextarea(ta);
+    }
+  });
+
+  diaryUpdateThumbIndicator();
+}
+
+// ========== ブロック操作 ==========
+
+function diaryTextBlockInput(el) {
+  var id = el.dataset.id;
+  var block = diaryBlocks.find(function(b) { return b.id === id; });
+  if (block) block.text = el.value;
+  diaryAutosizeTextarea(el);
+  diaryScheduleDraftSave();
+}
+
+// 空のテキストブロックでBackspace＝そのブロックを削除（先頭にカーソルがある時のみ）
+function diaryTextBlockKeydown(event, el) {
+  if (event.key !== 'Backspace') return;
+  if (el.value !== '') return;
+  if (el.selectionStart !== 0 || el.selectionEnd !== 0) return;
+
+  var id = el.dataset.id;
+  var idx = diaryBlocks.findIndex(function(b) { return b.id === id; });
+  if (idx === -1 || diaryBlocks.length === 1) return; // 最後の1ブロックは残す
+
+  event.preventDefault();
+  diaryBlocks.splice(idx, 1);
+  if (diaryThumbBlockId === id) diaryThumbBlockId = null;
+  diaryRenderBlocks();
+  var focusIdx = Math.max(0, idx - 1);
+  var focusTarget = diaryBlocks[focusIdx];
+  if (focusTarget && focusTarget.type === 'text') diaryFocusBlock(focusTarget.id);
+  diaryScheduleDraftSave();
+}
+
+// B/I: ブロック全体に太字/斜体を適用するトグル（文章ブロックのミニツールバー）
+function diaryToggleBlockFormat(id, fmt) {
+  var block = diaryBlocks.find(function(b) { return b.id === id; });
+  if (!block) return;
+  block[fmt] = !block[fmt];
+
+  var blockEl = document.querySelector('.dbe-block[data-id="' + id + '"]');
+  if (blockEl) {
+    var btn = blockEl.querySelector('.dbe-mini-btn[data-fmt="' + fmt + '"]');
+    if (btn) btn.classList.toggle('active', !!block[fmt]);
+    var ta = blockEl.querySelector('.dbe-textarea');
+    if (ta) {
+      ta.style.fontWeight = block.bold ? '700' : '400';
+      ta.style.fontStyle = block.italic ? 'italic' : 'normal';
+      ta.focus();
+    }
+  }
+  diaryScheduleDraftSave();
+}
+
+function diaryDeleteBlock(id) {
+  var idx = diaryBlocks.findIndex(function(b) { return b.id === id; });
+  if (idx === -1) return;
+
+  if (diaryBlocks.length === 1) {
+    // 最後の1ブロックは削除せず空の文章ブロックにリセット
+    diaryBlocks[0] = diaryMakeTextBlock('', false, false);
+  } else {
+    diaryBlocks.splice(idx, 1);
+  }
+  if (diaryThumbBlockId === id) diaryThumbBlockId = null;
+  diaryRenderBlocks();
+  diaryScheduleDraftSave();
+}
+
+function diaryMoveBlock(id, dir) {
+  var idx = diaryBlocks.findIndex(function(b) { return b.id === id; });
+  if (idx === -1) return;
+  var newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= diaryBlocks.length) return;
+  var tmp = diaryBlocks[idx];
+  diaryBlocks[idx] = diaryBlocks[newIdx];
+  diaryBlocks[newIdx] = tmp;
+  diaryRenderBlocks();
+  diaryScheduleDraftSave();
+}
+
+// ========== ＋ブロック追加チューザー ==========
+
+function diaryOpenBlockChooser(afterId) {
+  diaryChooserAfterId = afterId;
+  var modal = document.getElementById('diaryBlockChooser');
+  if (modal) modal.classList.add('active');
+}
+
+function diaryCloseBlockChooser() {
+  var modal = document.getElementById('diaryBlockChooser');
+  if (modal) modal.classList.remove('active');
+  diaryChooserAfterId = null;
+}
+
+function diaryAddBlockFromChooser(kind) {
+  var afterId = diaryChooserAfterId;
+  diaryCloseBlockChooser();
+
+  if (kind === 'text') {
+    var block = diaryInsertBlock(afterId, diaryMakeTextBlock('', false, false));
+    diaryRenderBlocks();
+    diaryFocusBlock(block.id);
+    diaryScheduleDraftSave();
+    return;
+  }
+
+  if (kind === 'photo') {
+    diaryPendingPhotoAfterId = afterId;
+    var input = document.getElementById('diaryBlockPhotoInput');
+    if (input) { input.value = ''; input.click(); }
   }
 }
 
-function diaryFormatText(format) {
-  document.execCommand(format, false, null);
-  document.getElementById('diaryRichEditor').focus();
+function diaryBlockPhotoFileSelected(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('画像サイズは10MB以下にしてください');
+    return;
+  }
+  var preset = AppConfig.IMAGE.DIARY_PHOTO;
+  compressImage(file, preset.maxWidth, preset.quality).then(function(dataUrl) {
+    var block = diaryMakePhotoBlock(dataUrl);
+    diaryInsertBlock(diaryPendingPhotoAfterId, block);
+    diaryPendingPhotoAfterId = null;
+    diaryRenderBlocks();
+    diaryScheduleDraftSave();
+  }).catch(function(err) {
+    console.error('画像圧縮エラー:', err);
+    alert('画像の読み込みに失敗しました');
+  });
 }
 
-function selectDiaryPhotoPosition(pos) {
-  diaryPhotoPosition = pos;
-  document.querySelectorAll('.diary-position-btn').forEach(function(btn) {
-    btn.classList.toggle('selected', btn.dataset.pos === pos);
+// ========== サムネイル選択 ==========
+
+function diaryOpenThumbPicker() {
+  var photos = diaryPhotoBlocks();
+  var grid = document.getElementById('diaryThumbPickerGrid');
+  if (grid) {
+    grid.innerHTML = photos.length
+      ? photos.map(function(b) {
+          return '<button type="button" class="dbe-thumb-picker-item" onclick="diarySelectThumb(\'' + b.id + '\')"><img src="' + escapeHtml(b.data) + '" alt=""></button>';
+        }).join('')
+      : '<div class="dbe-thumb-picker-empty">写真ブロックがありません</div>';
+  }
+  var modal = document.getElementById('diaryThumbPicker');
+  if (modal) modal.classList.add('active');
+}
+
+function diaryCloseThumbPicker() {
+  var modal = document.getElementById('diaryThumbPicker');
+  if (modal) modal.classList.remove('active');
+}
+
+function diarySelectThumb(id) {
+  diaryThumbBlockId = id || null;
+  diaryCloseThumbPicker();
+  diaryRenderBlocks();
+  diaryScheduleDraftSave();
+}
+
+// ========== 下書き自動保存（localStorage） ==========
+
+function diaryScheduleDraftSave() {
+  if (diaryEditingPostId) return; // 編集モードは下書き対象外
+  clearTimeout(diaryDraftDebounceTimer);
+  diaryDraftDebounceTimer = setTimeout(diarySaveDraftNow, 1000);
+}
+
+function diarySaveDraftNow() {
+  if (diaryEditingPostId) return;
+  try {
+    var titleInput = document.getElementById('diaryTitleInput');
+    var dateInput = document.getElementById('diaryDateInput');
+    var draft = {
+      blocks: diaryBlocks,
+      thumbBlockId: diaryThumbBlockId,
+      title: titleInput ? titleInput.value : '',
+      date: dateInput ? dateInput.value : '',
+      dateMode: diaryDateMode,
+      savedAt: Date.now()
+    };
+    localStorage.setItem('diaryDraft', JSON.stringify(draft));
+  } catch (e) {
+    // localStorage失敗（容量超過等）は無視
+  }
+}
+
+function diaryClearDraft() {
+  try { localStorage.removeItem('diaryDraft'); } catch (e) { /* noop */ }
+}
+
+function diaryLoadDraftRaw() {
+  try {
+    var raw = localStorage.getItem('diaryDraft');
+    if (!raw) return null;
+    var draft = JSON.parse(raw);
+    if (!draft || !Array.isArray(draft.blocks) || draft.blocks.length === 0) return null;
+    return draft;
+  } catch (e) {
+    return null;
+  }
+}
+
+function diaryOpenDraftPrompt(draft) {
+  diaryPendingDraft = draft;
+  var modal = document.getElementById('diaryDraftPrompt');
+  if (modal) modal.classList.add('active');
+}
+
+function diaryClosePromptModal() {
+  var modal = document.getElementById('diaryDraftPrompt');
+  if (modal) modal.classList.remove('active');
+}
+
+function diaryRestoreDraft() {
+  var draft = diaryPendingDraft;
+  diaryClosePromptModal();
+  diaryPendingDraft = null;
+  if (!draft) return;
+
+  diaryBlocks = draft.blocks.map(function(b) {
+    return b.type === 'photo' ? diaryMakePhotoBlock(b.data) : diaryMakeTextBlock(b.text, b.bold, b.italic);
   });
+  if (diaryBlocks.length === 0) diaryBlocks = [diaryMakeTextBlock('', false, false)];
+  diaryThumbBlockId = draft.thumbBlockId || null;
+
+  var titleInput = document.getElementById('diaryTitleInput');
+  if (titleInput) titleInput.value = draft.title || '';
+
+  diaryDateMode = draft.dateMode || 'custom';
+  var dateInput = document.getElementById('diaryDateInput');
+  if (dateInput) dateInput.value = draft.date || diaryDateStrFor('today');
+  document.querySelectorAll('.dbe-date-chip').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.when === diaryDateMode);
+  });
+  if (dateInput) dateInput.style.display = (diaryDateMode === 'custom') ? 'block' : 'none';
+
+  diaryRenderBlocks();
+}
+
+function diaryDiscardDraft() {
+  diaryClosePromptModal();
+  diaryPendingDraft = null;
+  diaryClearDraft();
+}
+
+// ========== シリアライズ / デシリアライズ（保存互換・Node vm でテスト可能な純粋関数） ==========
+// ブロック列 ⇄ 既存互換のHTML本文（<p>/<b>/<i>/<img>）を相互変換する。
+// 依存: escapeHtml（core/utils.js）のみ。DOM(document)には依存しない。
+
+function diaryDecodeEntities(str) {
+  return String(str == null ? '' : str)
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, '\'')
+    .replace(/&apos;/gi, '\'')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&');
+}
+
+// <br> を除去する前に改行へ置き換えるための一時プレースホルダ（本文中に出現しない制御文字）
+var DIARY_BR_MARKER = String.fromCharCode(2);
+
+// タグを除去してプレーンテキスト化。<br>は改行として保持（安全側フォールバックにも使用）
+function diaryStripTags(html) {
+  var s = html == null ? '' : String(html);
+  s = s.replace(/<br\s*\/?>/gi, DIARY_BR_MARKER);
+  s = s.replace(/<[^>]*>/g, '');
+  s = diaryDecodeEntities(s);
+  return s.split(DIARY_BR_MARKER).join('\n');
+}
+
+function diaryExtractImgSrc(tag) {
+  var m = tag.match(/\bsrc\s*=\s*"([^"]*)"/i) || tag.match(/\bsrc\s*=\s*'([^']*)'/i) || tag.match(/\bsrc\s*=\s*([^\s>]+)/i);
+  return m ? diaryDecodeEntities(m[1]) : '';
+}
+
+// インラインHTML断片を解析: 全体が<b>/<i>(<strong>/<em>)で丸ごと包まれていれば
+// bold/italicフラグへ吸収し、それ以外の入れ子構造が残る場合はタグを除去したプレーンテキストへ
+// フォールバックする（安全側）
+function diaryAnalyzeInlineHtml(html) {
+  var bold = false, italic = false;
+  var working = html == null ? '' : String(html);
+  var guard = 0;
+
+  while (guard++ < 20) {
+    var trimmed = working.trim();
+    var mb = trimmed.match(/^<(b|strong)(?:\s[^>]*)?>([\s\S]*)<\/\1>$/i);
+    if (mb) { bold = true; working = mb[2]; continue; }
+    var mi = trimmed.match(/^<(i|em)(?:\s[^>]*)?>([\s\S]*)<\/\1>$/i);
+    if (mi) { italic = true; working = mi[2]; continue; }
+    break;
+  }
+
+  var withoutBr = working.replace(/<br\s*\/?>/gi, '');
+  var hasOtherTag = /<[a-zA-Z][^>]*>/.test(withoutBr);
+  if (hasOtherTag) {
+    // 変換不能な複雑な入れ子構造 → 元のHTML全体をタグ除去してプレーンテキスト化(安全側)
+    return { text: diaryStripTags(html), bold: false, italic: false };
+  }
+  return { text: diaryStripTags(working), bold: bold, italic: italic };
+}
+
+// テキスト系セグメント（<img>を含む可能性あり）をブロック列へ変換
+function diaryPushInlineSegment(segment, blocks) {
+  if (!segment) return;
+  var parts = segment.split(/(<img\b[^>]*>)/i);
+  parts.forEach(function(part) {
+    if (!part) return;
+    if (/^<img\b/i.test(part)) {
+      blocks.push(diaryMakePhotoBlock(diaryExtractImgSrc(part)));
+    } else {
+      var analyzed = diaryAnalyzeInlineHtml(part);
+      if (analyzed.text !== '') blocks.push(diaryMakeTextBlock(analyzed.text, analyzed.bold, analyzed.italic));
+    }
+  });
+}
+
+// <p>/<div> の中身（imgを含む可能性あり）をブロック列へ変換
+function diaryPushParagraphSegment(inner, blocks) {
+  if (/<img\b/i.test(inner)) {
+    diaryPushInlineSegment(inner, blocks);
+    return;
+  }
+  var analyzed = diaryAnalyzeInlineHtml(inner);
+  blocks.push(diaryMakeTextBlock(analyzed.text, analyzed.bold, analyzed.italic));
+}
+
+/**
+ * 既存互換のHTML本文 → ブロック列
+ * <p>...</p> / <div>...</div> をそれぞれ1つの文章ブロックに、<img>を写真ブロックに変換する。
+ * 新形式(ブロックエディタ自身が保存したHTML)・旧形式(素のcontenteditableが生成したフラットなHTML)の
+ * 両方を吸収できるよう、トップレベルの生テキスト/インライン要素の並びも1文章ブロックとして扱う。
+ */
+function diaryHtmlToBlocks(html) {
+  var blocks = [];
+  var src = html || '';
+  var re = /<img\b[^>]*>|<p(?:\s[^>]*)?>[\s\S]*?<\/p>|<div(?:\s[^>]*)?>[\s\S]*?<\/div>/gi;
+  var lastIndex = 0;
+  var m;
+
+  while ((m = re.exec(src)) !== null) {
+    diaryPushInlineSegment(src.slice(lastIndex, m.index), blocks);
+    var token = m[0];
+    if (/^<img\b/i.test(token)) {
+      blocks.push(diaryMakePhotoBlock(diaryExtractImgSrc(token)));
+    } else {
+      var inner = token.replace(/^<[^>]*>/, '').replace(/<\/[a-zA-Z]+>$/, '');
+      diaryPushParagraphSegment(inner, blocks);
+    }
+    lastIndex = re.lastIndex;
+  }
+  diaryPushInlineSegment(src.slice(lastIndex), blocks);
+
+  if (blocks.length === 0) blocks.push(diaryMakeTextBlock('', false, false));
+  return blocks;
+}
+
+/**
+ * ブロック列 → 既存互換のHTML本文
+ * 文章ブロック→<p>(改行は<br>、bold/italicは<b>/<i>で包む)、写真ブロック→<img src="...">
+ */
+function diaryBlocksToHtml(blocks) {
+  return (blocks || []).map(function(block) {
+    if (block.type === 'photo') {
+      return block.data ? '<img src="' + escapeHtml(block.data) + '">' : '';
+    }
+    var body = escapeHtml(block.text || '').replace(/\n/g, '<br>');
+    if (block.bold) body = '<b>' + body + '</b>';
+    if (block.italic) body = '<i>' + body + '</i>';
+    return '<p>' + body + '</p>';
+  }).join('');
 }
 
 // ========== 共通テキストパーサー ==========
@@ -421,48 +952,19 @@ function diaryJumpToMonth(key) {
   }
 }
 
-function diaryPhotoSelected(event) {
-  var file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 10 * 1024 * 1024) {
-    alert('画像サイズは10MB以下にしてください');
-    return;
-  }
-  compressImage(file, AppConfig.IMAGE.DIARY_PHOTO.maxWidth, AppConfig.IMAGE.DIARY_PHOTO.quality).then(function(compressedData) {
-    diaryPhotoData = compressedData;
-    var preview = document.getElementById('diaryPhotoPreview');
-    var previewImg = document.getElementById('diaryPreviewImg');
-    previewImg.src = diaryPhotoData;
-    preview.style.display = 'block';
-    var positionSelector = document.getElementById('diaryPhotoPosition');
-    if (positionSelector) positionSelector.style.display = 'flex';
-  }).catch(function(err) {
-    console.error('画像圧縮エラー:', err);
-    alert('画像の読み込みに失敗しました');
-  });
-}
-
-function diaryRemovePhoto() {
-  diaryPhotoData = null;
-  diaryPhotoPosition = 'top';
-  document.getElementById('diaryPhotoPreview').style.display = 'none';
-  document.getElementById('diaryPreviewImg').src = '';
-  var photoInput = document.getElementById('diaryPhotoInput');
-  if (photoInput) photoInput.value = '';
-  var positionSelector = document.getElementById('diaryPhotoPosition');
-  if (positionSelector) positionSelector.style.display = 'none';
-}
+// ========== 投稿・編集・削除 ==========
 
 async function submitDiary() {
-  var editor = document.getElementById('diaryRichEditor');
-  var htmlContent = editor.innerHTML.trim();
-  var textContent = editor.textContent.trim();
   var titleInput = document.getElementById('diaryTitleInput');
   var dateInput = document.getElementById('diaryDateInput');
   var title = titleInput ? titleInput.value.trim() : '';
   var selectedDate = dateInput ? dateInput.value : '';
 
-  if (!textContent && !htmlContent.includes('<img')) {
+  // 空の文章ブロック・空の写真ブロックは投稿対象外（少なくとも1つ内容があるか確認）
+  var meaningful = diaryBlocks.filter(function(b) {
+    return b.type === 'photo' ? !!b.data : (b.text || '').trim() !== '';
+  });
+  if (meaningful.length === 0) {
     alert('日記の内容を入力してください');
     return;
   }
@@ -477,19 +979,32 @@ async function submitDiary() {
   btn.disabled = true;
 
   try {
-    // 1. キャッチ画像をアップロード（base64 の場合のみ。S3 URL はそのまま使用）
+    // 1. 写真ブロックのbase64を順にS3へアップロード（既にS3 URLのものはそのまま）
     btn.textContent = '画像アップロード中...';
-    var finalCatchImageUrl = null;
-    if (diaryCatchImageData) {
-      if (diaryCatchImageData.startsWith('data:')) {
-        finalCatchImageUrl = await uploadImageToS3(diaryCatchImageData, 'diary');
+    var uploadedBlocks = [];
+    for (var i = 0; i < diaryBlocks.length; i++) {
+      var b = diaryBlocks[i];
+      if (b.type === 'photo' && b.data) {
+        var url = b.data.indexOf('data:') === 0 ? await uploadImageToS3(b.data, 'diary') : b.data;
+        uploadedBlocks.push({ id: b.id, type: 'photo', data: url });
       } else {
-        finalCatchImageUrl = diaryCatchImageData; // 既に S3 URL（編集時など）
+        uploadedBlocks.push(b);
       }
     }
 
-    // 2. 本文中の base64 インライン画像を S3 にアップロード
-    var bodyHtml = await diaryUploadInlineImages(htmlContent);
+    // 2. HTML本文へシリアライズ（空の文章ブロック・空の写真ブロックは除外）
+    var blocksForBody = uploadedBlocks.filter(function(b) {
+      return b.type === 'photo' ? !!b.data : (b.text || '').trim() !== '';
+    });
+    var bodyHtml = diaryBlocksToHtml(blocksForBody);
+
+    // 3. サムネイル = 選択中の写真ブロック、なければ先頭の写真ブロック
+    var thumbBlock = null;
+    if (diaryThumbBlockId) {
+      thumbBlock = uploadedBlocks.find(function(b) { return b.id === diaryThumbBlockId && b.type === 'photo'; });
+    }
+    if (!thumbBlock) thumbBlock = uploadedBlocks.find(function(b) { return b.type === 'photo' && b.data; });
+    var finalCatchImageUrl = thumbBlock ? thumbBlock.data : null;
 
     btn.textContent = '投稿中...';
 
@@ -518,13 +1033,8 @@ async function submitDiary() {
     }
 
     // リセット
+    diaryClearDraft();
     diaryEditingPostId = null;
-    editor.innerHTML = '';
-    if (titleInput) titleInput.value = '';
-    diaryCatchImageData = null;
-    document.getElementById('diaryCatchPreview').style.display = 'none';
-    document.getElementById('diaryCatchPreviewImg').src = '';
-    document.getElementById('diaryCatchSelectBtn').style.display = 'block';
     toggleDiaryInput();
     await loadDiaryPosts(false, true);
   } catch (error) {
@@ -533,17 +1043,6 @@ async function submitDiary() {
     btn.disabled = false;
     btn.textContent = originalLabel;
   }
-}
-
-/** 本文 HTML 内の base64 画像を S3 にアップロードして URL に置換 */
-async function diaryUploadInlineImages(html) {
-  var tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  var imgs = tempDiv.querySelectorAll('img[src^="data:"]');
-  for (var i = 0; i < imgs.length; i++) {
-    imgs[i].src = await uploadImageToS3(imgs[i].src, 'diary');
-  }
-  return tempDiv.innerHTML;
 }
 
 function editDiary(postId) {
@@ -592,19 +1091,36 @@ function editDiary(postId) {
 
   // フォームに値をセット
   diaryEditingPostId = postId;
-  document.getElementById('diaryRichEditor').innerHTML = editHtml;
-  document.getElementById('diaryTitleInput').value = editTitle;
-  document.getElementById('diaryDateInput').value = editDate;
+  diaryBlocks = diaryHtmlToBlocks(editHtml);
 
-  diaryCatchImageData = editCatchImg;
+  // キャッチ画像(catchImageUrl / 旧CATCH_IMG)がある場合、本文中に同URLの写真ブロックがあれば
+  // それをサムネに、なければ先頭に補って追加する
+  diaryThumbBlockId = null;
   if (editCatchImg) {
-    document.getElementById('diaryCatchPreviewImg').src = editCatchImg;
-    document.getElementById('diaryCatchPreview').style.display = 'block';
-    document.getElementById('diaryCatchSelectBtn').style.display = 'none';
-  } else {
-    document.getElementById('diaryCatchPreview').style.display = 'none';
-    document.getElementById('diaryCatchSelectBtn').style.display = 'block';
+    var matching = diaryBlocks.find(function(b) { return b.type === 'photo' && b.data === editCatchImg; });
+    if (matching) {
+      diaryThumbBlockId = matching.id;
+    } else {
+      var thumbBlock = diaryMakePhotoBlock(editCatchImg);
+      diaryBlocks.unshift(thumbBlock);
+      diaryThumbBlockId = thumbBlock.id;
+    }
   }
+
+  var titleInput = document.getElementById('diaryTitleInput');
+  if (titleInput) titleInput.value = editTitle;
+
+  diaryDateMode = 'custom';
+  var dateInput = document.getElementById('diaryDateInput');
+  if (dateInput) {
+    dateInput.value = editDate;
+    dateInput.style.display = 'block';
+  }
+  document.querySelectorAll('.dbe-date-chip').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.when === 'custom');
+  });
+
+  diaryRenderBlocks();
 
   // ヘッダー・ボタンを編集モード表示に
   var titleEl = document.getElementById('diaryInputTitle');

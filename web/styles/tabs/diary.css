@@ -10,41 +10,74 @@
 .diary-input-header #diaryInputTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diary-input-header .diary-submit-top{width:auto;flex-shrink:0;position:static;bottom:auto;margin-top:0;padding:9px 18px;min-height:44px;font-size:14px;border-radius:10px}
 .diary-close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--c-ink-soft);padding:4px 8px;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-.diary-photo-select{display:block;text-align:center;padding:16px;background:var(--c-green-soft);border:2px dashed var(--c-green);border-radius:12px;cursor:pointer;margin-bottom:12px;font-size:14px;color:var(--c-green);min-height:44px}
-.diary-photo-select:active{opacity:.8}
-.diary-photo-preview{position:relative;margin-bottom:12px}
-.diary-photo-preview img{width:100%;max-height:180px;object-fit:cover;border-radius:12px}
-.diary-photo-remove{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;cursor:pointer;font-size:16px}
-.diary-text-input{width:100%;padding:14px;border:1px solid var(--c-line);border-radius:12px;font-size:15px;resize:none;font-family:inherit;line-height:1.6;background:var(--c-surface);color:var(--c-ink)}
-.diary-text-input:focus{border-color:var(--c-green);outline:none}
 .diary-submit-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--c-green) 0%,var(--c-green-deep) 100%);color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;position:sticky;bottom:0;z-index:10;flex-shrink:0;min-height:44px}
 .diary-submit-btn:disabled{background:var(--c-cell-off);color:var(--c-ink-faint)}
 .diary-empty{text-align:center;padding:60px 20px;color:var(--c-ink-faint);font-size:15px}
-.diary-title-input{width:100%;padding:12px 14px;border:1px solid var(--c-line);border-radius:10px;font-size:16px;font-weight:600;margin-bottom:10px;box-sizing:border-box;background:var(--c-surface);color:var(--c-ink)}
-.diary-title-input:focus{border-color:var(--c-green);outline:none}
-.diary-date-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.diary-date-label{font-size:14px;color:var(--c-ink-soft);font-weight:500}
-.diary-date-input{padding:10px 14px;border:1px solid var(--c-line);border-radius:10px;font-size:15px;flex:1;background:var(--c-surface);color:var(--c-ink)}
-.diary-date-input:focus{border-color:var(--c-green);outline:none}
-.diary-editor-wrapper{flex:1;display:flex;flex-direction:column;min-height:0}
-.diary-rich-editor{flex:1;min-height:100px}
 .header.brown{background:var(--grad-header-brown)}
 
-/* リッチテキストエディター */
-.diary-editor-toolbar{display:flex;gap:6px;margin-bottom:8px;padding:8px;background:var(--c-green-soft);border-radius:8px;flex-wrap:wrap}
-.diary-toolbar-btn{width:40px;height:40px;border:none;border-radius:6px;background:var(--c-surface);color:var(--c-ink);cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
-.diary-toolbar-btn:hover{background:var(--c-green);color:#fff}
-.diary-toolbar-btn.active{background:var(--c-green);color:#fff}
-.diary-toolbar-sep{width:1px;background:var(--c-line);margin:0 4px}
-.diary-rich-editor{width:100%;min-height:120px;padding:14px;border:1px solid var(--c-line);border-radius:12px;font-size:15px;line-height:1.8;background:var(--c-surface);color:var(--c-ink);overflow-y:auto}
-.diary-rich-editor:focus{border-color:var(--c-green);outline:none}
-.diary-rich-editor:empty::before{content:attr(data-placeholder);color:var(--c-ink-faint)}
-.diary-rich-editor img{max-width:100%;border-radius:8px;margin:8px 0}
-.diary-photo-position{display:flex;gap:8px;margin-bottom:12px}
-.diary-position-btn{flex:1;padding:10px 8px;min-height:44px;border:2px solid var(--c-line);border-radius:8px;font-size:12px;background:var(--c-surface);color:var(--c-ink);cursor:pointer;text-align:center;transition:all 0.2s}
-.diary-position-btn:hover{border-color:var(--c-green)}
-.diary-position-btn.selected{background:var(--c-green);color:#fff;border-color:var(--c-green)}
-.diary-position-btn .icon{display:block;font-size:20px;margin-bottom:4px}
+/* ========== ブロックエディタ（Task25: 文章/写真ブロックを積む書き方） ========== */
+
+/* サムネイル表示（ヘッダー下）— 最初の写真ブロックを自動採用、タップで変更 */
+.dbe-thumb-indicator{display:none;align-items:center;gap:10px;width:100%;padding:8px 10px;margin-bottom:12px;border:none;border-radius:12px;background:var(--c-green-soft);color:var(--c-green);font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit}
+.dbe-thumb-indicator img{width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0;display:block}
+.dbe-thumb-indicator span{flex:1}
+.dbe-thumb-indicator i{opacity:.7}
+
+/* 日付チップ: きょう/きのう/日付… */
+.dbe-date-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.dbe-date-chip{padding:8px 14px;min-height:36px;border:1px solid var(--c-line);border-radius:18px;background:var(--c-surface);color:var(--c-ink-soft);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.dbe-date-chip.active{background:var(--c-green);border-color:var(--c-green);color:#fff}
+.dbe-date-input{padding:9px 12px;border:1px solid var(--c-line);border-radius:10px;font-size:14px;background:var(--c-surface);color:var(--c-ink);flex:1;min-width:140px}
+.dbe-date-input:focus{border-color:var(--c-green);outline:none}
+
+/* タイトル: 大きめ明朝1行 */
+.dbe-title-input{width:100%;padding:8px 2px;border:none;border-bottom:1px solid var(--c-line);border-radius:0;font-family:var(--font-display);font-size:19px;font-weight:700;margin-bottom:14px;box-sizing:border-box;background:transparent;color:var(--c-ink)}
+.dbe-title-input:focus{border-color:var(--c-green);outline:none}
+.dbe-title-input::placeholder{font-weight:400;color:var(--c-ink-faint)}
+
+/* ブロック一覧 */
+.dbe-blocks{display:flex;flex-direction:column;gap:4px;flex:1;min-height:0;padding-bottom:24px}
+.dbe-block{display:flex;flex-direction:column}
+
+/* 文章ブロック: 自動伸長textarea + 常設ミニツールバー(B/I/削除) */
+.dbe-text-wrap{position:relative;border-left:3px solid var(--c-line);border-radius:4px 10px 10px 4px;background:var(--c-surface);padding:2px 2px 2px 10px}
+.dbe-block-text:focus-within .dbe-text-wrap{border-left-color:var(--c-green)}
+.dbe-textarea{display:block;width:100%;min-height:26px;padding:8px 4px;border:none;background:transparent;color:var(--c-ink);font-family:inherit;font-size:15px;line-height:1.8;resize:none;overflow:hidden;box-sizing:border-box}
+.dbe-textarea:focus{outline:none}
+.dbe-textarea::placeholder{color:var(--c-ink-faint);font-weight:400;font-style:normal}
+.dbe-mini-toolbar{display:flex;align-items:center;gap:4px;padding:0 2px 6px}
+.dbe-mini-btn{width:28px;height:28px;border:none;border-radius:6px;background:var(--c-cell-off);color:var(--c-ink-soft);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.dbe-mini-btn.active{background:var(--c-green);color:#fff}
+.dbe-mini-del{margin-left:auto;color:var(--c-danger)}
+
+/* 写真ブロック: 並べ替え(上/下)・削除・サムネバッジ */
+.dbe-photo-wrap{position:relative;border-radius:12px;overflow:hidden;background:var(--c-cell-off)}
+.dbe-photo-img{width:100%;max-height:220px;object-fit:cover;display:block}
+.dbe-photo-thumb-badge{position:absolute;left:8px;top:8px;background:rgba(63,110,91,.9);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:8px}
+.dbe-photo-controls{position:absolute;right:8px;top:8px;display:flex;gap:6px}
+.dbe-photo-btn{width:32px;height:32px;border:none;border-radius:50%;background:rgba(18,24,20,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+.dbe-photo-del{background:rgba(201,106,90,.85)}
+
+/* ＋ブロック追加行 */
+.dbe-add-row{display:flex;justify-content:center;padding:2px 0}
+.dbe-add-btn{width:30px;height:30px;border:none;border-radius:50%;background:var(--c-green-soft);color:var(--c-green);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+.dbe-add-btn:active{background:var(--c-green);color:#fff}
+
+/* ボトムシート共通（＋チューザー/サムネ選択/下書き復元） */
+.dbe-sheet{display:none;position:fixed;left:0;right:0;bottom:0;top:0;background:rgba(0,0,0,.45);z-index:10050;align-items:flex-end;justify-content:center}
+.dbe-sheet.active{display:flex}
+.dbe-sheet-card{width:100%;max-width:420px;background:var(--c-surface);border-radius:20px 20px 0 0;box-shadow:var(--shadow-modal);padding:18px 16px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;box-sizing:border-box}
+.dbe-sheet-title{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--c-ink);margin-bottom:2px}
+.dbe-sheet-desc{font-size:13px;color:var(--c-ink-soft);margin:0 0 6px;line-height:1.6}
+.dbe-sheet-btn{width:100%;padding:13px;min-height:44px;border:none;border-radius:12px;background:var(--c-green-soft);color:var(--c-green);font-size:14.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.dbe-sheet-btn:active{background:var(--c-green);color:#fff}
+.dbe-sheet-cancel{width:100%;padding:13px;min-height:44px;border:none;border-radius:12px;background:none;color:var(--c-ink-soft);font-size:14.5px;cursor:pointer}
+
+/* サムネ選択グリッド */
+.dbe-thumb-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.dbe-thumb-picker-item{padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:none}
+.dbe-thumb-picker-item img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.dbe-thumb-picker-empty{grid-column:1/-1;text-align:center;padding:16px;color:var(--c-ink-faint);font-size:13px}
 
 /* 詳細表示モーダル - フルスクリーン（iOS対応） */
 .diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:var(--c-surface);z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -61,13 +94,6 @@ body.modal-open{position:fixed;width:100%;overflow:hidden}
 .diary-detail-text{font-size:15px;color:var(--c-ink);line-height:1.9;white-space:pre-wrap}
 .diary-detail-text img{max-width:100%;border-radius:10px;margin:12px 0;display:block}
 .diary-detail-actions{display:flex;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--c-line);font-size:13px;color:var(--c-ink-soft)}
-
-/* キャッチ画像（入力フォーム） */
-.diary-catch-section{margin-bottom:10px}
-.diary-catch-select-btn{width:100%;padding:12px;min-height:44px;background:var(--c-green-soft);border:2px dashed var(--c-green);border-radius:10px;color:var(--c-green);font-size:14px;cursor:pointer;text-align:center}
-.diary-catch-select-btn:active{opacity:.8}
-.diary-catch-preview{position:relative;margin-top:8px}
-.diary-catch-preview img{width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block}
 
 /* キャッチ画像（詳細モーダル）— .diary-detail-content の左右上パディングを打ち消して全幅ブリード表示 */
 .diary-detail-catch{width:calc(100% + 32px);max-width:none;display:block;border-radius:0;margin:-20px -16px 20px}
