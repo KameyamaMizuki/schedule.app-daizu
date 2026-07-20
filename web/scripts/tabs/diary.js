@@ -656,21 +656,21 @@ function parseDiaryPost(post) {
 // ========== 一覧描画ヘルパー（Task24: マガジン型） ==========
 
 // サムネイル抽出: catchImgData優先、なければ本文HTML先頭の<img>にフォールバック（新旧形式共通）
+// DOMParserで解析(inert＝fetch/script実行なし)。tempDiv.innerHTMLは detached でも
+// img の読み込み/onerrorが発火し得るため使わない。
 function diaryExtractThumb(parsed) {
   if (parsed.catchImgData) return parsed.catchImgData;
   if (!parsed.textContent) return null;
-  var tempDiv = document.createElement('div');
-  tempDiv.innerHTML = parsed.textContent;
-  var img = tempDiv.querySelector('img');
+  var doc = new DOMParser().parseFromString(parsed.textContent, 'text/html');
+  var img = doc.querySelector('img');
   return img ? img.getAttribute('src') : null;
 }
 
-// 抜粋: HTMLタグ除去後の先頭maxLen字
+// 抜粋: HTMLタグ除去後の先頭maxLen字（DOMParserで解析＝inert）
 function diaryExtractExcerpt(html, maxLen) {
   if (!html) return '';
-  var tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  var text = (tempDiv.textContent || '').replace(/\s+/g, ' ').trim();
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  var text = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
   return text.length > maxLen ? text.substring(0, maxLen) : text;
 }
 
@@ -728,6 +728,21 @@ function diaryBuildCardHtml(post, parsed) {
     + '<div class="dj-card-date">' + parsed.dateStrShort + '</div>'
     + (hasTitle && excerpt ? '<div class="dj-card-excerpt">' + escapeHtml(excerpt) + '</div>' : '')
     + '</button>';
+}
+
+// 表示順: dateObj降順（同日はcreatedAt降順）にソートした {post, parsed} 配列を返す。
+// diaryPosts はAPIのfetch順(createdAt降順)のままだが、日付を過去に指定して投稿する
+// 「バックデート」が混ざると日付順と一致しなくなる。ヒーロー選出・月見出しグルーピング・
+// アーカイブ一覧・年月ジャンプは全てこの並びを基準にする（Task27: 月見出しの重複/乱れ修正）。
+function diarySortedPosts() {
+  return diaryPosts.map(function(post) {
+    return { post: post, parsed: parseDiaryPost(post) };
+  }).sort(function(a, b) {
+    var ta = (a.parsed.dateObj && !isNaN(a.parsed.dateObj.getTime())) ? a.parsed.dateObj.getTime() : -Infinity;
+    var tb = (b.parsed.dateObj && !isNaN(b.parsed.dateObj.getTime())) ? b.parsed.dateObj.getTime() : -Infinity;
+    if (tb !== ta) return tb - ta;
+    return (b.post.createdAt || '').localeCompare(a.post.createdAt || '');
+  });
 }
 
 // 「1年前のきょう」候補: 読み込み済みデータから target(今日-1年) ±3日以内で最も近い記事を探す
@@ -800,9 +815,13 @@ function renderDiaryPosts() {
       + '</button>';
   }
 
-  // ヒーローカード（最新1件）
-  var heroPost = diaryPosts[0];
-  var heroParsed = parseDiaryPost(heroPost);
+  // 表示順は日付降順（バックデート投稿があっても月見出しが重複/前後しないよう事前ソート）
+  var sorted = diarySortedPosts();
+
+  // ヒーローカード（最新1件＝ソート後の先頭）
+  var heroEntry = sorted[0];
+  var heroPost = heroEntry.post;
+  var heroParsed = heroEntry.parsed;
   var heroMember = familyMembers.find(function(m) { return m.userId === heroPost.userId; });
   var heroName = heroMember ? getDisplayName(heroMember) : heroPost.displayName;
   html += diaryBuildHeroHtml(heroPost, heroParsed, heroName);
@@ -812,8 +831,9 @@ function renderDiaryPosts() {
   var currentKey = null;
   var gridOpen = false;
 
-  diaryPosts.slice(1).forEach(function(post) {
-    var parsed = parseDiaryPost(post);
+  sorted.slice(1).forEach(function(entry) {
+    var post = entry.post;
+    var parsed = entry.parsed;
     var hasDate = parsed.dateObj && !isNaN(parsed.dateObj.getTime());
     var y = hasDate ? parsed.dateObj.getFullYear() : 0;
     var m = hasDate ? (parsed.dateObj.getMonth() + 1) : 0;
@@ -862,11 +882,12 @@ async function loadMoreDiaryPosts() {
 
 // 記事本文のサニタイズ。インライン画像は編集時のサイズ指定(data-size)によらず
 // 記事画面では常に全幅角丸で表示する（Task24: 読B統一レイアウト）
+// 実体は sanitizeRichHtml（許可リスト方式・core/utils.js）。on*属性やjavascript:等は
+// そこで除去済みなので、この関数では表示用のインライン画像スタイル付与のみ行う。
 function sanitizeDiaryHtml(html) {
+  var safe = sanitizeRichHtml(html);
   var tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  var scripts = tempDiv.querySelectorAll('script,style,iframe,object,embed');
-  scripts.forEach(function(el) { el.remove(); });
+  tempDiv.innerHTML = safe;
   var imgs = tempDiv.querySelectorAll('img');
   imgs.forEach(function(img) {
     img.style.width = '100%';
@@ -884,8 +905,8 @@ function sanitizeDiaryHtml(html) {
 function diaryArchiveEntries() {
   var seen = {};
   var entries = [];
-  diaryPosts.forEach(function(post) {
-    var parsed = parseDiaryPost(post);
+  diarySortedPosts().forEach(function(entry) {
+    var parsed = entry.parsed;
     if (!parsed.dateObj || isNaN(parsed.dateObj.getTime())) return;
     var y = parsed.dateObj.getFullYear();
     var m = parsed.dateObj.getMonth() + 1;
@@ -944,9 +965,9 @@ function diaryJumpToMonth(key) {
     return;
   }
 
-  var heroPost = diaryPosts[0];
-  if (!heroPost) return;
-  var heroParsed = parseDiaryPost(heroPost);
+  var heroEntry = diarySortedPosts()[0];
+  if (!heroEntry) return;
+  var heroParsed = heroEntry.parsed;
   if (!heroParsed.dateObj || isNaN(heroParsed.dateObj.getTime())) return;
   var heroKey = heroParsed.dateObj.getFullYear() + '-' + (heroParsed.dateObj.getMonth() + 1);
   if (heroKey === key) {

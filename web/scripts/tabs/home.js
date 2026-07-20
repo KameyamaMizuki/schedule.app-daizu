@@ -187,7 +187,9 @@ function homeDogTapped() {
   homeDogTapBusy = true;
   const hitokoto = homeHitokotoList[Math.floor(Math.random() * homeHitokotoList.length)];
   homeSetRandomDogImage('normal');
-  homeSetSpeechText(hitokoto);
+  // hitokoto はDB由来の未検証テキストをそのままinnerHTMLに渡すためescapeHtml必須
+  // （wansta.jsのrenderWanstaHitokotoも同じhitokotoデータをescapeHtml(item.text)で描画している＝踏襲）
+  homeSetSpeechText(escapeHtml(hitokoto));
   setTimeout(() => {
     homeSetRandomDogImage('normal');
     homeSetSpeechText(homeSpeechDefaultHtml(), updateHomeTodayInfo);

@@ -108,6 +108,67 @@ function safeImageSrc(url) {
   return '';
 }
 
+// 許可するタグ（それ以外は展開して子要素/テキストのみ残す＝unwrap）
+var RICH_HTML_ALLOWED_TAGS = { P: 1, BR: 1, B: 1, I: 1, STRONG: 1, EM: 1, U: 1, DIV: 1, SPAN: 1, IMG: 1 };
+// 中身ごと完全に除去するタグ（テキスト化すると不自然/danger なもの）
+var RICH_HTML_DROP_TAGS = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, NOSCRIPT: 1, TEMPLATE: 1, SVG: 1, MATH: 1, LINK: 1, META: 1, HEAD: 1, TITLE: 1, BASE: 1 };
+
+/**
+ * 日記本文HTML用サニタイザ(許可: p,br,b,i,strong,em,u,div,span,img。on*属性・javascript:等を除去)
+ * DOMParserでパース(inert＝fetch/script実行なし)し、許可タグ・許可属性のみを残して再構築する。
+ * - 許可外タグ: 子要素を展開してテキスト/子要素のみ保持(unwrap)。属性(onerror等)は自動的に消える
+ * - script/style/iframe/object/embed等: 中身ごと完全除去
+ * - img: src(safeImageSrcで検証。http(s)/data:image/以外・空になった場合は要素ごと削除)とaltのみ許可
+ * - その他許可タグ: class属性のうち "diary-" で始まるトークンのみ許可。他の属性(on*・style・href等)は全除去
+ * @param {string} html
+ * @returns {string} サニタイズ済みHTML文字列
+ */
+function sanitizeRichHtml(html) {
+  var src = html == null ? '' : String(html);
+  if (!src) return '';
+  if (typeof DOMParser === 'undefined') return escapeHtml(src); // DOMParser非対応環境は安全側でプレーンテキスト化
+
+  var doc = new DOMParser().parseFromString(src, 'text/html');
+
+  function filterClass(el) {
+    var raw = el.getAttribute('class') || '';
+    var kept = raw.split(/\s+/).filter(function(c) { return c.indexOf('diary-') === 0; });
+    return kept.length ? kept.join(' ') : '';
+  }
+
+  function serializeChildren(node) {
+    var buf = '';
+    for (var i = 0; i < node.childNodes.length; i++) {
+      buf += serializeNode(node.childNodes[i]);
+    }
+    return buf;
+  }
+
+  function serializeNode(node) {
+    if (node.nodeType === 3) return escapeHtml(node.nodeValue || ''); // テキストノード
+    if (node.nodeType !== 1) return ''; // コメント等は破棄
+    var tag = node.tagName;
+    if (RICH_HTML_DROP_TAGS[tag]) return ''; // 中身ごと除去
+    if (!RICH_HTML_ALLOWED_TAGS[tag]) return serializeChildren(node); // 許可外タグは展開(unwrap)
+
+    if (tag === 'BR') return '<br>';
+
+    if (tag === 'IMG') {
+      var imgSrc = safeImageSrc(node.getAttribute('src'));
+      if (!imgSrc) return ''; // 不正/空のsrcは要素ごと削除
+      var alt = node.getAttribute('alt') || '';
+      return '<img src="' + imgSrc + '" alt="' + escapeAttr(alt) + '">';
+    }
+
+    var tagLower = tag.toLowerCase();
+    var cls = filterClass(node);
+    var classAttr = cls ? ' class="' + escapeAttr(cls) + '"' : '';
+    return '<' + tagLower + classAttr + '>' + serializeChildren(node) + '</' + tagLower + '>';
+  }
+
+  return serializeChildren(doc.body);
+}
+
 function showError(containerId, message) {
   document.getElementById(containerId).innerHTML = `<div class="error">${message}</div>`;
 }
