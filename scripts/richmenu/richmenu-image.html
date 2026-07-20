@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>richmenu</title>
+<!--
+  LINEリッチメニュー画像(2500x1686)のレンダリング元HTML。
+  ヘッドレスChromeで --window-size=2500,1686 --screenshot を使って
+  ../../assets/richmenu.png を生成する(scripts/update-richmenu.tsからではなく手動再生成)。
+  再生成が必要なのはデザイン変更時のみ。
+-->
+<link rel="stylesheet" href="../../web/styles/vendor/phosphor/style.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 2500px;
+    height: 1686px;
+    background: #FBF6EC;
+    overflow: hidden;
+  }
+  .grid {
+    position: relative;
+    width: 2500px;
+    height: 1686px;
+    display: grid;
+    grid-template-columns: 833px 833px 834px;
+    grid-template-rows: 843px 843px;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .cell .icon {
+    font-size: 140px;
+    color: #3F6E5B;
+    line-height: 1;
+  }
+  .cell .label {
+    margin-top: 28px;
+    font-family: "Yu Gothic", "Meiryo", "Hiragino Sans", sans-serif;
+    font-size: 72px;
+    font-weight: 700;
+    color: #2F3B33;
+    letter-spacing: 0.02em;
+  }
+  /* 罫線(セル境界に沿った1本線) — グリッドの丸め誤差を避けるため絶対配置で重ねる */
+  .divider {
+    position: absolute;
+    background: #E7E0D2;
+  }
+  .divider.v1 { left: 833px; top: 0; width: 2px; height: 1686px; }
+  .divider.v2 { left: 1666px; top: 0; width: 2px; height: 1686px; }
+  .divider.h1 { left: 0; top: 843px; width: 2500px; height: 2px; }
+  /* 右下すみの小さな肉球すかし */
+  .watermark {
+    position: absolute;
+    right: 32px;
+    bottom: 28px;
+    font-size: 56px;
+    color: #3F6E5B;
+    opacity: 0.14;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="cell">
+      <i class="ph-bold ph-house icon"></i>
+      <div class="label">ホーム</div>
+    </div>
+    <div class="cell">
+      <i class="ph-bold ph-calendar icon"></i>
+      <div class="label">予定</div>
+    </div>
+    <div class="cell">
+      <i class="ph-bold ph-paw-print icon"></i>
+      <div class="label">様子</div>
+    </div>
+    <div class="cell">
+      <i class="ph-bold ph-book-open icon"></i>
+      <div class="label">日記</div>
+    </div>
+    <div class="cell">
+      <i class="ph-bold ph-camera icon"></i>
+      <div class="label">WANsta</div>
+    </div>
+    <div class="cell">
+      <i class="ph-bold ph-list-checks icon"></i>
+      <div class="label">今日の予定</div>
+    </div>
+    <div class="divider v1"></div>
+    <div class="divider v2"></div>
+    <div class="divider h1"></div>
+    <i class="ph-bold ph-paw-print watermark"></i>
+  </div>
+</body>
+</html>

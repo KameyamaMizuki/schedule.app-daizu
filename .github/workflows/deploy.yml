@@ -130,5 +130,10 @@ jobs:
             --content-type "text/html; charset=utf-8" \
             --no-cli-pager
 
+      # LINEリッチメニューを最新appv付きリンクで再登録(旧メニューは削除)
+      - name: Update LINE rich menu
+        run: |
+          APP_VERSION=$(git rev-parse --short HEAD) npx ts-node --compiler-options '{"module":"commonjs"}' scripts/update-richmenu.ts
+
       - name: Deploy complete
         run: echo "Deploy complete. Lambda functions and S3 assets updated."
