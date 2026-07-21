@@ -2,31 +2,25 @@
 
 // ========== 日付ユーティリティ ==========
 
+// [T30] 以前はここで「日曜日は翌日の月曜＝来週を今週として扱う」という特別扱いをしており、
+// getWeekId(日曜日は当週=6日前の月曜として扱う)と食い違っていた。この食い違いのせいで、
+// 日曜日に「来週」タブで保存すると getNextWeekId() が実際の翌週をまるごと1週飛ばして
+// その次の週に保存してしまい、カレンダー(getWeekIdで週キーを引く)側では該当週のデータが
+// 一切存在せず「来週の予定が空」に見えるバグがあった(シミュレーションで確認済み)。
+// 今週/来週の算出を getWeekId 基準に統一し、日曜日の特別扱いを廃止する。
+// これにより「今週」「来週」は曜日に関わらず常にちょうど7日離れた週になる。
 function getCalendarWeekId() {
   const now = new Date();
   const jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  const day = jstNow.getDay();
-  // 日曜日は翌日の月曜＝来週を「今週」として扱う
-  if (day === 0) {
-    const nextMonday = new Date(jstNow);
-    nextMonday.setDate(jstNow.getDate() + 1);
-    return formatDateToWeekId(nextMonday);
-  }
-  const daysFromMonday = day - 1;
-  const thisMonday = new Date(jstNow);
-  thisMonday.setDate(jstNow.getDate() - daysFromMonday);
-  return formatDateToWeekId(thisMonday);
+  return getWeekId(jstNow);
 }
 
 function getNextWeekId() {
   const now = new Date();
   const jstNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  const day = jstNow.getDay();
-  // 日曜日は翌週の月曜（+1日）のさらに次の月曜（+8日）を「来週」とする
-  const daysUntilNextMonday = (day === 0) ? 8 : (8 - day);
-  const nextMonday = new Date(jstNow);
-  nextMonday.setDate(jstNow.getDate() + daysUntilNextMonday);
-  return formatDateToWeekId(nextMonday);
+  const nextWeekDate = new Date(jstNow);
+  nextWeekDate.setDate(jstNow.getDate() + 7);
+  return getWeekId(nextWeekDate);
 }
 
 function formatDateToWeekId(date) {

@@ -187,6 +187,11 @@ async function preloadMonthScheduleData(year, month) {
   for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
     weekIds.add(getWeekId(new Date(d)));
   }
+  // [T30] 今週/来週は表示中の月に関わらず常にプリロード対象へ含める。
+  // 「来週」が丸ごと翌月側にはみ出す時期（表示中の月に1日も重ならない）だと、
+  // 月を送らない限り来週のデータが読み込まれず「空」に見えてしまうため。
+  weekIds.add(getCalendarWeekId());
+  weekIds.add(getNextWeekId());
 
   // 未取得の週のみ並列フェッチ
   const uncached = [...weekIds].filter(id => !scheduleCalendarData[id]);
