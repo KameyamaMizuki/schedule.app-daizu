@@ -5,7 +5,11 @@
 .diary-entry-action{cursor:pointer;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center;border-radius:16px;background:var(--c-cell-off);color:var(--c-ink-soft);transition:background 0.2s}
 .diary-entry-action:hover{background:var(--c-line)}
 .diary-entry-action.liked{color:var(--c-danger)}
-.diary-input-area{position:fixed;top:0;left:0;right:0;width:100%;height:100vh;height:100svh;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom));background:var(--c-surface);z-index:9999;box-shadow:var(--shadow-modal);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
+/* [T31] エディタ全体の背景は --c-bg(クリーム)。ブロックは --c-surface(白)のカードにする
+   ことで背景から浮いて見えるようにする（以前は背景もブロックも同じ白でブロック感が無かった）。
+   スティッキーヘッダー(.diary-input-header)は従来通り --c-surface のままにして、
+   クリーム背景の上に載る白いツールバーとして視覚的に分離する。 */
+.diary-input-area{position:fixed;top:0;left:0;right:0;width:100%;height:100vh;height:100svh;padding:16px;padding-bottom:calc(24px + env(safe-area-inset-bottom));background:var(--c-bg);z-index:9999;box-shadow:var(--shadow-modal);overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column}
 .diary-input-header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-16px -16px 12px;padding:12px 16px;background:var(--c-surface);border-bottom:1px solid var(--c-line);font-size:15px;font-weight:600;color:var(--c-ink)}
 .diary-input-header #diaryInputTitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diary-input-header .diary-submit-top{width:auto;flex-shrink:0;position:static;bottom:auto;margin-top:0;padding:9px 18px;min-height:44px;font-size:14px;border-radius:10px}
@@ -35,32 +39,33 @@
 .dbe-title-input:focus{border-color:var(--c-green);outline:none}
 .dbe-title-input::placeholder{font-weight:400;color:var(--c-ink-faint)}
 
-/* ブロック一覧 */
-.dbe-blocks{display:flex;flex-direction:column;gap:4px;flex:1;min-height:0;padding-bottom:24px}
+/* ブロック一覧 — [T31] クリーム背景の上でカードが浮くよう間隔を広げる */
+.dbe-blocks{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;padding-bottom:24px}
 .dbe-block{display:flex;flex-direction:column}
 
-/* 文章ブロック: 自動伸長textarea + 常設ミニツールバー(B/I/削除) */
-.dbe-text-wrap{position:relative;border-left:3px solid var(--c-line);border-radius:4px 10px 10px 4px;background:var(--c-surface);padding:2px 2px 2px 10px}
-.dbe-block-text:focus-within .dbe-text-wrap{border-left-color:var(--c-green)}
+/* 文章ブロック: 自動伸長textarea + 常設ミニツールバー(B/I/削除)
+   [T31] 左罫線のみだった見た目をカード化(枠線+角丸+微影+全方向パディング) */
+.dbe-text-wrap{position:relative;border:1px solid var(--c-line);border-radius:12px;background:var(--c-surface);box-shadow:var(--shadow-card);padding:8px 10px}
+.dbe-block-text:focus-within .dbe-text-wrap{border-color:var(--c-green)}
 .dbe-textarea{display:block;width:100%;min-height:26px;padding:8px 4px;border:none;background:transparent;color:var(--c-ink);font-family:inherit;font-size:15px;line-height:1.8;resize:none;overflow:hidden;box-sizing:border-box}
 .dbe-textarea:focus{outline:none}
 .dbe-textarea::placeholder{color:var(--c-ink-faint);font-weight:400;font-style:normal}
-.dbe-mini-toolbar{display:flex;align-items:center;gap:4px;padding:0 2px 6px}
-.dbe-mini-btn{width:28px;height:28px;border:none;border-radius:6px;background:var(--c-cell-off);color:var(--c-ink-soft);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
+.dbe-mini-toolbar{display:flex;align-items:center;gap:8px;padding:4px 2px 0}
+.dbe-mini-btn{width:44px;height:44px;border:none;border-radius:8px;background:var(--c-cell-off);color:var(--c-ink-soft);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
 .dbe-mini-btn.active{background:var(--c-green);color:#fff}
 .dbe-mini-del{margin-left:auto;color:var(--c-danger)}
 
-/* 写真ブロック: 並べ替え(上/下)・削除・サムネバッジ */
-.dbe-photo-wrap{position:relative;border-radius:12px;overflow:hidden;background:var(--c-cell-off)}
+/* 写真ブロック: 並べ替え(上/下)・削除・サムネバッジ — [T31] 枠線+微影でカード化 */
+.dbe-photo-wrap{position:relative;border:1px solid var(--c-line);border-radius:12px;overflow:hidden;background:var(--c-cell-off);box-shadow:var(--shadow-card)}
 .dbe-photo-img{width:100%;max-height:220px;object-fit:cover;display:block}
 .dbe-photo-thumb-badge{position:absolute;left:8px;top:8px;background:rgba(63,110,91,.9);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:8px}
 .dbe-photo-controls{position:absolute;right:8px;top:8px;display:flex;gap:6px}
-.dbe-photo-btn{width:32px;height:32px;border:none;border-radius:50%;background:rgba(18,24,20,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+.dbe-photo-btn{width:44px;height:44px;border:none;border-radius:50%;background:rgba(18,24,20,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
 .dbe-photo-del{background:rgba(201,106,90,.85)}
 
-/* ＋ブロック追加行 */
-.dbe-add-row{display:flex;justify-content:center;padding:2px 0}
-.dbe-add-btn{width:30px;height:30px;border:none;border-radius:50%;background:var(--c-green-soft);color:var(--c-green);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px}
+/* ＋ブロック追加行 — [T31] タップ目標を44pxに拡大 */
+.dbe-add-row{display:flex;justify-content:center;padding:4px 0}
+.dbe-add-btn{width:44px;height:44px;border:none;border-radius:50%;background:var(--c-green-soft);color:var(--c-green);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
 .dbe-add-btn:active{background:var(--c-green);color:#fff}
 
 /* ボトムシート共通（＋チューザー/サムネ選択/下書き復元） */
