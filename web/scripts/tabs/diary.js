@@ -691,7 +691,8 @@ function diaryBuildHeroHtml(post, parsed, displayName) {
     + '</div>';
 
   if (thumb) {
-    return '<button type="button" class="dj-hero" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+    // [T35] .reveal: スクロールでフェードイン（base.cssの共通機構+motion.jsのIntersectionObserver）
+    return '<button type="button" class="dj-hero reveal" onclick="diaryShowDetail(\'' + post.postId + '\')">'
       + '<img class="dj-hero-img" src="' + thumb + '" alt="" loading="lazy" decoding="async">'
       + '<div class="dj-hero-overlay">'
       + '<div class="dj-hero-title">' + titleHtml + '</div>'
@@ -699,7 +700,7 @@ function diaryBuildHeroHtml(post, parsed, displayName) {
       + '</div>'
       + '</button>';
   }
-  return '<button type="button" class="dj-hero dj-hero-token" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+  return '<button type="button" class="dj-hero dj-hero-token reveal" onclick="diaryShowDetail(\'' + post.postId + '\')">'
     + '<div class="dj-hero-title">' + titleHtml + '</div>'
     + metaHtml
     + '</button>';
@@ -712,7 +713,8 @@ function diaryBuildCardHtml(post, parsed) {
 
   if (thumb) {
     var photoTitle = hasTitle ? escapeHtml(parsed.title) : diaryDisplayTitle(parsed, 24);
-    return '<button type="button" class="dj-card dj-card-photo" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+    // [T35] .reveal: スクロールでフェードイン
+    return '<button type="button" class="dj-card dj-card-photo reveal" onclick="diaryShowDetail(\'' + post.postId + '\')">'
       + '<img class="dj-card-img" src="' + thumb + '" alt="" loading="lazy" decoding="async">'
       + '<div class="dj-card-body">'
       + '<div class="dj-card-title">' + photoTitle + '</div>'
@@ -723,7 +725,7 @@ function diaryBuildCardHtml(post, parsed) {
 
   var excerpt = diaryExtractExcerpt(parsed.textContent, 50);
   var textTitle = hasTitle ? escapeHtml(parsed.title) : (excerpt ? escapeHtml(excerpt) : '無題の日記');
-  return '<button type="button" class="dj-card dj-card-text" onclick="diaryShowDetail(\'' + post.postId + '\')">'
+  return '<button type="button" class="dj-card dj-card-text reveal" onclick="diaryShowDetail(\'' + post.postId + '\')">'
     + '<div class="dj-card-title">' + textTitle + '</div>'
     + '<div class="dj-card-date">' + parsed.dateStrShort + '</div>'
     + (hasTitle && excerpt ? '<div class="dj-card-excerpt">' + escapeHtml(excerpt) + '</div>' : '')
@@ -861,6 +863,9 @@ function renderDiaryPosts() {
   }
 
   container.innerHTML = html;
+  // [T35] 新しく差し込んだカード(.reveal)をスキャンして、画面内にあるものは即表示・
+  // 画面外のものはスクロールでの表示待ちにする（motion.js）。
+  if (window.rescanReveal) window.rescanReveal();
 }
 
 // 一覧のいいねボタンだけを部分更新（全体再描画で「もっと見る」の展開状態を失わないため）
