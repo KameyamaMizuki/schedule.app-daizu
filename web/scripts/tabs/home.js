@@ -246,19 +246,40 @@ async function renderHomeScheduleSummary() {
 }
 
 // ========== ④きょうのだいずカード ==========
-// 最新YOUSU 1件のサムネ+時刻+冒頭を表示。タップで様子タブへ。
+// 当日(JST)のYOUSU最新1件のサムネ+時刻+冒頭を表示。タップで様子タブへ。
+// [T29] 旧実装は posts[0](=最新1件)を日付無視で表示しており、昨日以前の投稿しか
+// なくてもそれが表示され続けるバグがあった。当日(JST)のものだけを対象にする。
+
+// createdAt(UTC ISO文字列)をJST日付文字列(yyyy-mm-dd)に変換
+function homeJstDateStr(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.getUTCFullYear() + '-' + String(jst.getUTCMonth() + 1).padStart(2, '0') + '-' + String(jst.getUTCDate()).padStart(2, '0');
+}
+
+// 「今日」をJSTのyyyy-mm-ddで返す
+function homeTodayJstStr() {
+  const jstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return formatDateForApi(jstNow);
+}
 
 async function renderHomeDaizuCard() {
   const body = document.getElementById('homeDaizuCardBody');
   if (!body) return;
 
+  const todayStr = homeTodayJstStr();
+
   const paint = function(data) {
     const posts = (data && data.posts) || [];
-    if (posts.length === 0) {
-      body.innerHTML = '<div class="home-daizu-empty">まだ記録がありません</div>';
+    // posts はcreatedAt降順で返る前提（既存の posts[0]="最新" 仕様を踏襲）ので、
+    // 最初に見つかった当日一致が「当日の最新」になる。
+    const post = posts.find(function(p) { return homeJstDateStr(p.createdAt) === todayStr; });
+    if (!post) {
+      body.innerHTML = '<div class="home-daizu-empty">今日の記録はまだありません</div>';
       return;
     }
-    const post = posts[0];
     const postDate = post.createdAt ? new Date(post.createdAt) : null;
     const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
     const imgSrc = safeImageSrc(post.imageUrl);
@@ -274,7 +295,7 @@ async function renderHomeDaizuCard() {
   };
 
   try {
-    const data = await Api.getPosts('?type=YOUSU&limit=1', paint);
+    const data = await Api.getPosts('?type=YOUSU&limit=5', paint);
     paint(data);
   } catch (e) {
     console.error('Failed to load home daizu card:', e);
