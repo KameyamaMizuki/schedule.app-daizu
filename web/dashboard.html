@@ -61,16 +61,19 @@
       </button>
 
       <!-- ④きょうのだいずカード -->
-      <button type="button" id="homeDaizuCard" class="home-daizu-card reveal" onclick="switchTab('yousu')">
-        <div class="home-daizu-card-header">
+      <!-- [T34] 様子(YOUSU)行と日記(DIARY)行でタップ先が異なる(様子タブ/日記タブ)ため、
+           カード全体を1つのbuttonにすることはできない。ヘッダーのみ独立ボタン化し、
+           本文側の各行(homeJs内で描画)がそれぞれ自分の遷移先を持つ。 -->
+      <div id="homeDaizuCard" class="home-daizu-card reveal">
+        <button type="button" class="home-daizu-card-header" onclick="switchTab('yousu')">
           <i class="ph-bold ph-paw-print"></i>
           <span>きょうのだいず</span>
           <i class="ph-bold ph-caret-right home-card-arrow"></i>
-        </div>
+        </button>
         <div id="homeDaizuCardBody" class="home-daizu-card-body">
           <div class="skeleton skeleton-line medium"></div>
         </div>
-      </button>
+      </div>
     </div>
   </div>
 

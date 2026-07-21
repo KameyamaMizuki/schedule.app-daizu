@@ -246,7 +246,8 @@ async function renderHomeScheduleSummary() {
 }
 
 // ========== ④きょうのだいずカード ==========
-// 当日(JST)のYOUSU最新1件のサムネ+時刻+冒頭を表示。タップで様子タブへ。
+// 当日(JST)のYOUSU最新1件(サムネ+時刻+冒頭) + 当日(JST)のDIARYをタイトル中心の
+// コンパクト行で表示。YOUSU行タップで様子タブ、DIARY行タップで日記タブへ（T34）。
 // [T29] 旧実装は posts[0](=最新1件)を日付無視で表示しており、昨日以前の投稿しか
 // なくてもそれが表示され続けるバグがあった。当日(JST)のものだけを対象にする。
 
@@ -265,38 +266,92 @@ function homeTodayJstStr() {
   return formatDateForApi(jstNow);
 }
 
+// タグ除去した先頭maxLen字の抜粋（DOMParserで解析=inert。diary.js の diaryExtractExcerpt と同じ方式。
+// 本文HTMLは実体参照済み(&lt;等)のため、textContent経由でデコードしてから返さないと
+// 表示時のescapeHtmlで二重エスケープされ「&lt;」のようにそのまま出てしまう）
+function homeStripTagsExcerpt(html, maxLen) {
+  if (!html) return '';
+  var doc = new DOMParser().parseFromString(String(html), 'text/html');
+  var text = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+  return text.length > maxLen ? text.substring(0, maxLen) : text;
+}
+
+// DIARY投稿の表示用タイトルと日付を抽出（新形式=title/body/date、旧形式=[TITLE:]/[DATE:]記法）。
+// diary.js の parseDiaryPost 相当をこのカード用（タイトル/日付のみ）に最小化したもの。
+function homeDiaryTitleAndDate(post) {
+  if (post.body !== undefined) {
+    var dateStr = post.date || homeJstDateStr(post.createdAt);
+    var title = post.title || homeStripTagsExcerpt(post.body, 20) || '無題の日記';
+    return { title: title, dateStr: dateStr };
+  }
+  var text = post.text || '';
+  var dateMatch = text.match(/^\[DATE:(\d{4}-\d{2}-\d{2})\]/);
+  var titleMatch = text.match(/\[TITLE:([^\]]+)\]/);
+  var dateStr = dateMatch ? dateMatch[1] : homeJstDateStr(post.createdAt);
+  var bodyOnly = text.replace(/^\[DATE:[^\]]+\]/, '').replace(/^\[TITLE:[^\]]+\]/, '').replace(/^\[PHOTO_POS:[^\]]+\]/, '').replace(/^\[CATCH_IMG:[^\]]+\]/, '');
+  var title = titleMatch ? titleMatch[1] : (homeStripTagsExcerpt(bodyOnly, 20) || '無題の日記');
+  return { title: title, dateStr: dateStr };
+}
+
 async function renderHomeDaizuCard() {
   const body = document.getElementById('homeDaizuCardBody');
   if (!body) return;
 
   const todayStr = homeTodayJstStr();
+  let yousuData = null;
+  let diaryData = null;
 
-  const paint = function(data) {
-    const posts = (data && data.posts) || [];
+  const paint = function() {
+    const yousuPosts = (yousuData && yousuData.posts) || [];
+    const diaryPosts = (diaryData && diaryData.posts) || [];
+
     // posts はcreatedAt降順で返る前提（既存の posts[0]="最新" 仕様を踏襲）ので、
     // 最初に見つかった当日一致が「当日の最新」になる。
-    const post = posts.find(function(p) { return homeJstDateStr(p.createdAt) === todayStr; });
-    if (!post) {
+    const yousuPost = yousuPosts.find(function(p) { return homeJstDateStr(p.createdAt) === todayStr; });
+    const todayDiaries = diaryPosts.filter(function(p) { return homeDiaryTitleAndDate(p).dateStr === todayStr; });
+
+    if (!yousuPost && todayDiaries.length === 0) {
       body.innerHTML = '<div class="home-daizu-empty">今日の記録はまだありません</div>';
       return;
     }
-    const postDate = post.createdAt ? new Date(post.createdAt) : null;
-    const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
-    const imgSrc = safeImageSrc(post.imageUrl);
-    const thumbHtml = imgSrc
-      ? '<img class="home-daizu-thumb" src="' + imgSrc + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
-      : '';
-    body.innerHTML =
-      '<div class="home-daizu-entry">' + thumbHtml +
-      '<div class="home-daizu-entry-text">' +
-      '<span class="home-daizu-entry-time">' + escapeHtml(timeStr) + '</span>' +
-      '<p class="home-daizu-entry-body">' + escapeHtml(post.text || '') + '</p>' +
-      '</div></div>';
+
+    let html = '';
+    if (yousuPost) {
+      const postDate = yousuPost.createdAt ? new Date(yousuPost.createdAt) : null;
+      const timeStr = postDate ? (String(postDate.getHours()).padStart(2, '0') + ':' + String(postDate.getMinutes()).padStart(2, '0')) : '';
+      const imgSrc = safeImageSrc(yousuPost.imageUrl);
+      const thumbHtml = imgSrc
+        ? '<img class="home-daizu-thumb" src="' + imgSrc + '" alt="だいず" loading="lazy" decoding="async" onerror="this.style.display=\'none\'">'
+        : '';
+      html +=
+        '<div class="home-daizu-entry" onclick="switchTab(\'yousu\')">' + thumbHtml +
+        '<div class="home-daizu-entry-text">' +
+        '<span class="home-daizu-entry-time"><i class="ph-bold ph-paw-print"></i>' + escapeHtml(timeStr) + '</span>' +
+        '<p class="home-daizu-entry-body">' + escapeHtml(yousuPost.text || '') + '</p>' +
+        '</div></div>';
+    }
+
+    if (todayDiaries.length > 0) {
+      html += '<div class="home-daizu-diary-list">' + todayDiaries.map(function(post) {
+        const info = homeDiaryTitleAndDate(post);
+        return '<div class="home-daizu-diary-row" onclick="switchTab(\'diary\')">' +
+          '<i class="ph-bold ph-book-open"></i>' +
+          '<span class="home-daizu-diary-title">' + escapeHtml(info.title) + '</span>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
+
+    body.innerHTML = html;
   };
 
   try {
-    const data = await Api.getPosts('?type=YOUSU&limit=5', paint);
-    paint(data);
+    const results = await Promise.all([
+      Api.getPosts('?type=YOUSU&limit=5', function(fresh) { yousuData = fresh; paint(); }),
+      Api.getPosts('?type=DIARY&limit=5', function(fresh) { diaryData = fresh; paint(); })
+    ]);
+    yousuData = results[0];
+    diaryData = results[1];
+    paint();
   } catch (e) {
     console.error('Failed to load home daizu card:', e);
     body.innerHTML = '<div class="home-daizu-empty">読み込みに失敗しました</div>';

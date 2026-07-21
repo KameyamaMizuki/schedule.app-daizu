@@ -76,13 +76,30 @@
 .home-summary-label{color:var(--c-ink-soft);font-weight:600;min-width:44px}
 .home-summary-value{color:var(--c-ink);font-weight:600;text-align:right}
 
+/* [T34] カード全体はもうbuttonではない（様子行/日記行で遷移先が異なるため）。
+   共通ルールで付いた cursor:pointer / タップ縮小はヘッダー側の独立ボタンだけに残す。 */
+.home-daizu-card{cursor:default}
+.home-daizu-card:active{transform:none}
+.home-daizu-card-header{display:flex;width:100%;background:none;border:none;padding:0;text-align:left;font-family:inherit;cursor:pointer;min-height:44px}
+.home-daizu-card-header:active{opacity:.7}
+
 .home-daizu-card-body{margin-top:10px}
-.home-daizu-entry{display:flex;gap:12px;align-items:flex-start}
+.home-daizu-entry{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .home-daizu-thumb{width:56px;height:56px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid var(--c-line)}
 .home-daizu-entry-text{flex:1;min-width:0}
-.home-daizu-entry-time{font-size:12px;color:var(--c-ink-faint)}
+.home-daizu-entry-time{font-size:12px;color:var(--c-ink-faint);display:inline-flex;align-items:center;gap:4px}
 .home-daizu-entry-body{font-size:14px;color:var(--c-ink);line-height:1.5;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .home-daizu-empty{font-size:14px;color:var(--c-ink-faint);text-align:center;padding:4px 0}
+
+/* [T34] 当日の日記(DIARY)行 — タイトル中心のコンパクト表示。ph-book-openで様子行(ph-paw-print)と区別
+   行間の区切り線は「2行目以降」にのみ付ける。様子行の直後に続く場合はリスト自体に上区切りを足す
+   （様子が無く日記行だけの日は、先頭行に余計な線が出ない）。 */
+.home-daizu-diary-list{display:flex;flex-direction:column}
+.home-daizu-entry+.home-daizu-diary-list{margin-top:10px;padding-top:10px;border-top:1px solid var(--c-line)}
+.home-daizu-diary-row{display:flex;align-items:center;gap:8px;padding:10px 0;min-height:44px;cursor:pointer}
+.home-daizu-diary-row+.home-daizu-diary-row{border-top:1px solid var(--c-line)}
+.home-daizu-diary-row i{font-size:16px;color:var(--c-green);flex-shrink:0}
+.home-daizu-diary-title{font-size:13.5px;color:var(--c-ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ===== 共有クラス（他タブからも参照される。ホーム内では使用しないが定義は残す） =====
    .back-btn: WANstaタブの一言モーダル「キャンセル」ボタン（dashboard.html）が参照 */
