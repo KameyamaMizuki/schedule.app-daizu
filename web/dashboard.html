@@ -45,8 +45,11 @@
         </div>
       </div>
 
-      <!-- ②おさんぽ日和カード（Task 17: カード本体 / Task 21: タップで時間帯別グラフ） -->
-      <button type="button" id="walkCard" class="walk-card" style="display:none"></button>
+      <!-- ②おさんぽ日和カード（Task17: カード本体 / Task32: タップでインライン展開=気温曲線・降水棒・UV・チロル解説。モーダルは廃止） -->
+      <div class="walk-card-wrap">
+        <button type="button" id="walkCard" class="walk-card" style="display:none" aria-expanded="false" aria-controls="walkPanel"></button>
+        <div id="walkPanel" class="walk-panel" hidden></div>
+      </div>
 
       <!-- ③今週のよていサマリーカード -->
       <button type="button" id="homeScheduleSummaryCard" class="home-summary-card reveal" onclick="switchTab('schedule')">
@@ -263,11 +266,6 @@
       <button class="wansta-hitokoto-submit" id="wanstaHitokotoSubmitBtn" onclick="wanstaSubmitHitokoto()">追加する</button>
       <button class="back-btn" onclick="wanstaCloseHitokotoModal()" style="margin-top:8px">キャンセル</button>
     </div>
-  </div>
-
-  <!-- おさんぽ日和 詳細グラフモーダル（Task21） -->
-  <div id="walkDetailModal" class="walk-detail-modal" onclick="if(event.target===this) closeWalkDetailModal()">
-    <div class="walk-detail-content"></div>
   </div>
 
   <!-- 週選択モーダル -->

@@ -75,6 +75,7 @@ const AppConfig = Object.freeze({
     HOT_LIMIT: 28,      // これ以上の気温は散歩非推奨(°C)
     RAIN_LIMIT: 50,     // 降水確率しきい値(%)
     CACHE_MIN: 60,      // キャッシュ分
+    PLACE_NAME: '東雲', // 詳細パネルに表示する地点名(Task32)
   },
 
   /** カレンダー色（schedule-calendar.js） */

@@ -27,7 +27,10 @@
 .speech-bubble.fade-out{opacity:0}
 
 /* ===== ②おさんぽ日和カード（Task17実装。モック: .superpowers/brainstorm/1619-1783078352/content/home-final.html） ===== */
-/* Task21: <div>→<button>化（タップでモーダル）。フォント/枠線などボタンの既定装飾をリセット */
+/* Task32: モーダル(Task21)を廃止しカード直下へインライン展開。ヘッダーは<button>のまま、
+   パネル(#walkPanel)はmax-height+opacityで開閉(prefers-reduced-motionはJS側でも即時反映)。
+   この画面のみ天気アプリ風の配色(空グラデ・UV色)をトークン外で使用可(スペック許容)。 */
+.walk-card-wrap{width:100%}
 .walk-card{display:flex;align-items:center;gap:14px;width:100%;padding:16px;background:linear-gradient(135deg,var(--c-accent-soft),var(--c-surface));border:none;border-radius:var(--radius-card);box-shadow:var(--shadow-card);min-height:44px;font-family:var(--font-body);text-align:left;cursor:pointer}
 .walk-icon{flex-shrink:0;width:48px;height:48px;border-radius:50%;background:var(--c-surface);display:flex;align-items:center;justify-content:center}
 .walk-icon i{font-size:24px;color:var(--c-accent)}
@@ -36,32 +39,66 @@
 .walk-title{font-size:15.5px;font-weight:700;color:var(--c-ink);margin-top:2px}
 .walk-sub{font-size:12.5px;color:var(--c-ink-soft);margin-top:2px}
 .walk-arrow{flex-shrink:0;color:var(--c-ink-faint);font-size:16px}
+.walk-arrow i{display:block;transition:transform 0.25s ease}
+.walk-card[aria-expanded="true"] .walk-arrow i{transform:rotate(180deg)}
 
-/* ===== ②-a おさんぽ日和 詳細グラフモーダル（Task21） ===== */
-.walk-detail-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:2500;justify-content:center;align-items:center;padding:20px}
-.walk-detail-modal.active{display:flex}
-.walk-detail-content{position:relative;background:var(--c-surface);border-radius:var(--radius-card);box-shadow:var(--shadow-modal);padding:20px 14px 16px;width:100%;max-width:380px;max-height:86vh;overflow-y:auto}
-.wm-close{position:absolute;top:6px;right:6px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:none;color:var(--c-ink-soft);font-size:19px;cursor:pointer}
-.wm-title{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--c-ink);margin:0 40px 12px 4px}
-.wm-axis-caption{font-size:11px;color:var(--c-ink-soft);margin:0 4px 10px}
-.wm-cols{display:flex;align-items:flex-end;gap:2px;padding:0 2px}
-.wm-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center}
-.wm-col.wm-now{background:var(--c-green-soft);border-radius:6px}
-.wm-now-tag{font-size:8.5px;font-weight:700;color:var(--c-green-deep);height:11px;line-height:11px;white-space:nowrap}
-.wm-bar-track{width:100%;height:140px;display:flex;align-items:flex-end;justify-content:center}
-.wm-bar{width:100%;max-width:16px;border-radius:3px 3px 1px 1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
-.wm-bar.wm-good{background:var(--c-green)}
-.wm-bar.wm-off{background:var(--c-cell-off)}
-.wm-bar.wm-hot{background:var(--c-danger-soft)}
-.wm-rain{font-size:9px;color:var(--c-sat);font-weight:700;height:13px;line-height:13px;white-space:nowrap}
-.wm-hour{font-size:10px;color:var(--c-ink-soft);height:14px;line-height:14px;white-space:nowrap}
-.wm-legend{display:flex;flex-wrap:wrap;gap:8px 12px;margin:12px 4px 0;font-size:10.5px;color:var(--c-ink-soft)}
-.wm-legend-item{display:inline-flex;align-items:center;gap:4px}
-.wm-swatch{display:inline-block;width:9px;height:9px;border-radius:2px;flex-shrink:0}
-.wm-swatch-good{background:var(--c-green)}
-.wm-swatch-off{background:var(--c-cell-off);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
-.wm-swatch-hot{background:var(--c-danger-soft)}
-.wm-swatch-rain{background:var(--c-sat)}
+/* ===== ②-a おさんぽ日和 詳細パネル（インライン展開・Task32） ===== */
+.walk-panel{max-height:0;opacity:0;overflow:hidden;border-radius:var(--radius-card);background:var(--c-surface);box-shadow:var(--shadow-card);transition:max-height 0.35s cubic-bezier(.4,0,.2,1),opacity 0.3s ease}
+.walk-panel:not([hidden]){margin-top:10px}
+@media (prefers-reduced-motion: reduce){.walk-panel,.walk-arrow i{transition:none}}
+
+.wm2-head{padding:16px 16px 14px;border-radius:var(--radius-card) var(--radius-card) 0 0;color:#fff}
+.wm2-sky-clear{background:linear-gradient(160deg,#5FA8DE 0%,#9BCDEE 55%,#E4F3FB 100%)}
+.wm2-sky-hot{background:linear-gradient(160deg,#F2994A 0%,#F6C453 55%,#FCE6B0 100%)}
+.wm2-sky-rain{background:linear-gradient(160deg,#5C6E7E 0%,#8FA3B0 55%,#D8E2E6 100%)}
+.wm2-place{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:0.04em;opacity:0.95;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+.wm2-place i{font-size:12px}
+.wm2-headline{font-family:var(--font-display);font-size:19px;font-weight:700;margin-top:4px;text-shadow:0 1px 3px rgba(0,0,0,.2)}
+.wm2-headsub{font-size:12.5px;margin-top:3px;opacity:0.96;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+
+.wm2-body{padding:14px 14px 2px}
+.wm2-section-label{font-size:11px;font-weight:700;color:var(--c-ink-soft);letter-spacing:0.03em;margin-bottom:6px}
+.wm2-temp-wrap{position:relative;height:92px;margin-bottom:2px}
+.wm2-axis-max,.wm2-axis-min{position:absolute;left:0;z-index:2;font-size:10px;font-weight:700;color:var(--c-ink-faint);background:var(--c-surface);padding:0 3px;border-radius:3px}
+.wm2-axis-max{top:0}
+.wm2-axis-min{bottom:0}
+.wm2-temp-svg{width:100%;height:100%;display:block}
+.wm2-temp-path{fill:none;stroke:var(--c-accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.wm2-rec-band{fill:var(--c-green-soft);opacity:0.75}
+.wm2-now-line{stroke:var(--c-ink-faint);stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.wm2-pt{fill:var(--c-surface);stroke:var(--c-accent);stroke-width:2}
+.wm2-pt-hot{stroke:var(--c-danger)}
+.wm2-pt-now{fill:var(--c-accent);stroke:var(--c-surface);stroke-width:2}
+.wm2-now-label{font-size:11px;font-weight:700;fill:var(--c-ink)}
+
+.wm2-cols{display:flex;align-items:flex-end;gap:1px}
+.wm2-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;border-radius:4px}
+.wm2-col-rec{background:var(--c-green-soft)}
+.wm2-col-now{background:var(--c-accent-soft)}
+.wm2-bar-track{width:100%;height:44px;display:flex;align-items:flex-end;justify-content:center}
+.wm2-bar-track-uv{height:38px}
+.wm2-bar{width:100%;max-width:10px;border-radius:2px 2px 1px 1px}
+.wm2-bar-rain{background:var(--c-sat)}
+.wm2-uv-low{background:#8BC34A}
+.wm2-uv-moderate{background:#FDD835}
+.wm2-uv-high{background:#FB8C00}
+.wm2-uv-veryhigh{background:#E64A19}
+.wm2-uv-extreme{background:#9C27B0}
+.wm2-tick{font-size:10px;color:var(--c-ink-soft);height:14px;line-height:14px;white-space:nowrap}
+.wm2-row-label{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--c-ink-faint);margin:3px 0 8px}
+.wm2-row-label i{font-size:11px}
+
+.wm2-legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin:6px 0 12px;font-size:10px;color:var(--c-ink-soft)}
+.wm2-legend-item{display:inline-flex;align-items:center;gap:4px}
+.wm2-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.wm2-swatch-rec{background:var(--c-green-soft);box-shadow:inset 0 0 0 1px var(--c-green)}
+.wm2-swatch-hot{background:var(--c-danger)}
+.wm2-swatch-now{background:var(--c-accent)}
+
+.wm2-chirol{display:flex;align-items:flex-end;gap:10px;padding:0 14px 16px}
+.wm2-chirol-avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--c-surface);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.wm2-chirol-bubble{position:relative;flex:1;min-width:0;background:var(--c-bg);border:1.5px solid var(--c-green-soft);border-radius:14px;padding:8px 12px;font-size:12.5px;line-height:1.5;color:var(--c-ink)}
+.wm2-chirol-bubble::before{content:'';position:absolute;left:-6px;bottom:13px;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:6px solid var(--c-green-soft)}
 
 /* ===== ③今週のよてい／④きょうのだいず：共通カードボタン ===== */
 .home-summary-card,.home-daizu-card{display:block;width:100%;text-align:left;background:var(--c-surface);border:none;border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:14px 16px;cursor:pointer;font-family:var(--font-body);min-height:44px;transition:transform 0.15s ease}
