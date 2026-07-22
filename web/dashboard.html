@@ -51,17 +51,22 @@
         <div id="walkPanel" class="walk-panel" hidden></div>
       </div>
 
-      <!-- ③今週のよていサマリーカード -->
-      <button type="button" id="homeScheduleSummaryCard" class="home-summary-card reveal" onclick="switchTab('schedule')">
-        <div class="home-summary-card-header">
-          <i class="ph-bold ph-calendar-check"></i>
-          <span>今週のよてい</span>
-          <i class="ph-bold ph-caret-right home-card-arrow"></i>
-        </div>
-        <div id="homeScheduleSummaryBody" class="home-summary-card-body">
-          <div class="skeleton skeleton-line medium"></div>
-        </div>
-      </button>
+      <!-- ③今週のよていサマリーカード（T33: タップでカード直下に「きょう」の全員×時間帯詳細を展開表示。
+           再タップで収納。予定タブへの遷移は展開内の専用リンクに移動。おさんぽ日和カード(②)と同じ
+           展開/収納の実装パターン(hidden属性 + aria-expanded + max-height/opacityトランジション)。 -->
+      <div class="home-summary-card-wrap">
+        <button type="button" id="homeScheduleSummaryCard" class="home-summary-card reveal" onclick="toggleHomeScheduleSummary()" aria-expanded="false" aria-controls="homeScheduleSummaryPanel">
+          <div class="home-summary-card-header">
+            <i class="ph-bold ph-calendar-check"></i>
+            <span>今週のよてい</span>
+            <i class="ph-bold ph-caret-down home-card-arrow"></i>
+          </div>
+          <div id="homeScheduleSummaryBody" class="home-summary-card-body">
+            <div class="skeleton skeleton-line medium"></div>
+          </div>
+        </button>
+        <div id="homeScheduleSummaryPanel" class="home-summary-panel" hidden></div>
+      </div>
 
       <!-- ④きょうのだいずカード -->
       <!-- [T34] 様子(YOUSU)行と日記(DIARY)行でタップ先が異なる(様子タブ/日記タブ)ため、

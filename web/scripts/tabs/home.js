@@ -198,7 +198,18 @@ function homeDogTapped() {
 }
 
 // ========== ③今週のよていサマリーカード ==========
-// きょう・あすの「担当」を homeGetTodayPerson と同じロジックで要約表示。タップで予定タブへ。
+// きょう・あすの「担当」を homeGetTodayPerson と同じロジックで要約表示。
+// [T33] タップするとカード直下に「きょう」の全員×時間帯(終日/9/17/21/24)詳細を
+// ◯✕グリッドで展開表示し、再タップで収納する（以前はタップで予定タブへ遷移していた）。
+// 展開内には引き続き予定タブへのリンクを残す。展開/収納は home.walk.js の
+// toggleWalkPanel と同じ実装パターン(hidden属性 + aria-expanded + max-height/opacityの
+// トランジション + prefers-reduced-motion時は即時切替 + transitionend未発火環境向けの
+// setTimeoutフォールバック)。詳細グリッドは schedule-weekview.js の wv-grid/wv-cell を
+// そのまま流用(同じdashboard.bundle.cssに含まれるため追加CSSなしで見た目を統一できる)。
+
+let homeScheduleTodayData = null;
+let homeScheduleTodayStr = '';
+let homeScheduleExpanded = false;
 
 async function renderHomeScheduleSummary() {
   const body = document.getElementById('homeScheduleSummaryBody');
@@ -213,6 +224,7 @@ async function renderHomeScheduleSummary() {
   const tomorrowWeekId = getWeekId(tomorrow);
   const sameWeek = todayWeekId === tomorrowWeekId;
 
+  homeScheduleTodayStr = todayStr;
   let todayData = null;
   let tomorrowData = null;
 
@@ -222,6 +234,8 @@ async function renderHomeScheduleSummary() {
     body.innerHTML =
       '<div class="home-summary-row"><span class="home-summary-label">きょう</span><span class="home-summary-value">' + escapeHtml(todayPerson || '未定') + '</span></div>' +
       '<div class="home-summary-row"><span class="home-summary-label">あす</span><span class="home-summary-value">' + escapeHtml(tomorrowPerson || '未定') + '</span></div>';
+    homeScheduleTodayData = todayData;
+    if (homeScheduleExpanded) renderHomeSchedulePanel(); // 展開中にSWRで最新化されたら詳細グリッドも更新
   };
 
   try {
@@ -243,6 +257,112 @@ async function renderHomeScheduleSummary() {
     console.error('Failed to load home schedule summary:', e);
     body.innerHTML = '<div class="home-summary-row"><span class="home-summary-value">読み込みに失敗しました</span></div>';
   }
+}
+
+function homeScheduleReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+/** きょうの全員×時間帯(終日/9/17/21/24)を◯/✕グリッドで表示するHTML(wv-grid/wv-cellを流用) + 予定タブへのリンク */
+function buildHomeScheduleDetailHtml() {
+  const data = homeScheduleTodayData;
+  const dateStr = homeScheduleTodayStr;
+  const linkHtml = '<button type="button" class="home-detail-link" onclick="switchTab(\'schedule\')">予定タブで詳しく <i class="ph-bold ph-arrow-right"></i></button>';
+  if (!data || !data.users || data.users.length === 0) {
+    return '<div class="home-summary-row"><span class="home-summary-value">読み込み中…</span></div>' + linkHtml;
+  }
+  const timeSlots = AppConfig.SCHEDULE.SLOTS;
+  const timeLabels = AppConfig.SCHEDULE.LABEL_MAP;
+  let html = '<div class="wv-grid home-detail-grid">';
+  html += '<div class="wv-grid-cell wv-grid-head"></div>';
+  data.users.forEach(function(user) {
+    const name = getDisplayNameByUserId(user.userId) || user.displayName;
+    html += '<div class="wv-grid-cell wv-grid-head">' + escapeHtml(name) + '</div>';
+  });
+  timeSlots.forEach(function(slot) {
+    html += '<div class="wv-grid-cell wv-slot-label">' + timeLabels[slot] + '</div>';
+    data.users.forEach(function(user) {
+      const key = dateStr + ':' + slot;
+      const on = !!(user.slots && user.slots[key]);
+      html += '<div class="wv-grid-cell wv-cell ' + (on ? 'on' : 'off') + '">' + (on ? '◯' : '✕') + '</div>';
+    });
+  });
+  html += '</div>';
+  return html + linkHtml;
+}
+
+function renderHomeSchedulePanel() {
+  const panel = document.getElementById('homeScheduleSummaryPanel');
+  if (!panel) return;
+  panel.innerHTML = buildHomeScheduleDetailHtml();
+}
+
+function toggleHomeScheduleSummary() {
+  const card = document.getElementById('homeScheduleSummaryCard');
+  const panel = document.getElementById('homeScheduleSummaryPanel');
+  if (!card || !panel) return;
+  if (homeScheduleExpanded) {
+    collapseHomeSchedulePanel(panel);
+    homeScheduleExpanded = false;
+  } else {
+    renderHomeSchedulePanel();
+    expandHomeSchedulePanel(panel);
+    homeScheduleExpanded = true;
+  }
+  card.setAttribute('aria-expanded', homeScheduleExpanded ? 'true' : 'false');
+}
+
+function expandHomeSchedulePanel(panel) {
+  panel.hidden = false;
+  if (homeScheduleReducedMotion()) {
+    panel.style.transition = 'none';
+    panel.style.maxHeight = 'none';
+    panel.style.opacity = '1';
+    return;
+  }
+  panel.style.maxHeight = '0px';
+  panel.style.opacity = '0';
+  void panel.offsetHeight; // reflow
+  const target = panel.scrollHeight;
+  // rAFはバックグラウンドタブ/一部のheadless実行環境で発火しないことがあるため、
+  // setTimeoutで次ティックに回して確実にトランジションを開始させる(home.walk.js踏襲)。
+  setTimeout(function() {
+    panel.style.maxHeight = target + 'px';
+    panel.style.opacity = '1';
+  }, 16);
+  const finish = function() {
+    panel.style.maxHeight = 'none'; // 以後のリフロー(向き変更等)でも切れないように
+    panel.removeEventListener('transitionend', onEnd);
+    clearTimeout(fallback);
+  };
+  const onEnd = function(e) { if (e.target === panel && e.propertyName === 'max-height') finish(); };
+  panel.addEventListener('transitionend', onEnd);
+  const fallback = setTimeout(finish, 600); // transitionendが発火しない環境向けの保険
+}
+
+function collapseHomeSchedulePanel(panel) {
+  if (homeScheduleReducedMotion()) {
+    panel.style.transition = 'none';
+    panel.style.maxHeight = '0px';
+    panel.style.opacity = '0';
+    panel.hidden = true;
+    return;
+  }
+  const current = panel.scrollHeight;
+  panel.style.maxHeight = current + 'px';
+  void panel.offsetHeight; // reflow
+  setTimeout(function() {
+    panel.style.maxHeight = '0px';
+    panel.style.opacity = '0';
+  }, 16);
+  const finish = function() {
+    panel.hidden = true;
+    panel.removeEventListener('transitionend', onEnd);
+    clearTimeout(fallback);
+  };
+  const onEnd = function(e) { if (e.target === panel && e.propertyName === 'max-height') finish(); };
+  panel.addEventListener('transitionend', onEnd);
+  const fallback = setTimeout(finish, 600); // transitionendが発火しない環境向けの保険
 }
 
 // ========== ④きょうのだいずカード ==========

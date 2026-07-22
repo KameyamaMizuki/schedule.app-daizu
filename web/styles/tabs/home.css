@@ -113,6 +113,17 @@
 .home-summary-label{color:var(--c-ink-soft);font-weight:600;min-width:44px}
 .home-summary-value{color:var(--c-ink);font-weight:600;text-align:right}
 
+/* [T33] タップ展開する「きょう」の全員×時間帯詳細パネル(walk-card-wrap/walk-panelと同じ構造・アニメーション) */
+.home-summary-card-wrap{width:100%}
+.home-summary-card[aria-expanded="true"] .home-card-arrow{transform:rotate(180deg)}
+.home-card-arrow{transition:transform 0.2s ease}
+.home-summary-panel{max-height:0;opacity:0;overflow:hidden;border-radius:var(--radius-card);background:var(--c-surface);box-shadow:var(--shadow-card);transition:max-height 0.35s cubic-bezier(.4,0,.2,1),opacity 0.3s ease;padding:0 14px}
+.home-summary-panel:not([hidden]){margin-top:10px;padding:14px}
+@media (prefers-reduced-motion: reduce){.home-summary-panel,.home-card-arrow{transition:none}}
+.home-detail-grid{margin-bottom:12px}
+.home-detail-link{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;background:var(--c-green-soft);color:var(--c-green);border:none;border-radius:var(--radius-cell);font-family:var(--font-body);font-size:13.5px;font-weight:700;cursor:pointer}
+.home-detail-link:active{opacity:.7}
+
 /* [T34] カード全体はもうbuttonではない（様子行/日記行で遷移先が異なるため）。
    共通ルールで付いた cursor:pointer / タップ縮小はヘッダー側の独立ボタンだけに残す。 */
 .home-daizu-card{cursor:default}
