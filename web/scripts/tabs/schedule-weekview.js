@@ -204,6 +204,20 @@ function createWeekView(config) {
     renderView();
   }
 
+  // [T37] テンプレート削除（チップの✕）。適用中に削除された場合は適用モードを解除する。
+  function patternDeleteTap(index) {
+    if (!editMode) return;
+    var patterns = loadSchedulePatterns();
+    var pattern = patterns[index];
+    if (!pattern) return;
+    if (!confirm('「' + pattern.name + '」を削除しますか？')) return;
+    patterns.splice(index, 1);
+    saveSchedulePatterns(patterns);
+    if (patternMode && patternMode.type === 'apply' && patternMode.index === index) patternMode = null;
+    showToast('「' + pattern.name + '」を削除しました');
+    renderView();
+  }
+
   function startEdit() {
     syncNotes();
     snapshot = JSON.parse(JSON.stringify(schedules));
@@ -431,14 +445,23 @@ function createWeekView(config) {
     html += '<button class="wv-copy-btn" onclick="' + config.copyLastWeekFnName + '()"><i class="ph-bold ph-copy"></i>コピー</button>';
     html += '</div>';
 
+    // [T37] マイパターン = 名前付きテンプレート(localStorage schedulePatterns)。
+    // チップをタップ→適用モード(日の見出しタップで反映)、✕で削除(確認あり)、
+    // ＋登録で現在の自分の列を新しい名前付きテンプレとして保存する。
     var patterns = loadSchedulePatterns();
     html += '<div class="wv-pattern-chips">';
+    if (patterns.length === 0) {
+      html += '<span class="wv-pattern-empty-hint">マイパターンはまだありません。＋登録で保存できます</span>';
+    }
     patterns.forEach(function(p, i) {
       var active = !!(patternMode && patternMode.type === 'apply' && patternMode.index === i);
-      html += '<button class="wv-pattern-chip' + (active ? ' active' : '') + '" onclick="' + config.patternChipFnName + '(' + i + ')">' + escapeHtml(p.name) + '</button>';
+      html += '<span class="wv-pattern-chip-wrap">'
+        + '<button type="button" class="wv-pattern-chip' + (active ? ' active' : '') + '" onclick="' + config.patternChipFnName + '(' + i + ')">' + escapeHtml(p.name) + '</button>'
+        + '<button type="button" class="wv-pattern-chip-del" onclick="' + config.patternDeleteFnName + '(' + i + ')" aria-label="' + escapeAttr(p.name) + 'を削除"><i class="ph-bold ph-x"></i></button>'
+        + '</span>';
     });
     var registering = !!(patternMode && patternMode.type === 'register');
-    html += '<button class="wv-pattern-chip add' + (registering ? ' active' : '') + '" onclick="' + config.patternRegisterFnName + '()"><i class="ph-bold ph-plus"></i>登録</button>';
+    html += '<button type="button" class="wv-pattern-chip add' + (registering ? ' active' : '') + '" onclick="' + config.patternRegisterFnName + '()"><i class="ph-bold ph-plus"></i>登録</button>';
     html += '</div>';
 
     if (patternMode) {
@@ -520,6 +543,7 @@ function createWeekView(config) {
     headerTap: headerTap,
     patternChip: patternChipTap,
     patternRegister: patternRegisterTap,
+    patternDelete: patternDeleteTap,
     copyLastWeek: copyMyLastWeek,
     getSelectedWeekId: function() { return selectedWeekId; },
     setSelectedWeekId: function(v) { selectedWeekId = v; },
@@ -550,6 +574,7 @@ var thisWeekView = createWeekView({
   headerTapFnName: 'thisWeekHeaderTap',
   patternChipFnName: 'thisWeekPatternChip',
   patternRegisterFnName: 'thisWeekPatternRegister',
+  patternDeleteFnName: 'thisWeekPatternDelete',
   copyLastWeekFnName: 'copyThisWeekLastWeek'
 });
 
@@ -565,6 +590,7 @@ var nextWeekView = createWeekView({
   headerTapFnName: 'nextWeekHeaderTap',
   patternChipFnName: 'nextWeekPatternChip',
   patternRegisterFnName: 'nextWeekPatternRegister',
+  patternDeleteFnName: 'nextWeekPatternDelete',
   copyLastWeekFnName: 'copyNextWeekLastWeek'
 });
 
@@ -581,6 +607,7 @@ function loadSelectedWeek(skipFetch) { return thisWeekView.load(skipFetch); }
 function thisWeekHeaderTap(dateStr) { thisWeekView.headerTap(dateStr); }
 function thisWeekPatternChip(index) { thisWeekView.patternChip(index); }
 function thisWeekPatternRegister() { thisWeekView.patternRegister(); }
+function thisWeekPatternDelete(index) { thisWeekView.patternDelete(index); }
 function copyThisWeekLastWeek() { return thisWeekView.copyLastWeek(); }
 
 // --- 来週 ---
@@ -593,6 +620,7 @@ function loadNextWeekSchedule(skipFetch) { return nextWeekView.load(skipFetch); 
 function nextWeekHeaderTap(dateStr) { nextWeekView.headerTap(dateStr); }
 function nextWeekPatternChip(index) { nextWeekView.patternChip(index); }
 function nextWeekPatternRegister() { nextWeekView.patternRegister(); }
+function nextWeekPatternDelete(index) { nextWeekView.patternDelete(index); }
 function copyNextWeekLastWeek() { return nextWeekView.copyLastWeek(); }
 
 // --- FAB entrypoint（現在表示中の週サブタブで編集開始。カレンダー表示中は今週へ切り替えてから開始） ---
