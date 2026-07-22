@@ -21,11 +21,16 @@
 
 /* ========== ブロックエディタ（Task25: 文章/写真ブロックを積む書き方） ========== */
 
-/* サムネイル表示（ヘッダー下）— 最初の写真ブロックを自動採用、タップで変更 */
-.dbe-thumb-indicator{display:none;align-items:center;gap:10px;width:100%;padding:8px 10px;margin-bottom:12px;border:none;border-radius:12px;background:var(--c-green-soft);color:var(--c-green);font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit}
-.dbe-thumb-indicator img{width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0;display:block}
-.dbe-thumb-indicator span{flex:1}
-.dbe-thumb-indicator i{opacity:.7}
+/* サムネイル専用ブロック（[T36] 本文ブロックとは完全に独立管理。以前は「1枚目の写真ブロックを
+   自動採用」でサムネと本文が同じ画像を二重表示していたバグがあったため、本文の直列ブロックとは
+   別枠の専用スロットにした。空なら追加ボタン、設定済みならプレビュー+削除ボタンを表示） */
+.dbe-thumb-slot{margin-bottom:12px}
+.dbe-thumb-slot-label{font-size:11px;font-weight:700;color:var(--c-ink-soft);letter-spacing:.03em;margin-bottom:6px}
+.dbe-thumb-slot-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:64px;border:1.5px dashed var(--c-line);border-radius:12px;background:var(--c-surface);color:var(--c-ink-soft);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.dbe-thumb-slot-add:active{background:var(--c-green-soft);color:var(--c-green);border-color:var(--c-green)}
+.dbe-thumb-slot-preview{position:relative;border:1px solid var(--c-line);border-radius:12px;overflow:hidden;background:var(--c-cell-off);box-shadow:var(--shadow-card)}
+.dbe-thumb-slot-preview img{width:100%;max-height:160px;object-fit:cover;display:block}
+.dbe-thumb-slot-remove{position:absolute;right:8px;top:8px;width:44px;height:44px;border:none;border-radius:50%;background:rgba(18,24,20,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
 
 /* 日付チップ: きょう/きのう/日付… */
 .dbe-date-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
@@ -55,10 +60,10 @@
 .dbe-mini-btn.active{background:var(--c-green);color:#fff}
 .dbe-mini-del{margin-left:auto;color:var(--c-danger)}
 
-/* 写真ブロック: 並べ替え(上/下)・削除・サムネバッジ — [T31] 枠線+微影でカード化 */
+/* 写真ブロック: 並べ替え(上/下)・削除 — [T31] 枠線+微影でカード化 /
+   [T36] サムネはこのブロック列から独立したため、サムネバッジは廃止 */
 .dbe-photo-wrap{position:relative;border:1px solid var(--c-line);border-radius:12px;overflow:hidden;background:var(--c-cell-off);box-shadow:var(--shadow-card)}
 .dbe-photo-img{width:100%;max-height:220px;object-fit:cover;display:block}
-.dbe-photo-thumb-badge{position:absolute;left:8px;top:8px;background:rgba(63,110,91,.9);color:#fff;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:8px}
 .dbe-photo-controls{position:absolute;right:8px;top:8px;display:flex;gap:6px}
 .dbe-photo-btn{width:44px;height:44px;border:none;border-radius:50%;background:rgba(18,24,20,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
 .dbe-photo-del{background:rgba(201,106,90,.85)}
@@ -77,12 +82,6 @@
 .dbe-sheet-btn{width:100%;padding:13px;min-height:44px;border:none;border-radius:12px;background:var(--c-green-soft);color:var(--c-green);font-size:14.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .dbe-sheet-btn:active{background:var(--c-green);color:#fff}
 .dbe-sheet-cancel{width:100%;padding:13px;min-height:44px;border:none;border-radius:12px;background:none;color:var(--c-ink-soft);font-size:14.5px;cursor:pointer}
-
-/* サムネ選択グリッド */
-.dbe-thumb-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
-.dbe-thumb-picker-item{padding:0;border:2px solid transparent;border-radius:10px;overflow:hidden;cursor:pointer;background:none}
-.dbe-thumb-picker-item img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
-.dbe-thumb-picker-empty{grid-column:1/-1;text-align:center;padding:16px;color:var(--c-ink-faint);font-size:13px}
 
 /* 詳細表示モーダル - フルスクリーン（iOS対応） */
 .diary-detail-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:var(--c-surface);z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}

@@ -125,12 +125,14 @@
           <span id="diaryInputTitle"><i class="ph-bold ph-note-pencil"></i> 日記を書く</span>
           <button id="diarySubmitBtn" class="diary-submit-btn diary-submit-top" onclick="submitDiary()">投稿する</button>
         </div>
-        <!-- サムネイル表示（最初の写真ブロックを自動採用・タップで変更） -->
-        <button type="button" id="diaryThumbIndicator" class="dbe-thumb-indicator" style="display:none" onclick="diaryOpenThumbPicker()">
-          <img id="diaryThumbIndicatorImg" src="" alt="">
-          <span id="diaryThumbIndicatorLabel">サムネ: 自動（1枚目）</span>
-          <i class="ph-bold ph-caret-right"></i>
-        </button>
+        <!-- サムネイル専用ブロック（[T36] 本文ブロックとは独立管理。本文写真の1枚目を自動採用する
+             旧仕様は、同じ画像がサムネと本文に二重表示されるバグの原因だったため廃止。ここで選んだ
+             画像だけが catchImageUrl として保存され、本文の写真ブロックには影響しない） -->
+        <div class="dbe-thumb-slot">
+          <div class="dbe-thumb-slot-label">サムネイル（任意）</div>
+          <div id="diaryThumbSlotBody"></div>
+        </div>
+        <input type="file" id="diaryThumbPhotoInput" accept="image/*" style="display:none" onchange="diaryThumbPhotoFileSelected(event)">
         <!-- 日付チップ -->
         <div class="dbe-date-row">
           <button type="button" class="dbe-date-chip active" data-when="today" onclick="diarySetDateChip('today')"><i class="ph-bold ph-calendar"></i> きょう</button>
@@ -151,16 +153,6 @@
           <button type="button" class="dbe-sheet-btn" onclick="diaryAddBlockFromChooser('text')"><i class="ph-bold ph-text-align-left"></i> 文章を追加</button>
           <button type="button" class="dbe-sheet-btn" onclick="diaryAddBlockFromChooser('photo')"><i class="ph-bold ph-image"></i> 写真を追加</button>
           <button type="button" class="dbe-sheet-cancel" onclick="diaryCloseBlockChooser()">キャンセル</button>
-        </div>
-      </div>
-
-      <!-- サムネイル選択シート -->
-      <div id="diaryThumbPicker" class="dbe-sheet" onclick="if(event.target===this) diaryCloseThumbPicker()">
-        <div class="dbe-sheet-card">
-          <div class="dbe-sheet-title">サムネイルを選ぶ</div>
-          <div id="diaryThumbPickerGrid" class="dbe-thumb-picker-grid"></div>
-          <button type="button" class="dbe-sheet-btn" onclick="diarySelectThumb(null)"><i class="ph-bold ph-magic-wand"></i> 自動（1枚目）にする</button>
-          <button type="button" class="dbe-sheet-cancel" onclick="diaryCloseThumbPicker()">キャンセル</button>
         </div>
       </div>
 
