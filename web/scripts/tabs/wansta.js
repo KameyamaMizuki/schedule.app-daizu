@@ -130,7 +130,10 @@ function renderWanstaPhotos(photos) {
   for (var i = 0; i < photos.length; i++) {
     var photo = photos[i];
     var isStatic = photo.isStatic ? 'true' : 'false';
-    var photoImgSrc = safeImageSrc(photo.url);
+    // 静的写真(state.jsの内蔵犬画像=相対パス・ハードコードで信頼できる)は escapeAttr で通す。
+    // safeImageSrc は http(s)/data:image のみ許可し相対パスを弾くため、静的写真に使うと
+    // 内蔵ギャラリーが全部消える(本番リグレッション)。DB由来(ユーザー投稿)のみ safeImageSrc で検査。
+    var photoImgSrc = photo.isStatic ? escapeAttr(photo.url) : safeImageSrc(photo.url);
     if (!photoImgSrc) continue; // 不正な形式のsrcは表示しない（属性インジェクション対策）
     // photo.url は onclick 内のJS文字列へ直接連結しない（HTML実体参照はonclick等の
     // イベントハンドラ属性ではJSパース前にデコードされるため引用符エスケープが無意味になる。
