@@ -45,6 +45,10 @@ async function loadWanstaData() {
     var images = (imgData && imgData.images) || [];
     for (var k = 0; k < images.length; k++) {
       var img = images[k];
+      // API由来の画像は決して「静的(信頼)」扱いにしない。isStatic は当ファイルが
+      // ハードコードの内蔵画像にのみ付与するフラグで、描画時に escapeAttr(scheme検査バイパス)
+      // 経路の分岐に使う。万一APIレスポンスに isStatic が混入しても safeImageSrc 経路を強制する。
+      img.isStatic = false;
       if (img.tag === 'wansta-daizu') {
         wanstaPhotos.daizu.push(img);
       } else if (img.tag !== 'diary') {
